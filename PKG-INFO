@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: adsPy
+Version: 1.0.2
+Summary: Python wrapper for Beckhoff ADS-DLL
+Home-page: http://mrleeh.square7.ch/
+Author: Stefan Lehmann
+Author-email: mrleeh@gmx.de
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: ctypes
+Provides: adsPy
