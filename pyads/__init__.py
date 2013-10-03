@@ -5,7 +5,7 @@
 @version: 1
 @note: Wrapper for the Beckhoff TwinCAT AdsDLL.dll  
 
-AdsPy uses the C API I{AdsDLL.dll}. The documentation for the ADS API is available on U{infosys.beckhoff.de<http://infosys.beckhoff.de/index.php?content=../content/1031/TcAdsDll2/HTML/TcAdsDll_Api_Overview.htm&id=>}
+pyads uses the C API I{AdsDLL.dll}. The documentation for the ADS API is available on U{infosys.beckhoff.de<http://infosys.beckhoff.de/index.php?content=../content/1031/TcAdsDll2/HTML/TcAdsDll_Api_Overview.htm&id=>}
 
 B{samples:}
 

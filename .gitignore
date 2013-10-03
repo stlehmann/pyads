@@ -1,3 +1,10 @@
+#pyCharm config files
 .idea/
+
+#pyc files
 *.pyc
-adsPy/doc/
+
+#other
+pyads/doc/
+dist/
+MANIFEST
