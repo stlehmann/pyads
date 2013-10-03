@@ -2,14 +2,14 @@
 from distutils.core import setup
 
 setup(
-      name = "adsPy",
+      name = "pyads",
       version = "1.0.2",
       description = "Python wrapper for TwinCAT ADS-DLL",
       author = "Stefan Lehmann",
       author_email = "mrleeh@gmx.de",
-      packages = ["adsPy"],
-      package_data = {'adsPy': ['doc/*.*']},
+      packages = ["pyads"],
+      package_data = {'pyads': ['doc/*.*']},
       requires = ['ctypes'],
-      provides=['adsPy'],
-      url = 'https://github.com/MrLeeh/adsPy'
+      provides=['pyads'],
+      url = 'https://github.com/MrLeeh/pyads'
       )
