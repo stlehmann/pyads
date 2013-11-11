@@ -7,4 +7,6 @@
 #other
 pyads/doc/
 dist/
+build/
+html/
 MANIFEST
