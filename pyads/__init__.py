@@ -19,7 +19,7 @@ setting ADS-state and machine-state
     >>> print errCode
      
 reading bit %MX100.0, toggle it and writing back    
-    >>> (errCode, data) = adsSyncReadReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0)   
+    >>> (errCode, data) = adsSyncReadReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
     >>> errCode = adsSyncWriteReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
     
 writing an UDINT value to MW0 and reading it

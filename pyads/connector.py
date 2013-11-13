@@ -36,13 +36,15 @@ class ADSConnector(AbstractPLCConnector):
         self.ams_addr.setPort(PORT_SPS1)
 
     def read_from_plc(self, address, datatype):
-        (errcode, value) = adsSyncReadReq(self.ams_addr, INDEXGROUP_MEMORYBYTE, address, datatype)
+        index_group = INDEXGROUP_MEMORYBIT if datatype == PLCTYPE_BOOL else INDEXGROUP_MEMORYBYTE
+        (errcode, value) = adsSyncReadReq(self.ams_addr, index_group, address, datatype)
         if errcode:
             raise ADSError("Reading from address %i (ErrorCode %i)" % (address, errcode))
         return value
 
     def write_to_plc(self, address, value, datatype):
-        errcode = adsSyncWriteReq(self.ams_addr, INDEXGROUP_MEMORYBYTE, address, value, datatype)
+        index_group = INDEXGROUP_MEMORYBIT if datatype == PLCTYPE_BOOL else INDEXGROUP_MEMORYBYTE
+        errcode = adsSyncWriteReq(self.ams_addr, index_group, address, value, datatype)
         if errcode:
             raise ADSError("Writing on address %i (ErrorCode %i)" % (address, errcode))
 
