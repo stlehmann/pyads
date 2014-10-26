@@ -8,7 +8,7 @@ from ctypes import *
 from constants import *
 
 #ADS-DLL laden
-_adsDLL = CDLL("AdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
+_adsDLL = CDLL("TcAdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
 
 
 def adsGetDllVersion():
@@ -27,7 +27,7 @@ def adsGetDllVersion():
     fit = min(sizeof(stVersion), sizeof(resLong))
     memmove(addressof(stVersion), addressof(resLong), fit)
 
-    return AdsVersion(stVersion.version, stVersion.revision, stVersion.build)
+    return AdsVersion(stVersion)
 
 def adsPortOpen():
     """
@@ -187,7 +187,10 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
         pData = nData
         nLength = len(pData.value)+1
     else:
-        nData = plcDataType(value)
+        if type(plcDataType).__name__ == 'PyCArrayType':
+            nData = plcDataType(*value)
+        else:
+            nData = plcDataType(value)
         pData = pointer(nData)
         nLength = sizeof(nData)
 
@@ -273,11 +276,15 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     nLength = c_ulong(sizeof(data))    
     errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)      
     
-	if hasattr(data,'value'):    
-	    return (errCode, data.value)
-	else:
-		## if we return structures, they may not have a value attribute
-		return (errCode, data)
+    if hasattr(data,'value'):
+        return (errCode, data.value)
+    else:
+        if type(plcDataType).__name__ == 'PyCArrayType':
+            dout = [i for i in data]
+            return (errCode, data)
+        else:
+        ## if we return structures, they may not have a value attribute		
+            return (errCode, data)
 
 
 '''

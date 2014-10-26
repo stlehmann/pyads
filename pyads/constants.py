@@ -24,7 +24,12 @@ PLCTYPE_TOD = c_int32
 PLCTYPE_UDINT = c_uint32
 PLCTYPE_UINT = c_uint16
 PLCTYPE_USINT = c_uint8
-PLCTYPE_WORD = c_int16 
+PLCTYPE_WORD = c_int16
+PLCTYPE_ARR_LREAL = lambda n: c_double*n
+PLCTYPE_ARR_DINT = lambda n: c_int32*n
+PLCTYPE_ARR_SHORT = lambda n: c_short*n
+
+
 
 #Index Group
 #READ_M - WRITE_M
