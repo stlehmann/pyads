@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+
+"""
 Created on 25.06.2013
 @author: lehmann
-'''
+"""
 
 from ctypes import *
 
@@ -23,7 +24,12 @@ PLCTYPE_TOD = c_int32
 PLCTYPE_UDINT = c_uint32
 PLCTYPE_UINT = c_uint16
 PLCTYPE_USINT = c_uint8
-PLCTYPE_WORD = c_int16 
+PLCTYPE_WORD = c_int16
+PLCTYPE_ARR_LREAL = lambda n: c_double*n
+PLCTYPE_ARR_DINT = lambda n: c_int32*n
+PLCTYPE_ARR_SHORT = lambda n: c_short*n
+
+
 
 #Index Group
 #READ_M - WRITE_M
@@ -82,10 +88,13 @@ ADSTRANS_CLIENT1REQ = 2
 ADSTRANS_SERVERCYCLE = 3
 ADSTRANS_SERVERONCHA = 4
 
+
 class SAdsVersion(Structure):
     _fields_=[("version", c_byte),
              ("revision", c_byte),
-             ("build", c_short)]    
+             ("build", c_short)]
+
+
 class AdsVersion ():
     '''
     @summary: contains version number, revision number, build number of the ADS-DLL
@@ -114,6 +123,8 @@ class SAmsAddr(Structure):
     '''
     _fields_ = [("netId", c_ubyte * 6),
                 ("port", c_ushort)]
+
+
 class AmsAddr():
     '''
     @summary: wrapper for SAmsAddr-structure, needed to adress an ADS device
@@ -171,9 +182,27 @@ class AmsAddr():
         for i in range(len(a)):
             self.stAmsAddr.netId[i] = c_ubyte(int(a[i])) 
 
+
 class SAdsNotificationAttrib(Structure):
     _fields_ = [("cbLength", c_ulong),
                 ("nTransMode", c_ulong),
                 ("nMaxDelay", c_ulong),
                 ("nCycleTime", c_ulong)]
-    
+
+
+class SAdsSymbolUploadInfo(Structure):
+    _fields_ = [("nSymbols", c_ulong),
+                ("nSymSize", c_ulong)]
+
+
+class SAdsSymbolEntry(Structure):
+    _fields_ = [("entryLength", c_ulong),
+                ("iGroup", c_ulong),
+                ("iOffs", c_ulong),
+                ("iSize", c_ulong),
+                ("flags", c_ulong),
+                ("nameLength", c_ushort),
+                ("typeLength", c_ushort),
+                ("commentLength", c_ushort)]
+
+
