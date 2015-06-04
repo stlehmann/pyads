@@ -5,12 +5,11 @@
 
     Connector for use with the qthmi package.
 
-    :copyright: (c) 2015 by Stefan Lehmann
+    :copyright: © 2015 by Stefan Lehmann
     :license: MIT, see LICENSE for details
 
 """
 
-__author__ = 'Stefan Lehmann'
 
 from qthmi.connector import AbstractPLCConnector, ConnectionError
 from pyads import adsPortOpen, adsGetLocalAddress, adsSyncReadReq, adsSyncWriteReq
@@ -19,12 +18,8 @@ from constants import *
 
 class ADSConnector(AbstractPLCConnector):
     """
-    @type port: int
-    @ivar port: port number
-
-    @type ams_addr: AmsAddr
-    @ivar ams_addr: ams address of device
-
+        :ivar int port: port number
+        :ivar pyads.structs.AmsAddr ams_addr: ams address of device
 
     """
 
