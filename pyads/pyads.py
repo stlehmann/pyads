@@ -8,7 +8,7 @@ from ctypes import *
 from constants import *
 
 #ADS-DLL laden
-_adsDLL = CDLL("AdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
+_adsDLL = CDLL("TcAdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
 
 
 def adsGetDllVersion():
@@ -27,7 +27,7 @@ def adsGetDllVersion():
     fit = min(sizeof(stVersion), sizeof(resLong))
     memmove(addressof(stVersion), addressof(resLong), fit)
 
-    return AdsVersion(stVersion.version, stVersion.revision, stVersion.build)
+    return AdsVersion(stVersion)
 
 def adsPortOpen():
     """
@@ -56,19 +56,19 @@ def adsPortClose():
 def adsGetLocalAddress():
     """
     @summary: returns the local AMS-address and the port number
-    @rtype: AmsAddr 
+    @rtype: AmsAddr
     @return: AMS-address
     """
     adsGetLocalAddressFct = _adsDLL.AdsGetLocalAddress
     stAmsAddr = SAmsAddr()
 
     errCode = adsGetLocalAddressFct(pointer(stAmsAddr))
-    
-    if errCode: 
+
+    if errCode:
         return None
-    
+
     adsLocalAddr = AmsAddr(errCode, stAmsAddr)
-   
+
     return adsLocalAddr
 
 def adsSyncReadStateReq(adr):
@@ -99,11 +99,11 @@ def adsSyncReadDeviceInfoReq(adr):
     @return: errCode, device name, version
     """
     adsSyncReadDeviceInfoReqFct = _adsDLL.AdsSyncReadDeviceInfoReq
-    
+
     pAmsAddr = pointer(adr.amsAddrStruct())
     devNameStringBuffer = create_string_buffer(20)
     pDevName = pointer(devNameStringBuffer)
-    stVersion = SAdsVersion() 
+    stVersion = SAdsVersion()
     pVersion = pointer(stVersion)
 
     errCode = adsSyncReadDeviceInfoReqFct(pAmsAddr, pDevName, pVersion)
@@ -112,129 +112,187 @@ def adsSyncReadDeviceInfoReq(adr):
 def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     """
     @summary: changes the ads-state and the machine-state of the ADS-server
-    
+
     @type adr: AmsAddr
     @param adr: local or remote AmsAddr
-    
+
     @type adsState: int
     @param adsState: new ADS-state, according to ADSTATE constants
-    
-    @type deviceState: int 
+
+    @type deviceState: int
     @param deviceState: new machine-state
-    
+
     @param data: additional data
-    
+
     @type plcDataType: int
     @param plcDataType: PLC-datatype, according to PLCTYPE constants
-    
+
     @rtype: int
     @return: error-state of the function
-    
+
     @note: Despite changing the ADS-state and the machine-state it is possible to send additional
-    data to the ADS-server. For current ADS-devices additional data is not progressed. 
+    data to the ADS-server. For current ADS-devices additional data is not progressed.
     Every ADS-device is able to communicate its current state to other devices. There is a difference
     between the device-state and the state of the ADS-interface (AdsState). The possible states of an
     ADS-interface are defined in the ADS-specification.
     """
     adsSyncWriteControlReqFct = _adsDLL.AdsSyncWriteControlReq
-    
+
     pAddr = pointer(adr.amsAddrStruct())
     nAdsState = c_ulong(adsState)
     nDeviceState = c_ulong(deviceState)
-    
+
     if plcDataType == PLCTYPE_STRING:
         nData = c_char_p(data)
         pData = nData
-        nLength = len(pData.value)+1       
+        nLength = len(pData.value)+1
     else:
         nData = plcDataType(data)
         pData = pointer(nData)
         nLength = sizeof(nData)
-    
+
     errCode = adsSyncWriteControlReqFct(pAddr, nAdsState, nDeviceState, nLength, pData)
     return errCode
-    
+
 def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
     """
     @summary: sends data synchronous to an ADS-device
-    
+
     @type adr: AmsAddr
     @param adr: local or remote AmsAddr
-    
+
     @type indexGroup: int
     @param indexGroup: PLC storage area, according to the INDEXGROUP constants
-    
+
     @type indexOffset: int
     @param indexOffset: PLC storage address
-    
+
     @param value: value to write to the storage address of the PLC
-    
+
     @type plcDataType: int
     @param plcDataType: type of the data given to the PLC, according to PLCTYPE constants
-    
+
     @rtype: int
     @return: error-state of the function
     """
 
     adsSyncWriteReqFct = _adsDLL.AdsSyncWriteReq
-    
+
     pAmsAddr = pointer(adr.amsAddrStruct())
     nIndexGroup = c_ulong(indexGroup)
-    nIndexOffset = c_ulong(indexOffset)  
-    
+    nIndexOffset = c_ulong(indexOffset)
+
     if plcDataType == PLCTYPE_STRING:
         nData = c_char_p(value)
         pData = nData
-        nLength = len(pData.value)+1       
+        nLength = len(pData.value)+1
     else:
-        nData = plcDataType(value)
+        if type(plcDataType).__name__ == 'PyCArrayType':
+            nData = plcDataType(*value)
+        else:
+            nData = plcDataType(value)
         pData = pointer(nData)
         nLength = sizeof(nData)
-        
-    
+
+
     errCode = adsSyncWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
     return errCode
+
+
+def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType, value, plcWriteDataType):
+    """
+    @summary: reads ands writes data synchronous from/to an ADS-device
+
+    @type adr: AmsAddr
+    @param adr: local or remote AmsAddr
+
+    @type indexGroup: int
+    @param indexGroup: PLC storage area, according to the INDEXGROUP constants
+
+    @type indexOffset: int
+    @param indexOffset: PLC storage address
+
+    @type plcDataType: int
+    @param plcDataType: type of the data given to the PLC to respond to, according to PLCTYPE constants
+
+    @param value: value to write to the storage address of the PLC
+
+    @param plcWriteDataType: type of the data given to the PLC, according to PLCTYPE constants
+
+    @rtype: (int, PLCTYPE)
+    @return: (err_code, value): B{err_code} error-state of the function, B{value}
+    """
+    adsSyncReadWriteReqFct = _adsDLL.AdsSyncReadWriteReq
+
+    pAmsAddr = pointer(adr.amsAddrStruct())
+    nIndexGroup = c_ulong(indexGroup)
+    nIndexOffset = c_ulong(indexOffset)
+
+    readData = plcReadDataType()
+    nReadLength = c_ulong(sizeof(readData))
+
+    if plcWriteDataType == PLCTYPE_STRING:
+        ## as we got the value as unicode string (python 3) we have to convert it to ascii
+        ascii_string = value.encode()
+        data = c_char_p(ascii_string)
+        data_length = len(value) + 1
+    else:
+        nData = plcWriteDataType(value)
+        data = pointer(nData)
+        data_length = sizeof(nData)
+
+    err_code = adsSyncReadWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nReadLength,
+                                     pointer(readData), data_length, data)
+    return err_code, readData.value
 
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     """
     @summary: reads data synchronous from an ADS-device
-        
+
     @type adr: AmsAddr
     @param adr: local or remote AmsAddr
-    
+
     @type indexGroup: int
     @param indexGroup: PLC storage area, according to the INDEXGROUP constants
-    
+
     @type indexOffset: int
-    @param indexOffset: PLC storage address   
-    
+    @param indexOffset: PLC storage address
+
     @type plcDataType: int
     @param plcDataType: type of the data given to the PLC, according to PLCTYPE constants
-    
+
     @rtype: (int, PLCTYPE)
-    @return: (errCode, value): B{errCode} error-state of the function, B{value}  
+    @return: (errCode, value): B{errCode} error-state of the function, B{value}
     """
-    
+
     adsSyncReadReqFct = _adsDLL.AdsSyncReadReq
-    
+
     pAmsAddr = pointer(adr.amsAddrStruct())
     nIndexGroup = c_ulong(indexGroup)
     nIndexOffset = c_ulong(indexOffset)
-     
+
     data = plcDataType()
     pData = pointer(data)  
     nLength = c_ulong(sizeof(data))    
     errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)      
-        
-    return (errCode, data.value)
+    
+    if hasattr(data,'value'):
+        return (errCode, data.value)
+    else:
+        if type(plcDataType).__name__ == 'PyCArrayType':
+            dout = [i for i in data]
+            return (errCode, data)
+        else:
+        ## if we return structures, they may not have a value attribute		
+            return (errCode, data)
+
 
 '''
 def adsSyncAddDeviceNotificationReq(adr, indexGroup, indexOffset, noteAttrib, noteFunc, user, notification):
     adsSyncAddDeviceNotificationReq = _adsDLL.AdsSyncAddDeviceNotificationReq
-    
+
     pAmsAddr = pointer(adr.amsAddrStruct())
     nIndexGroup = c_ulong(indexGroup)
     nIndexOffset = c_ulong(indexOffset)
     #pNoteAttrib =
-''' 
-        
+'''
