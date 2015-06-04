@@ -1,23 +1,29 @@
 # -*- coding: utf-8 -*-
-'''
-Created on 19.09.2013
-@author: lehmann
-'''
+"""
+    pyads.pyads
+    ~~~~~~~~~~~
+
+    Contains ADS functions.
+
+    :copyright: (c) 2013 by Stefan Lehmann
+    :license: MIT, see LICENSE for details
+
+"""
 
 from ctypes import *
 from constants import *
 
-#ADS-DLL laden
+# load dynamic ADS library
 _adsDLL = CDLL("TcAdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
 
 
 def adsGetDllVersion():
-    '''
+    """
     @summary: returns version, revision and build of the ads-dll
     
     @rtype: AdsVersion
     @return: version, revision and build of the ads-dll
-    '''
+    """
     #Aufruf der API-Funktion, Rückgabetyp ist Long
     resLong = c_long(_adsDLL.AdsGetDllVersion())
 
@@ -287,7 +293,7 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
             return (errCode, data)
 
 
-'''
+"""
 def adsSyncAddDeviceNotificationReq(adr, indexGroup, indexOffset, noteAttrib, noteFunc, user, notification):
     adsSyncAddDeviceNotificationReq = _adsDLL.AdsSyncAddDeviceNotificationReq
 
@@ -295,4 +301,4 @@ def adsSyncAddDeviceNotificationReq(adr, indexGroup, indexOffset, noteAttrib, no
     nIndexGroup = c_ulong(indexGroup)
     nIndexOffset = c_ulong(indexOffset)
     #pNoteAttrib =
-'''
+"""

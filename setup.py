@@ -1,15 +1,15 @@
 # -*-coding: utf-8 -*-
-from distutils.core import setup
+from setuptools import setup
 
 setup(
       name = "pyads",
-      version = "1.0.4",
+      version = "1.1.0",
       description = "Python wrapper for TwinCAT ADS-DLL",
-      author = "Karl-Heinz reichel",
-      author_email = "kh.reichel@techdrivers.de",
+      author = "Stefan Lehmann",
+      author_email = "Stefan.St.Lehmann@gmail.com",
       packages = ["pyads"],
       package_data = {'pyads': ['doc/*.*']},
       requires = ['ctypes'],
       provides=['pyads'],
-      url = 'https://github.com/khReichel/pyads'
-      )
+      url = 'https://github.com/MrLeeh/pyads'
+)

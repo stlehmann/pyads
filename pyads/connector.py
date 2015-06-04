@@ -1,5 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-Connector for use with the qthmi package.
+    pyads.connector
+    ~~~~~~~~~~~~~~~
+
+    Connector for use with the qthmi package.
+
+    :copyright: (c) 2015 by Stefan Lehmann
+    :license: MIT, see LICENSE for details
 
 """
 

@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-'''
+"""
 @requires: ctypes, Beckhoff TwinCAT mit ADS-DLL
 @version: 1
 @note: Wrapper for the Beckhoff TwinCAT AdsDLL.dll  
@@ -33,7 +33,7 @@ writing a string value in MW0 and reading it
 
 close port
     >>> adsPortClose()
-'''
+"""
 
 
 from pyads import *

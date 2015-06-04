@@ -1,13 +1,20 @@
 #-*-coding: utf-8-*-
-'''
-Created on 19.09.2013
-@author: lehmann
-'''
+"""
+    pyads.constants
+    ~~~~~~~~~~~~~~~
+
+    Mapper class for binding GUI objects to the ADS API.
+
+    :copyright: (c) 2013 by Stefan Lehmann
+    :license: MIT, see LICENSE for details
+
+"""
 from constants import INDEXGROUP_MEMORYBIT, PLCTYPE_BOOL, INDEXGROUP_MEMORYBYTE
 from pyads import adsSyncWriteReq, adsSyncReadReq
 
+
 class ADSMapper():
-    '''
+    """
     @summary:  Objects of this class represent a plc process value. The class accomblishes a connection between
     plc and the gui. For implementing the interaction between gui objects and plc values subclass and implement
     mapAdsToGui according to the given examples.
@@ -37,16 +44,16 @@ class ADSMapper():
 
     @version: 1.0.0
     
-    '''
+    """
     def __init__(self, plcAddress, plcDataType, guiObjects, hint=None):
-        '''
+        """
         @type plcAddress: int 
         @param plcAddress: plc address
         @type plcDataType: int
         @param plcDataType: plc data type
         @param guiObjects: list/tuple or single gui objects (for instance Qt objects)
         @type hint: string 
-        '''
+        """
         self.hint = hint                #: hint for plc value
         self.plcAdr = plcAddress        #: plc address
         self.plcDataType = plcDataType  #: plc data type (PLCTYPE constant)
@@ -60,14 +67,14 @@ class ADSMapper():
             guiObjects.plcObject = self
                 
     def write (self, adsAdr, value):
-        '''
+        """
         writes the value to the plc address
         
         @type adsAdr: adsPy.AmsAdr
         @param adsAdr: address to the ADS device
         
         @param value: value to be written 
-        '''
+        """
         self.currentValue = value
         indexgroup = INDEXGROUP_MEMORYBIT if self.plcDataType == PLCTYPE_BOOL else INDEXGROUP_MEMORYBYTE
         
@@ -80,7 +87,7 @@ class ADSMapper():
         raise Exception("error writing on address %i. error number %i" % (self.plcAdr, err) )
     
     def read(self, adsAdr):
-        '''
+        """
         reads from plc address and writes in self.currentValue, calls mapAdsToGui to show the value on
         the connected gui objects 
         
@@ -88,7 +95,7 @@ class ADSMapper():
         @param adsAdr: address to the ADS device
         
         @return: current value
-        ''' 
+        """
         indexgroup = INDEXGROUP_MEMORYBIT if self.plcDataType == PLCTYPE_BOOL else INDEXGROUP_MEMORYBYTE
             
         (err, value) = adsSyncReadReq(adsAdr, indexgroup, self.plcAdr, self.plcDataType)
@@ -107,7 +114,7 @@ class ADSMapper():
         return value
     
     def mapAdsToGui(self, guiObject, value):
-        '''
+        """
         @summary: displays the value on the connected gui object, this function should be overriden, by default the value is printed on the console.
                 
         @type guiObject: QObject
@@ -115,5 +122,5 @@ class ADSMapper():
         
         @param value: value to display in the gui object
         
-        '''
+        """
         print value
