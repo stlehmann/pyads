@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyads.constants &mdash; pyads 1.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pyads 1.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pyads 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pyads.constants</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    pyads.constants</span>
+<span class="sd">    ~~~~~~~~~~~~~~~</span>
+
+<span class="sd">    Constants for the work with the ADS API.</span>
+
+<span class="sd">    :copyright: © 2013 by Stefan Lehmann</span>
+<span class="sd">    :license: MIT, see LICENSE for details</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="c"># plc data types</span>
+<span class="n">PLCTYPE_BOOL</span> <span class="o">=</span> <span class="n">c_bool</span>
+<span class="n">PLCTYPE_BYTE</span> <span class="o">=</span> <span class="n">c_byte</span>
+<span class="n">PLCTYPE_DATE</span> <span class="o">=</span> <span class="n">c_int32</span> 
+<span class="n">PLCTYPE_DINT</span> <span class="o">=</span> <span class="n">c_int32</span>
+<span class="n">PLCTYPE_DT</span> <span class="o">=</span> <span class="n">c_int32</span> 
+<span class="n">PLCTYPE_DWORD</span> <span class="o">=</span> <span class="n">c_int32</span> 
+<span class="n">PLCTYPE_INT</span> <span class="o">=</span> <span class="n">c_int16</span>
+<span class="n">PLCTYPE_LREAL</span> <span class="o">=</span> <span class="n">c_double</span>
+<span class="n">PLCTYPE_REAL</span> <span class="o">=</span> <span class="n">c_float</span>
+<span class="n">PLCTYPE_SINT</span> <span class="o">=</span> <span class="n">c_int8</span>
+<span class="n">PLCTYPE_STRING</span> <span class="o">=</span> <span class="n">c_char</span>
+<span class="n">PLCTYPE_TIME</span> <span class="o">=</span> <span class="n">c_int32</span>
+<span class="n">PLCTYPE_TOD</span> <span class="o">=</span> <span class="n">c_int32</span>
+<span class="n">PLCTYPE_UDINT</span> <span class="o">=</span> <span class="n">c_uint32</span>
+<span class="n">PLCTYPE_UINT</span> <span class="o">=</span> <span class="n">c_uint16</span>
+<span class="n">PLCTYPE_USINT</span> <span class="o">=</span> <span class="n">c_uint8</span>
+<span class="n">PLCTYPE_WORD</span> <span class="o">=</span> <span class="n">c_int16</span>
+<span class="n">PLCTYPE_ARR_LREAL</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">c_double</span><span class="o">*</span><span class="n">n</span>
+<span class="n">PLCTYPE_ARR_DINT</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">c_int32</span><span class="o">*</span><span class="n">n</span>
+<span class="n">PLCTYPE_ARR_SHORT</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">c_short</span><span class="o">*</span><span class="n">n</span>
+
+
+
+<span class="c">#Index Group</span>
+<span class="c">#READ_M - WRITE_M</span>
+<span class="n">INDEXGROUP_MEMORYBYTE</span> <span class="o">=</span> <span class="mh">0x4020</span>    <span class="c">#:plc memory area (%M), offset means byte-offset</span>
+<span class="c">#READ_MX - WRITE_MX</span>
+<span class="n">INDEXGROUP_MEMORYBIT</span> <span class="o">=</span> <span class="mh">0x4021</span>     <span class="c">#:plc memory area (%MX), offset means the bit adress, calculatedb by bytenumber * 8 + bitnumber</span>
+<span class="c">#PLCADS_IGR_RMSIZE</span>
+<span class="n">INDEXGROUP_MEMORYSIZE</span> <span class="o">=</span> <span class="mh">0x4025</span>    <span class="c">#:size of the memory area in bytes</span>
+<span class="c">#PLCADS_IGR_RWRB</span>
+<span class="n">INDEXGROUP_RETAIN</span> <span class="o">=</span> <span class="mh">0x4030</span>        <span class="c">#:plc retain memory area, offset means byte-offset</span>
+<span class="c">#PLCADS_IGR_RRSIZE</span>
+<span class="n">INDEXGROUP_RETAINSIZE</span> <span class="o">=</span> <span class="mh">0x4035</span>    <span class="c">#:size of the retain area in bytes</span>
+<span class="c">#PLCADS_IGR_RWDB</span>
+<span class="n">INDEXGROUP_DATA</span> <span class="o">=</span> <span class="mh">0x4040</span>          <span class="c">#:data area, offset means byte-offset</span>
+<span class="c">#PLCADS_IGR_RDSIZE</span>
+<span class="n">INDEXGROUP_DATASIZE</span> <span class="o">=</span> <span class="mh">0x4045</span>      <span class="c">#:size of the data area in bytes</span>
+
+<span class="c">#PORTS</span>
+<span class="n">PORT_LOGGER</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">PORT_EVENTLOGGER</span> <span class="o">=</span> <span class="mi">110</span>
+<span class="n">PORT_IO</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">PORT_SPECIALTASK1</span> <span class="o">=</span> <span class="mi">301</span>
+<span class="n">PORT_SPECIALTASK2</span> <span class="o">=</span> <span class="mi">302</span>
+<span class="n">PORT_NC</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">PORT_SPS1</span> <span class="o">=</span> <span class="mi">801</span>
+<span class="n">PORT_SPS2</span> <span class="o">=</span> <span class="mi">811</span>
+<span class="n">PORT_SPS3</span> <span class="o">=</span> <span class="mi">821</span>
+<span class="n">PORT_SPS4</span> <span class="o">=</span> <span class="mi">831</span>
+<span class="n">PORT_NOCKE</span> <span class="o">=</span> <span class="mi">900</span>
+<span class="n">PORT_SYSTEMSERVICE</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">PORT_SCOPE</span> <span class="o">=</span> <span class="mi">14000</span> 
+
+<span class="c">#ADSState-constants</span>
+<span class="n">ADSSTATE_INVALID</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ADSSTATE_IDLE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">ADSSTATE_RESET</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">ADSSTATE_INIT</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">ADSSTATE_START</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">ADSSTATE_RUN</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">ADSSTATE_STOP</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">ADSSTATE_SAVECFG</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">ADSSTATE_LOADCFG</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">ADSSTATE_POWERFAILURE</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="n">ADSSTATE_POWERGOOD</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">ADSSTATE_ERROR</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">ADSSTATE_SHUTDOWN</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">ADSSTATE_SUSPEND</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">ADSSTATE_RESUME</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">ADSSTATE_CONFIG</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">ADSSTATE_RECONFIG</span> <span class="o">=</span> <span class="mi">16</span>
+
+<span class="c">#ADSTransmode</span>
+<span class="n">ADSTRANS_NOTRANS</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ADSTRANS_CLIENTCYCLE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">ADSTRANS_CLIENT1REQ</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">ADSTRANS_SERVERCYCLE</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">ADSTRANS_SERVERONCHA</span> <span class="o">=</span> <span class="mi">4</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pyads 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Stefan Lehmann.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>
