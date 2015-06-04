@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyads.pyads &mdash; pyads 1.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pyads 1.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pyads 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pyads.pyads</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    pyads.pyads</span>
+<span class="sd">    ~~~~~~~~~~~</span>
+
+<span class="sd">    Contains ADS functions.</span>
+
+<span class="sd">    :copyright: © 2013 by Stefan Lehmann</span>
+<span class="sd">    :license: MIT, see LICENSE for details</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">constants</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c"># load dynamic ADS library</span>
+<span class="n">_adsDLL</span> <span class="o">=</span> <span class="n">CDLL</span><span class="p">(</span><span class="s">&quot;TcAdsDll.dll&quot;</span><span class="p">)</span> <span class="c">#: ADS-DLL (Beckhoff TwinCAT)</span>
+
+
+<div class="viewcode-block" id="adsGetDllVersion"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsGetDllVersion">[docs]</a><span class="k">def</span> <span class="nf">adsGetDllVersion</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Return version, revision and build of the ADS library.</span>
+<span class="sd">    :rtype: pyads.structs.AdsVersion</span>
+<span class="sd">    :return: version, revision and build of the ads-dll</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">resLong</span> <span class="o">=</span> <span class="n">c_long</span><span class="p">(</span><span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsGetDllVersion</span><span class="p">())</span>
+    <span class="n">stVersion</span> <span class="o">=</span> <span class="n">SAdsVersion</span><span class="p">()</span>
+    <span class="n">fit</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">sizeof</span><span class="p">(</span><span class="n">stVersion</span><span class="p">),</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">resLong</span><span class="p">))</span>
+    <span class="n">memmove</span><span class="p">(</span><span class="n">addressof</span><span class="p">(</span><span class="n">stVersion</span><span class="p">),</span> <span class="n">addressof</span><span class="p">(</span><span class="n">resLong</span><span class="p">),</span> <span class="n">fit</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">AdsVersion</span><span class="p">(</span><span class="n">stVersion</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="adsPortOpen"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsPortOpen">[docs]</a><span class="k">def</span> <span class="nf">adsPortOpen</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary:  Connect to the TwinCAT message router.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    :return: port number</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsPortOpenFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsPortOpen</span>
+    <span class="n">adsPortOpenFct</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_long</span>
+    <span class="n">portNr</span> <span class="o">=</span> <span class="n">adsPortOpenFct</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">portNr</span>
+</div>
+<div class="viewcode-block" id="adsPortClose"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsPortClose">[docs]</a><span class="k">def</span> <span class="nf">adsPortClose</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Close the connection to the TwinCAT message router.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    :return: error state</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsPortCloseFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsPortClose</span>
+    <span class="n">adsPortCloseFct</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_long</span>
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsPortCloseFct</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">errCode</span>
+</div>
+<div class="viewcode-block" id="adsGetLocalAddress"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsGetLocalAddress">[docs]</a><span class="k">def</span> <span class="nf">adsGetLocalAddress</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Return the local AMS-address and the port number.</span>
+<span class="sd">    :rtype: pyads.structs.AmsAddr</span>
+<span class="sd">    :return: AMS-address</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsGetLocalAddressFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsGetLocalAddress</span>
+    <span class="n">stAmsAddr</span> <span class="o">=</span> <span class="n">SAmsAddr</span><span class="p">()</span>
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsGetLocalAddressFct</span><span class="p">(</span><span class="n">pointer</span><span class="p">(</span><span class="n">stAmsAddr</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">errCode</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="n">adsLocalAddr</span> <span class="o">=</span> <span class="n">AmsAddr</span><span class="p">(</span><span class="n">errCode</span><span class="p">,</span> <span class="n">stAmsAddr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">adsLocalAddr</span>
+</div>
+<div class="viewcode-block" id="adsSyncReadStateReq"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsSyncReadStateReq">[docs]</a><span class="k">def</span> <span class="nf">adsSyncReadStateReq</span><span class="p">(</span><span class="n">adr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Read the current ADS-state and the machine-state from the</span>
+<span class="sd">        ADS-server</span>
+<span class="sd">    :param pyads.structs.AmsAddr adr: local or remote AmsAddr</span>
+<span class="sd">    :rtype: (int, int, int)</span>
+<span class="sd">    :return: errCode, adsState, deviceState</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsSyncReadStateReqFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsSyncReadStateReq</span>
+
+    <span class="n">pAmsAddr</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adr</span><span class="o">.</span><span class="n">amsAddrStruct</span><span class="p">())</span>
+    <span class="n">adsState</span> <span class="o">=</span> <span class="n">c_int</span><span class="p">()</span>
+    <span class="n">pAdsState</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adsState</span><span class="p">)</span>
+    <span class="n">deviceState</span> <span class="o">=</span> <span class="n">c_int</span><span class="p">()</span>
+    <span class="n">pDeviceState</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">deviceState</span><span class="p">)</span>
+
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsSyncReadStateReqFct</span><span class="p">(</span><span class="n">pAmsAddr</span><span class="p">,</span> <span class="n">pAdsState</span><span class="p">,</span> <span class="n">pDeviceState</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">errCode</span><span class="p">,</span> <span class="n">adsState</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">deviceState</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="adsSyncReadDeviceInfoReq"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsSyncReadDeviceInfoReq">[docs]</a><span class="k">def</span> <span class="nf">adsSyncReadDeviceInfoReq</span><span class="p">(</span><span class="n">adr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Read the name and the version number of the ADS-server</span>
+<span class="sd">    :param pyads.structs.AmsAddr adr: local or remote AmsAddr</span>
+<span class="sd">    :rtype: int, string, AdsVersion</span>
+<span class="sd">    :return: errCode, device name, version</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsSyncReadDeviceInfoReqFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsSyncReadDeviceInfoReq</span>
+
+    <span class="n">pAmsAddr</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adr</span><span class="o">.</span><span class="n">amsAddrStruct</span><span class="p">())</span>
+    <span class="n">devNameStringBuffer</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">pDevName</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">devNameStringBuffer</span><span class="p">)</span>
+    <span class="n">stVersion</span> <span class="o">=</span> <span class="n">SAdsVersion</span><span class="p">()</span>
+    <span class="n">pVersion</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">stVersion</span><span class="p">)</span>
+
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsSyncReadDeviceInfoReqFct</span><span class="p">(</span><span class="n">pAmsAddr</span><span class="p">,</span> <span class="n">pDevName</span><span class="p">,</span> <span class="n">pVersion</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">errCode</span><span class="p">,</span> <span class="n">devNameStringBuffer</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">AdsVersion</span><span class="p">(</span><span class="n">stVersion</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="adsSyncWriteControlReq"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsSyncWriteControlReq">[docs]</a><span class="k">def</span> <span class="nf">adsSyncWriteControlReq</span><span class="p">(</span><span class="n">adr</span><span class="p">,</span> <span class="n">adsState</span><span class="p">,</span> <span class="n">deviceState</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">plcDataType</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Change the ADS state and the machine-state of the ADS-server</span>
+
+<span class="sd">    :param pyads.structs.AmsAddr adr: local or remote AmsAddr</span>
+<span class="sd">    :param int adsState: new ADS-state, according to ADSTATE constants</span>
+<span class="sd">    :param int deviceState: new machine-state</span>
+<span class="sd">    :param data: additional data</span>
+<span class="sd">    :param int plcDataType: plc datatype, according to PLCTYPE constants</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    :return: error-state of the function</span>
+
+<span class="sd">    :note: Despite changing the ADS-state and the machine-state it is possible</span>
+<span class="sd">    to send additional data to the ADS-server. For current ADS-devices</span>
+<span class="sd">    additional data is not progressed.</span>
+<span class="sd">    Every ADS-device is able to communicate its current state to other devices.</span>
+<span class="sd">    There is a difference between the device-state and the state of the</span>
+<span class="sd">    ADS-interface (AdsState). The possible states of an ADS-interface are</span>
+<span class="sd">    defined in the ADS-specification.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsSyncWriteControlReqFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsSyncWriteControlReq</span>
+
+    <span class="n">pAddr</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adr</span><span class="o">.</span><span class="n">amsAddrStruct</span><span class="p">())</span>
+    <span class="n">nAdsState</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">adsState</span><span class="p">)</span>
+    <span class="n">nDeviceState</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">deviceState</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">plcDataType</span> <span class="o">==</span> <span class="n">PLCTYPE_STRING</span><span class="p">:</span>
+        <span class="n">nData</span> <span class="o">=</span> <span class="n">c_char_p</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">pData</span> <span class="o">=</span> <span class="n">nData</span>
+        <span class="n">nLength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pData</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nData</span> <span class="o">=</span> <span class="n">plcDataType</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">pData</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">nData</span><span class="p">)</span>
+        <span class="n">nLength</span> <span class="o">=</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">nData</span><span class="p">)</span>
+
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsSyncWriteControlReqFct</span><span class="p">(</span><span class="n">pAddr</span><span class="p">,</span> <span class="n">nAdsState</span><span class="p">,</span> <span class="n">nDeviceState</span><span class="p">,</span>
+                                        <span class="n">nLength</span><span class="p">,</span> <span class="n">pData</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">errCode</span>
+</div>
+<div class="viewcode-block" id="adsSyncWriteReq"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsSyncWriteReq">[docs]</a><span class="k">def</span> <span class="nf">adsSyncWriteReq</span><span class="p">(</span><span class="n">adr</span><span class="p">,</span> <span class="n">indexGroup</span><span class="p">,</span> <span class="n">indexOffset</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">plcDataType</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Send data synchronous to an ADS-device</span>
+
+<span class="sd">    :param pyads.structs.AmsAddr adr: local or remote AmsAddr</span>
+<span class="sd">    :param int indexGroup: PLC storage area, according to the INDEXGROUP</span>
+<span class="sd">        constants</span>
+<span class="sd">    :param int indexOffset: PLC storage address</span>
+<span class="sd">    :param value: value to write to the storage address of the PLC</span>
+<span class="sd">    :param int plcDataType: type of the data given to the PLC,</span>
+<span class="sd">        according to PLCTYPE constants</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    :return: error-state of the function</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">adsSyncWriteReqFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsSyncWriteReq</span>
+
+    <span class="n">pAmsAddr</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adr</span><span class="o">.</span><span class="n">amsAddrStruct</span><span class="p">())</span>
+    <span class="n">nIndexGroup</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">indexGroup</span><span class="p">)</span>
+    <span class="n">nIndexOffset</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">indexOffset</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">plcDataType</span> <span class="o">==</span> <span class="n">PLCTYPE_STRING</span><span class="p">:</span>
+        <span class="n">nData</span> <span class="o">=</span> <span class="n">c_char_p</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">pData</span> <span class="o">=</span> <span class="n">nData</span>
+        <span class="n">nLength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pData</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">plcDataType</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;PyCArrayType&#39;</span><span class="p">:</span>
+            <span class="n">nData</span> <span class="o">=</span> <span class="n">plcDataType</span><span class="p">(</span><span class="o">*</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nData</span> <span class="o">=</span> <span class="n">plcDataType</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">pData</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">nData</span><span class="p">)</span>
+        <span class="n">nLength</span> <span class="o">=</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">nData</span><span class="p">)</span>
+
+
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsSyncWriteReqFct</span><span class="p">(</span><span class="n">pAmsAddr</span><span class="p">,</span> <span class="n">nIndexGroup</span><span class="p">,</span> <span class="n">nIndexOffset</span><span class="p">,</span>
+                                 <span class="n">nLength</span><span class="p">,</span> <span class="n">pData</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">errCode</span>
+
+</div>
+<div class="viewcode-block" id="adsSyncReadWriteReq"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsSyncReadWriteReq">[docs]</a><span class="k">def</span> <span class="nf">adsSyncReadWriteReq</span><span class="p">(</span><span class="n">adr</span><span class="p">,</span> <span class="n">indexGroup</span><span class="p">,</span> <span class="n">indexOffset</span><span class="p">,</span>  <span class="n">plcReadDataType</span><span class="p">,</span>
+                        <span class="n">value</span><span class="p">,</span> <span class="n">plcWriteDataType</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Read ands write data synchronous from/to an ADS-device</span>
+<span class="sd">    :param pyads.structs.AmsAddr adr: local or remote AmsAddr</span>
+<span class="sd">    :param int indexGroup: PLC storage area, according to the INDEXGROUP</span>
+<span class="sd">        constants</span>
+<span class="sd">    :param int indexOffset: PLC storage address</span>
+<span class="sd">    :param int plcDataType: type of the data given to the PLC to respond to,</span>
+<span class="sd">        according to PLCTYPE constants</span>
+<span class="sd">    :param value: value to write to the storage address of the PLC</span>
+<span class="sd">    :param plcWriteDataType: type of the data given to the PLC, according to</span>
+<span class="sd">        PLCTYPE constants</span>
+<span class="sd">    :rtype: (int, PLCTYPE)</span>
+<span class="sd">    :return: (err_code, value): **err_code** error-state of the function,</span>
+<span class="sd">        **value**</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsSyncReadWriteReqFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsSyncReadWriteReq</span>
+
+    <span class="n">pAmsAddr</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adr</span><span class="o">.</span><span class="n">amsAddrStruct</span><span class="p">())</span>
+    <span class="n">nIndexGroup</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">indexGroup</span><span class="p">)</span>
+    <span class="n">nIndexOffset</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">indexOffset</span><span class="p">)</span>
+
+    <span class="n">readData</span> <span class="o">=</span> <span class="n">plcReadDataType</span><span class="p">()</span>
+    <span class="n">nReadLength</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">sizeof</span><span class="p">(</span><span class="n">readData</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">plcWriteDataType</span> <span class="o">==</span> <span class="n">PLCTYPE_STRING</span><span class="p">:</span>
+        <span class="c">## as we got the value as unicode string (python 3) we have to convert it to ascii</span>
+        <span class="n">ascii_string</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">c_char_p</span><span class="p">(</span><span class="n">ascii_string</span><span class="p">)</span>
+        <span class="n">data_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nData</span> <span class="o">=</span> <span class="n">plcWriteDataType</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">nData</span><span class="p">)</span>
+        <span class="n">data_length</span> <span class="o">=</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">nData</span><span class="p">)</span>
+
+    <span class="n">err_code</span> <span class="o">=</span> <span class="n">adsSyncReadWriteReqFct</span><span class="p">(</span><span class="n">pAmsAddr</span><span class="p">,</span> <span class="n">nIndexGroup</span><span class="p">,</span> <span class="n">nIndexOffset</span><span class="p">,</span> <span class="n">nReadLength</span><span class="p">,</span>
+                                     <span class="n">pointer</span><span class="p">(</span><span class="n">readData</span><span class="p">),</span> <span class="n">data_length</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">err_code</span><span class="p">,</span> <span class="n">readData</span><span class="o">.</span><span class="n">value</span>
+</div>
+<div class="viewcode-block" id="adsSyncReadReq"><a class="viewcode-back" href="../../pyads.html#pyads.pyads.adsSyncReadReq">[docs]</a><span class="k">def</span> <span class="nf">adsSyncReadReq</span><span class="p">(</span><span class="n">adr</span><span class="p">,</span> <span class="n">indexGroup</span><span class="p">,</span> <span class="n">indexOffset</span><span class="p">,</span> <span class="n">plcDataType</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :summary: Read data synchronous from an ADS-device</span>
+<span class="sd">    :param pyads.structs.AmsAddr adr: local or remote AmsAddr</span>
+<span class="sd">    :param int indexGroup: PLC storage area, according to the INDEXGROUP</span>
+<span class="sd">        constants</span>
+<span class="sd">    :param int indexOffset: PLC storage address</span>
+<span class="sd">    :param int plcDataType: type of the data given to the PLC, according to</span>
+<span class="sd">        PLCTYPE constants</span>
+<span class="sd">    :rtype: (int, PLCTYPE)</span>
+<span class="sd">    :return: (errCode, value): **errCode** error-state of the function,</span>
+<span class="sd">        **value**</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">adsSyncReadReqFct</span> <span class="o">=</span> <span class="n">_adsDLL</span><span class="o">.</span><span class="n">AdsSyncReadReq</span>
+
+    <span class="n">pAmsAddr</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">adr</span><span class="o">.</span><span class="n">amsAddrStruct</span><span class="p">())</span>
+    <span class="n">nIndexGroup</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">indexGroup</span><span class="p">)</span>
+    <span class="n">nIndexOffset</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">indexOffset</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">plcDataType</span><span class="p">()</span>
+    <span class="n">pData</span> <span class="o">=</span> <span class="n">pointer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  
+    <span class="n">nLength</span> <span class="o">=</span> <span class="n">c_ulong</span><span class="p">(</span><span class="n">sizeof</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>    
+    <span class="n">errCode</span> <span class="o">=</span> <span class="n">adsSyncReadReqFct</span><span class="p">(</span><span class="n">pAmsAddr</span><span class="p">,</span> <span class="n">nIndexGroup</span><span class="p">,</span> <span class="n">nIndexOffset</span><span class="p">,</span> <span class="n">nLength</span><span class="p">,</span> <span class="n">pData</span><span class="p">)</span>      
+    
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s">&#39;value&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">errCode</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">plcDataType</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;PyCArrayType&#39;</span><span class="p">:</span>
+            <span class="n">dout</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">errCode</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+        <span class="c">## if we return structures, they may not have a value attribute		</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">errCode</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">pyads 1.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Stefan Lehmann.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

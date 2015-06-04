@@ -1,13 +1,13 @@
 #-*- coding: utf-8 -*-
 
-"""
+'''
 @requires: ctypes, Beckhoff TwinCAT mit ADS-DLL
 @version: 1
 @note: Wrapper for the Beckhoff TwinCAT AdsDLL.dll  
 
-pyads uses the C API *AdsDLL.dll*. The documentation for the ADS API is available on U{infosys.beckhoff.de<http://infosys.beckhoff.de/index.php?content=../content/1031/TcAdsDll2/HTML/TcAdsDll_Api_Overview.htm&id=>}
+pyads uses the C API I{AdsDLL.dll}. The documentation for the ADS API is available on U{infosys.beckhoff.de<http://infosys.beckhoff.de/index.php?content=../content/1031/TcAdsDll2/HTML/TcAdsDll_Api_Overview.htm&id=>}
 
-**samples:**
+B{samples:}
 
 opening port, set port number to 801
     >>> port = adsPortOpen()
@@ -33,7 +33,7 @@ writing a string value in MW0 and reading it
 
 close port
     >>> adsPortClose()
-"""
+'''
 
 
 from pyads import *
