@@ -2,9 +2,12 @@
 # -*-coding: utf-8 -*-
 from setuptools import setup
 
+import versioneer
+
 setup(
       name = "pyads",
-      version = "1.1.0",
+      version = versioneer.get_version(),
+      cmdclass = versioneer.get_cmdclass(),
       description = "Python wrapper for TwinCAT ADS library",
       author = "Stefan Lehmann",
       author_email = "Stefan.St.Lehmann@gmail.com",
@@ -12,5 +15,6 @@ setup(
       package_data = {'pyads': ['doc/*.*']},
       requires = ['ctypes'],
       provides=['pyads'],
+      license='MIT',
       url = 'https://github.com/MrLeeh/pyads'
 )
