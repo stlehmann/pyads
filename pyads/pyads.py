@@ -5,13 +5,16 @@
 
     Contains ADS functions.
 
-    :copyright: © 2013 by Stefan Lehmann
+    :copyright: (c) 2013 by Stefan Lehmann
     :license: MIT, see LICENSE for details
 
 """
 
 from ctypes import *
-from constants import *
+
+from pyads.constants import *
+from pyads.structs import *
+
 
 # load dynamic ADS library
 _adsDLL = CDLL("TcAdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
@@ -189,7 +192,6 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
                                  nLength, pData)
     return errCode
 
-
 def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
                         value, plcWriteDataType):
     """
@@ -253,8 +255,8 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     nIndexOffset = c_ulong(indexOffset)
 
     data = plcDataType()
-    pData = pointer(data)  
-    nLength = c_ulong(sizeof(data))    
+    pData = pointer(data)
+    nLength = c_ulong(sizeof(data))
     errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)      
     
     if hasattr(data,'value'):
