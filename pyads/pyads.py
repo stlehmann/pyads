@@ -12,6 +12,7 @@
 
 from ctypes import *
 from constants import *
+from structs import *
 
 # load dynamic ADS library
 _adsDLL = CDLL("TcAdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
