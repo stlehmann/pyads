@@ -257,8 +257,8 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     data = plcDataType()
     pData = pointer(data)
     nLength = c_ulong(sizeof(data))
-    errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)      
-    
+    errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
+
     if hasattr(data,'value'):
         return (errCode, data.value)
     else:
@@ -266,5 +266,5 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
             dout = [i for i in data]
             return (errCode, data)
         else:
-        ## if we return structures, they may not have a value attribute		
+        ## if we return structures, they may not have a value attribute
             return (errCode, data)
