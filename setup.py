@@ -1,10 +1,11 @@
 #! /usr/bin/env python2
 # -*-coding: utf-8 -*-
 from setuptools import setup
+import versioneer
 
 setup(
       name = "pyads",
-      version = "1.1.1",
+      version = versioneer.get_version(),
       description = "Python wrapper for TwinCAT ADS library",
       author = "Stefan Lehmann",
       author_email = "Stefan.St.Lehmann@gmail.com",
@@ -19,5 +20,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
         'Topic :: Software Development :: Libraries'
-      ]
+      ],
+      cmdclass=versioneer.get_cmdclass()
 )

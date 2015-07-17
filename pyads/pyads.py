@@ -12,8 +12,8 @@
 
 from ctypes import *
 
-from pyads.constants import *
-from pyads.structs import *
+from constants import *
+from structs import *
 
 
 # load dynamic ADS library
