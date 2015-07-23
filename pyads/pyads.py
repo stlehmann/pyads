@@ -17,7 +17,7 @@ from structs import *
 
 
 # load dynamic ADS library
-_adsDLL = CDLL("TcAdsDll.dll") #: ADS-DLL (Beckhoff TwinCAT)
+_adsDLL = windll.TcAdsDll #: ADS-DLL (Beckhoff TwinCAT)
 
 
 def adsGetDllVersion():
@@ -268,3 +268,51 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
         else:
         ## if we return structures, they may not have a value attribute
             return (errCode, data)
+
+def adsSyncReadByName(adr, dataName, plcDataType):		
+    """
+    :summary: Read data synchronous from an ADS-device from data name
+    :param pyads.structs.AmsAddr adr: local or remote AmsAddr
+    :param string dataName: data name
+    :param int plcDataType: type of the data given to the PLC, according to
+        PLCTYPE constants
+    :rtype: (int, PLCTYPE)
+    :return: (errCode, value): **errCode** error-state of the function,
+        **value**
+
+    """
+    #Get the handle of the PLC-variable
+    (err_code, hnl) = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName, PLCTYPE_STRING )
+    if err_code :
+        return (err_code, 0)
+    #Read the value of a PLC-variable, via handle
+    (err_code,value) =  adsSyncReadReq(adr, ADSIGRP_SYM_VALBYHND, hnl, plcDataType )    
+    if err_code :
+        return (err_code,0)
+    #Release the handle of the PLC-variable
+    err_code = adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT )
+    return ( err_code, value )
+    
+def adsSyncWriteByName(adr, dataName, value, plcDataType):
+    """
+    :summary: Send data synchronous to an ADS-device from data name
+
+    :param pyads.structs.AmsAddr adr: local or remote AmsAddr
+    :param string dataName: PLC storage address
+    :param value: value to write to the storage address of the PLC
+    :param int plcDataType: type of the data given to the PLC,
+        according to PLCTYPE constants
+    :rtype: int
+    :return: error-state of the function
+
+    """
+    #Get the handle of the PLC-variable
+    (err_code, hnl) = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName, PLCTYPE_STRING )
+    if err_code :
+        return err_code
+    #Read the value of a PLC-variable, via handle
+    err_code = adsSyncWriteReq(adr, ADSIGRP_SYM_VALBYHND, hnl, value, plcDataType )
+    if err_code :
+        return err_code
+    #Release the handle of the PLC-variable
+    return adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT )
