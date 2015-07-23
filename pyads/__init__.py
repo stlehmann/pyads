@@ -1,11 +1,11 @@
 #-*- coding: utf-8 -*-
 
 """
-@requires: ctypes, Beckhoff TwinCAT mit ADS-DLL
-@version: 1
-@note: Wrapper for the Beckhoff TwinCAT AdsDLL.dll
+:requires: ctypes, Beckhoff TwinCAT with ADS-DLL
+:note: Wrapper for the Beckhoff TwinCAT AdsDLL.dll
 
-pyads uses the C API *AdsDLL.dll*. The documentation for the ADS API is available on U{infosys.beckhoff.de<http://infosys.beckhoff.de/index.php?content=../content/1031/TcAdsDll2/HTML/TcAdsDll_Api_Overview.htm&id=>}
+*pyads* uses the C API *AdsDLL.dll*. The documentation for the ADS API is
+available on `infosys.backhoff.com <http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557>`_.
 
 **samples:**
 
