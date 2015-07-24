@@ -111,7 +111,7 @@ def adsSyncReadDeviceInfoReq(adr):
     pVersion = pointer(stVersion)
 
     errCode = adsSyncReadDeviceInfoReqFct(pAmsAddr, pDevName, pVersion)
-    return (errCode, devNameStringBuffer.value, AdsVersion(stVersion))
+    return (errCode, devNameStringBuffer.value.decode(), AdsVersion(stVersion))
 
 def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     """
@@ -141,7 +141,7 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     nDeviceState = c_ulong(deviceState)
 
     if plcDataType == PLCTYPE_STRING:
-        nData = c_char_p(data)
+        nData = c_char_p(data.encode())
         pData = nData
         nLength = len(pData.value)+1
     else:

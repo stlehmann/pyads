@@ -15,11 +15,14 @@ setup(
       provides=['pyads'],
       url = 'https://github.com/MrLeeh/pyads',
       classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2',
-        'Topic :: Software Development :: Libraries'
+        'Programming Language :: Python :: 3',
+        'Topic :: Software Development :: Libraries',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: Microsoft :: Windows :: Windows 7'
       ],
       cmdclass=versioneer.get_cmdclass()
 )

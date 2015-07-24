@@ -7,3 +7,7 @@
 #other
 dist/
 MANIFEST
+
+build/
+*.egg-info/
+venv/
