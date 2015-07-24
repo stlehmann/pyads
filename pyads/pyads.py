@@ -12,8 +12,8 @@
 
 from ctypes import *
 
-from constants import *
-from structs import *
+from .constants import *
+from .structs import *
 
 
 # load dynamic ADS library
@@ -195,7 +195,7 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
 def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
                         value, plcWriteDataType):
     """
-    :summary: Read ands write data synchronous from/to an ADS-device
+    :summary: Read and write data synchronous from/to an ADS-device
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param int indexGroup: PLC storage area, according to the INDEXGROUP
         constants

@@ -11,7 +11,7 @@ setup(
       author_email = "Stefan.St.Lehmann@gmail.com",
       packages = ["pyads"],
       package_data = {'pyads': ['doc/*.*']},
-      requires = ['ctypes'],
+      requires = [],
       provides=['pyads'],
       url = 'https://github.com/MrLeeh/pyads',
       classifiers=[
