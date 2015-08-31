@@ -11,3 +11,7 @@ MANIFEST
 build/
 *.egg-info/
 venv/
+
+*.tox
+tox.ini
+deploy.py
