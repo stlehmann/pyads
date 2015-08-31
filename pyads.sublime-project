@@ -1,0 +1,17 @@
+{
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "c:/python34/python.exe -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	]
+}

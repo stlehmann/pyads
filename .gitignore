@@ -15,3 +15,5 @@ venv/
 *.tox
 tox.ini
 deploy.py
+
+*.sublime-workspace

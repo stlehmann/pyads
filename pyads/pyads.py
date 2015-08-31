@@ -17,7 +17,11 @@ from .structs import *
 
 
 # load dynamic ADS library
-_adsDLL = windll.TcAdsDll #: ADS-DLL (Beckhoff TwinCAT)
+_adsDLL = windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
+
+
+class ADSError(Exception):
+    pass
 
 
 def adsGetDllVersion():
@@ -33,6 +37,7 @@ def adsGetDllVersion():
     memmove(addressof(stVersion), addressof(resLong), fit)
     return AdsVersion(stVersion)
 
+
 def adsPortOpen():
     """
     :summary:  Connect to the TwinCAT message router.
@@ -45,6 +50,7 @@ def adsPortOpen():
     portNr = adsPortOpenFct()
     return portNr
 
+
 def adsPortClose():
     """
     :summary: Close the connection to the TwinCAT message router.
@@ -56,6 +62,7 @@ def adsPortClose():
     adsPortCloseFct.restype = c_long
     errCode = adsPortCloseFct()
     return errCode
+
 
 def adsGetLocalAddress():
     """
@@ -73,6 +80,7 @@ def adsGetLocalAddress():
 
     adsLocalAddr = AmsAddr(errCode, stAmsAddr)
     return adsLocalAddr
+
 
 def adsSyncReadStateReq(adr):
     """
@@ -94,6 +102,7 @@ def adsSyncReadStateReq(adr):
     errCode = adsSyncReadStateReqFct(pAmsAddr, pAdsState, pDeviceState)
     return (errCode, adsState.value, deviceState.value)
 
+
 def adsSyncReadDeviceInfoReq(adr):
     """
     :summary: Read the name and the version number of the ADS-server
@@ -112,6 +121,7 @@ def adsSyncReadDeviceInfoReq(adr):
 
     errCode = adsSyncReadDeviceInfoReqFct(pAmsAddr, pDevName, pVersion)
     return (errCode, devNameStringBuffer.value.decode(), AdsVersion(stVersion))
+
 
 def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     """
@@ -153,6 +163,7 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
                                         nLength, pData)
     return errCode
 
+
 def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
     """
     :summary: Send data synchronous to an ADS-device
@@ -187,10 +198,10 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
         pData = pointer(nData)
         nLength = sizeof(nData)
 
-
     errCode = adsSyncWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset,
                                  nLength, pData)
     return errCode
+
 
 def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
                         value, plcWriteDataType):
@@ -220,7 +231,8 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
     nReadLength = c_ulong(sizeof(readData))
 
     if plcWriteDataType == PLCTYPE_STRING:
-        ## as we got the value as unicode string (python 3) we have to convert it to ascii
+        # as we got the value as unicode string (python 3)
+        # we have to convert it to ascii
         ascii_string = value.encode()
         data = c_char_p(ascii_string)
         data_length = len(value) + 1
@@ -229,9 +241,11 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
         data = pointer(nData)
         data_length = sizeof(nData)
 
-    err_code = adsSyncReadWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nReadLength,
-                                     pointer(readData), data_length, data)
+    err_code = adsSyncReadWriteReqFct(
+        pAmsAddr, nIndexGroup, nIndexOffset, nReadLength, pointer(readData),
+        data_length, data)
     return err_code, readData.value
+
 
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     """
@@ -257,19 +271,21 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     data = plcDataType()
     pData = pointer(data)
     nLength = c_ulong(sizeof(data))
-    errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
+    errCode = adsSyncReadReqFct(
+        pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
 
-    if hasattr(data,'value'):
+    if hasattr(data, 'value'):
         return (errCode, data.value)
     else:
         if type(plcDataType).__name__ == 'PyCArrayType':
             dout = [i for i in data]
-            return (errCode, data)
+            return (errCode, dout)
         else:
-        ## if we return structures, they may not have a value attribute
+            # if we return structures, they may not have a value attribute
             return (errCode, data)
 
-def adsSyncReadByName(adr, dataName, plcDataType):		
+
+def adsSyncReadByName(adr, dataName, plcDataType):
     """
     :summary: Read data synchronous from an ADS-device from data name
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
@@ -281,18 +297,26 @@ def adsSyncReadByName(adr, dataName, plcDataType):
         **value**
 
     """
-    #Get the handle of the PLC-variable
-    (err_code, hnl) = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName, PLCTYPE_STRING )
-    if err_code :
+    # Get the handle of the PLC-variable
+    (err_code, hnl) = adsSyncReadWriteReq(
+        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName,
+        PLCTYPE_STRING)
+
+    if err_code:
         return (err_code, 0)
-    #Read the value of a PLC-variable, via handle
-    (err_code,value) =  adsSyncReadReq(adr, ADSIGRP_SYM_VALBYHND, hnl, plcDataType )    
-    if err_code :
-        return (err_code,0)
-    #Release the handle of the PLC-variable
-    err_code = adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT )
-    return ( err_code, value )
-    
+
+    # Read the value of a PLC-variable, via handle
+    (err_code, value) = adsSyncReadReq(adr, ADSIGRP_SYM_VALBYHND,
+                                       hnl, plcDataType)
+    if err_code:
+        return (err_code, 0)
+
+    # Release the handle of the PLC-variable
+    err_code = adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0,
+                               hnl, PLCTYPE_UDINT)
+    return (err_code, value)
+
+
 def adsSyncWriteByName(adr, dataName, value, plcDataType):
     """
     :summary: Send data synchronous to an ADS-device from data name
@@ -306,13 +330,20 @@ def adsSyncWriteByName(adr, dataName, value, plcDataType):
     :return: error-state of the function
 
     """
-    #Get the handle of the PLC-variable
-    (err_code, hnl) = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName, PLCTYPE_STRING )
-    if err_code :
+    # Get the handle of the PLC-variable
+    (err_code, hnl) = adsSyncReadWriteReq(
+        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
+        dataName, PLCTYPE_STRING)
+
+    if err_code:
         return err_code
-    #Read the value of a PLC-variable, via handle
-    err_code = adsSyncWriteReq(adr, ADSIGRP_SYM_VALBYHND, hnl, value, plcDataType )
-    if err_code :
+
+    # Read the value of a PLC-variable, via handle
+    err_code = adsSyncWriteReq(
+        adr, ADSIGRP_SYM_VALBYHND, hnl, value, plcDataType)
+
+    if err_code:
         return err_code
-    #Release the handle of the PLC-variable
-    return adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT )
+
+    # Release the handle of the PLC-variable
+    return adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT)
