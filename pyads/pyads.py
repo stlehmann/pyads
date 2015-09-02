@@ -14,6 +14,7 @@ from ctypes import *
 
 from .constants import *
 from .structs import *
+from .errorcodes import ERROR_CODES
 
 
 # load dynamic ADS library
@@ -21,7 +22,12 @@ _adsDLL = windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
 
 
 class ADSError(Exception):
-    pass
+    def __init__(self, err_code):
+        self.err_code = err_code
+        self.msg = "{} ({})".format(ERROR_CODES[self.err_code], self.err_code)
+
+    def __str__(self):
+        return "ADSError: " + self.msg
 
 
 def adsGetDllVersion():
