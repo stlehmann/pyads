@@ -145,6 +145,7 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     :param int plcDataType: plc datatype, according to PLCTYPE constants
 
     :note: Despite changing the ADS-state and the machine-state it is possible
+
     to send additional data to the ADS-server. For current ADS-devices
     additional data is not progressed.
     Every ADS-device is able to communicate its current state to other devices.

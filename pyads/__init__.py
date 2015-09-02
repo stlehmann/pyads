@@ -15,24 +15,29 @@ opening port, set port number to 801
     >>> adr.setPort(PORT_SPS1)
 
 setting ADS-state and machine-state
-    >>> errCode = adsSyncWriteControlReq(adr, ADSSTATE_STOP, 0, 0)
-    >>> print errCode
+    >>> adsSyncWriteControlReq(adr, ADSSTATE_STOP, 0, 0)
 
-reading bit %MX100.0, toggle it and writing back
-    >>> (errCode, data) = adsSyncReadReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
-    >>> errCode = adsSyncWriteReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
+read bit %MX100.0, toggle it and writing back
+    >>> data = adsSyncReadReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
+    >>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 
-writing an UDINT value to MW0 and reading it
-    >>> errCode = adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, PLCTYPE_UDINT)
-    >>> (errCode, val) = adsSyncReadReq(adr, INDEXGROUP_MEMORYBYTE, 0, PLCTYPE_UDINT)
-    >>> print errCode, val
+write an UDINT value to MW0 and reading it
+    >>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, PLCTYPE_UDINT)
+    >>> adsSyncReadReq(adr, INDEXGROUP_MEMORYBYTE, 0, PLCTYPE_UDINT)
 
-writing a string value in MW0 and reading it
-    >>> errCode = adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, "Hallo, wie geht es?", PLCTYPE_STRING)
-    >>> (errCode, val) = ads
+write a string value in MW0 and reading it
+    >>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, "Hallo, wie geht es?", PLCTYPE_STRING)
+    >>> adsSyncReadReq(adr, INDEXGROUP_MEMORY_BYTE, 0, PLCTYPE_STRING)
+
+read a value of type real from global variable foo
+    >>> adsSyncReadByName(adr, ".foo", PLCTYPE_REAL)
+
+write a value of type real to global variable bar
+    >>> adsSyncWriteByName(adr, ".bar", 1.234, PLCTYPE_REAL)
 
 close port
     >>> adsPortClose()
+
 """
 from pyads import *
 
