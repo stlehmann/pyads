@@ -32,8 +32,16 @@ PLCTYPE_USINT = c_uint8
 PLCTYPE_WORD = c_int16
 
 
+def PLCTYPE_ARR_REAL(n):
+    return c_float * n
+
+
 def PLCTYPE_ARR_LREAL(n):
     return c_double * n
+
+
+def PLCTYPE_ARR_INT(n):
+    return c_int16 * n
 
 
 def PLCTYPE_ARR_DINT(n):
