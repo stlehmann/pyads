@@ -87,8 +87,8 @@ def adsSyncReadStateReq(adr):
     :summary: Read the current ADS-state and the machine-state from the
         ADS-server
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
-    :rtype: (int, int, int)
-    :return: errCode, adsState, deviceState
+    :rtype: (int, int)
+    :return: adsState, deviceState
 
     """
     adsSyncReadStateReqFct = _adsDLL.AdsSyncReadStateReq
@@ -100,15 +100,18 @@ def adsSyncReadStateReq(adr):
     pDeviceState = pointer(deviceState)
 
     errCode = adsSyncReadStateReqFct(pAmsAddr, pAdsState, pDeviceState)
-    return (errCode, adsState.value, deviceState.value)
+    if errCode:
+        raise ADSError(errCode)
+
+    return (adsState.value, deviceState.value)
 
 
 def adsSyncReadDeviceInfoReq(adr):
     """
     :summary: Read the name and the version number of the ADS-server
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
-    :rtype: int, string, AdsVersion
-    :return: errCode, device name, version
+    :rtype: string, AdsVersion
+    :return: device name, version
 
     """
     adsSyncReadDeviceInfoReqFct = _adsDLL.AdsSyncReadDeviceInfoReq
@@ -120,7 +123,9 @@ def adsSyncReadDeviceInfoReq(adr):
     pVersion = pointer(stVersion)
 
     errCode = adsSyncReadDeviceInfoReqFct(pAmsAddr, pDevName, pVersion)
-    return (errCode, devNameStringBuffer.value.decode(), AdsVersion(stVersion))
+    if errCode:
+        raise ADSError(errCode)
+    return (devNameStringBuffer.value.decode(), AdsVersion(stVersion))
 
 
 def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
@@ -132,8 +137,6 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     :param int deviceState: new machine-state
     :param data: additional data
     :param int plcDataType: plc datatype, according to PLCTYPE constants
-    :rtype: int
-    :return: error-state of the function
 
     :note: Despite changing the ADS-state and the machine-state it is possible
     to send additional data to the ADS-server. For current ADS-devices
@@ -161,7 +164,8 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
 
     errCode = adsSyncWriteControlReqFct(pAddr, nAdsState, nDeviceState,
                                         nLength, pData)
-    return errCode
+    if errCode:
+        raise ADSError(errCode)
 
 
 def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
@@ -175,8 +179,6 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
     :param value: value to write to the storage address of the PLC
     :param int plcDataType: type of the data given to the PLC,
         according to PLCTYPE constants
-    :rtype: int
-    :return: error-state of the function
 
     """
 
@@ -200,7 +202,8 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
 
     errCode = adsSyncWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset,
                                  nLength, pData)
-    return errCode
+    if errCode:
+        raise ADSError(errCode)
 
 
 def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
@@ -216,9 +219,8 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
     :param value: value to write to the storage address of the PLC
     :param plcWriteDataType: type of the data given to the PLC, according to
         PLCTYPE constants
-    :rtype: (int, PLCTYPE)
-    :return: (err_code, value): **err_code** error-state of the function,
-        **value**
+    :rtype: PLCTYPE
+    :return: value: **value**
 
     """
     adsSyncReadWriteReqFct = _adsDLL.AdsSyncReadWriteReq
@@ -244,7 +246,11 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
     err_code = adsSyncReadWriteReqFct(
         pAmsAddr, nIndexGroup, nIndexOffset, nReadLength, pointer(readData),
         data_length, data)
-    return err_code, readData.value
+
+    if err_code:
+        raise ADSError(err_code)
+
+    return readData.value
 
 
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
@@ -256,9 +262,8 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     :param int indexOffset: PLC storage address
     :param int plcDataType: type of the data given to the PLC, according to
         PLCTYPE constants
-    :rtype: (int, PLCTYPE)
-    :return: (errCode, value): **errCode** error-state of the function,
-        **value**
+    :rtype: PLCTYPE
+    :return: value: **value**
 
     """
 
@@ -274,15 +279,18 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     errCode = adsSyncReadReqFct(
         pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
 
+    if errCode:
+        raise ADSError(errCode)
+
     if hasattr(data, 'value'):
-        return (errCode, data.value)
+        return data.value
     else:
         if type(plcDataType).__name__ == 'PyCArrayType':
             dout = [i for i in data]
-            return (errCode, dout)
+            return dout
         else:
             # if we return structures, they may not have a value attribute
-            return (errCode, data)
+            return data
 
 
 def adsSyncReadByName(adr, dataName, plcDataType):
@@ -292,29 +300,23 @@ def adsSyncReadByName(adr, dataName, plcDataType):
     :param string dataName: data name
     :param int plcDataType: type of the data given to the PLC, according to
         PLCTYPE constants
-    :rtype: (int, PLCTYPE)
-    :return: (errCode, value): **errCode** error-state of the function,
-        **value**
+    :rtype: PLCTYPE
+    :return: value: **value**
 
     """
     # Get the handle of the PLC-variable
-    (err_code, hnl) = adsSyncReadWriteReq(
-        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName,
-        PLCTYPE_STRING)
-
-    if err_code:
-        return (err_code, 0)
+    hnl = adsSyncReadWriteReq(
+        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
+        dataName, PLCTYPE_STRING
+    )
 
     # Read the value of a PLC-variable, via handle
-    (err_code, value) = adsSyncReadReq(adr, ADSIGRP_SYM_VALBYHND,
-                                       hnl, plcDataType)
-    if err_code:
-        return (err_code, 0)
+    value = adsSyncReadReq(adr, ADSIGRP_SYM_VALBYHND, hnl, plcDataType)
 
     # Release the handle of the PLC-variable
-    err_code = adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0,
-                               hnl, PLCTYPE_UDINT)
-    return (err_code, value)
+    adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT)
+
+    return value
 
 
 def adsSyncWriteByName(adr, dataName, value, plcDataType):
@@ -326,24 +328,14 @@ def adsSyncWriteByName(adr, dataName, value, plcDataType):
     :param value: value to write to the storage address of the PLC
     :param int plcDataType: type of the data given to the PLC,
         according to PLCTYPE constants
-    :rtype: int
-    :return: error-state of the function
 
     """
     # Get the handle of the PLC-variable
-    (err_code, hnl) = adsSyncReadWriteReq(
-        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
-        dataName, PLCTYPE_STRING)
+    hnl = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
+                              dataName, PLCTYPE_STRING)
 
-    if err_code:
-        return err_code
-
-    # Read the value of a PLC-variable, via handle
-    err_code = adsSyncWriteReq(
-        adr, ADSIGRP_SYM_VALBYHND, hnl, value, plcDataType)
-
-    if err_code:
-        return err_code
+    # Write the value of a PLC-variable, via handle
+    adsSyncWriteReq(adr, ADSIGRP_SYM_VALBYHND, hnl, value, plcDataType)
 
     # Release the handle of the PLC-variable
-    return adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT)
+    adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT)
