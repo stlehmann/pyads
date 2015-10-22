@@ -17,3 +17,4 @@ tox.ini
 deploy.py
 
 *.sublime-workspace
+README.rst
