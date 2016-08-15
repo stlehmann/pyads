@@ -34,8 +34,10 @@ documentation for the ADS API is available on [infosys.beckhoff.com](http://info
 
 **write a string value in MW0 and read it from plc**
 ```python
->>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, "Hallo, wie geht es?", PLCTYPE_STRING)
->>> adsSyncReadReq(adr, INDEXGROUP_MEMORY_BYTE, 0, PLCTYPE_STRING)
+>>> s = "Hello World"
+>>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, s, len(s) * PLCTYPE_STRING)
+>>> bufsize = 100
+>>> adsSyncReadReq(adr, INDEXGROUP_MEMORY_BYTE, 0, bufsize * PLCTYPE_STRING)
 ```
 
 **read a value of type real from global variable foo**

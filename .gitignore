@@ -18,3 +18,4 @@ deploy.py
 
 *.sublime-workspace
 README.rst
+*.sublime-project
