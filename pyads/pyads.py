@@ -196,7 +196,7 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
     nIndexOffset = c_ulong(indexOffset)
 
     if plcDataType == PLCTYPE_STRING:
-        nData = c_char_p(value)
+        nData = c_char_p(value.encode())
         pData = nData
         nLength = len(pData.value) + 1
     else:
@@ -288,7 +288,11 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     nIndexGroup = c_ulong(indexGroup)
     nIndexOffset = c_ulong(indexOffset)
 
-    data = plcDataType()
+    if plcDataType == PLCTYPE_STRING:
+        data = (STRING_BUFFER * PLCTYPE_STRING)()
+    else:
+        data = plcDataType()
+
     pData = pointer(data)
     nLength = c_ulong(sizeof(data))
     errCode = adsSyncReadReqFct(
@@ -298,11 +302,11 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
         raise ADSError(errCode)
 
     if hasattr(data, 'value'):
-        return data.value
+        return data.value.decode('utf-8')
     else:
         if type(plcDataType).__name__ == 'PyCArrayType':
             dout = [i for i in data]
-            return dout
+            return dout.decode('utf-8')
         else:
             # if we return structures, they may not have a value attribute
             return data

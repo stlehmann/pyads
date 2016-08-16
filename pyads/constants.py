@@ -11,8 +11,9 @@
 """
 from ctypes import *
 
+STRING_BUFFER = 1024
 
-# plc data types
+# plc data types:
 PLCTYPE_BOOL = c_bool
 PLCTYPE_BYTE = c_byte
 PLCTYPE_DATE = c_int32
