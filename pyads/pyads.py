@@ -60,14 +60,13 @@ def adsPortOpen():
 def adsPortClose():
     """
     :summary: Close the connection to the TwinCAT message router.
-    :rtype: int
-    :return: error state
 
     """
     adsPortCloseFct = _adsDLL.AdsPortClose
     adsPortCloseFct.restype = c_long
     errCode = adsPortCloseFct()
-    return errCode
+    if errCode:
+        raise ADSError(errCode)
 
 
 def adsGetLocalAddress():
@@ -82,9 +81,10 @@ def adsGetLocalAddress():
     errCode = adsGetLocalAddressFct(pointer(stAmsAddr))
 
     if errCode:
-        return None
+        raise ADSError(errCode)
 
-    adsLocalAddr = AmsAddr(errCode, stAmsAddr)
+    adsLocalAddr = AmsAddr()
+    adsLocalAddr._ams_addr = stAmsAddr
     return adsLocalAddr
 
 
@@ -163,7 +163,7 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     if plcDataType == PLCTYPE_STRING:
         nData = c_char_p(data.encode())
         pData = nData
-        nLength = len(pData.value)+1
+        nLength = len(pData.value) + 1
     else:
         nData = plcDataType(data)
         pData = pointer(nData)
@@ -198,7 +198,7 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
     if plcDataType == PLCTYPE_STRING:
         nData = c_char_p(value)
         pData = nData
-        nLength = len(pData.value)+1
+        nLength = len(pData.value) + 1
     else:
         if type(plcDataType).__name__ == 'PyCArrayType':
             nData = plcDataType(*value)
@@ -213,7 +213,7 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
         raise ADSError(errCode)
 
 
-def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
+def adsSyncReadWriteReq(adr, indexGroup, indexOffset, plcReadDataType,
                         value, plcWriteDataType):
     """
     :summary: Read and write data synchronous from/to an ADS-device
@@ -257,15 +257,15 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset,  plcReadDataType,
     if err_code:
         raise ADSError(err_code)
 
-    if hasattr(data, 'value'):
-        return data.value
+    if hasattr(readData, 'value'):
+        return readData.value
     else:
         if type(plcDataType).__name__ == 'PyCArrayType':
-            dout = [i for i in data]
+            dout = [i for i in readData]
             return dout
         else:
             # if we return structures, they may not have a value attribute
-            return data
+            return readData
 
 
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):

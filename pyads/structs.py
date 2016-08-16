@@ -59,17 +59,18 @@ class AmsAddr():
     """
     :summary: wrapper for SAmsAddr-structure to adress an ADS device
 
-    :type stAmsAddr: SAmsAddr
-    :ivar stAmsAddr: ctypes-structure SAmsAddr
-
-    :type errCode: int
-    :ivar errCode: error code
+    :type _ams_addr: SAmsAddr
+    :ivar _ams_addr: ctypes-structure SAmsAddr
 
     """
 
-    def __init__(self, errCode, stAmsAddr):
-        self.stAmsAddr = stAmsAddr
-        self.errCode = errCode
+    def __init__(self, netid=None, port=None):
+        self._ams_addr = SAmsAddr()
+
+        if netid is not None:
+            self.netid = netid
+        if port is not None:
+            self.port = port
 
     def toString(self):
         """
@@ -78,29 +79,40 @@ class AmsAddr():
         :return:  textual representation of the AMS adress
         """
         tmpList = [
-            str(self.stAmsAddr.netId[i])
-            for i in range(sizeof(self.stAmsAddr.netId))
+            str(self._ams_addr.netId[i])
+            for i in range(sizeof(self._ams_addr.netId))
         ]
-        netId = ".".join(tmpList) + ": " + str(self.stAmsAddr.port)
+        netId = ".".join(tmpList) + ": " + str(self._ams_addr.port)
         return netId
 
-    def port(self):
-        """
-        :summary: returns port number
-        """
-        return int(self.stAmsAddr.port)
+    # property netid
+    @property
+    def netid(self):
+        return '.'.join(map(str, self._ams_addr.netId))
 
-    def setPort(self, value):
-        """
-        :summary: sets port number
-        """
-        self.stAmsAddr.port = c_ushort(value)
+    @netid.setter
+    def netid(self, value):
+        id_numbers = list(map(int, value.split('.')))
+        if len(id_numbers) != 6:
+            raise ValueError('no valid netid')
+
+        for i, nr in enumerate(id_numbers):
+            self._ams_addr.netId[i] = c_ubyte(nr)
+
+    # property port
+    @property
+    def port(self):
+        return self._ams_addr.port
+
+    @port.setter
+    def port(self, value):
+        self._ams_addr.port = c_ushort(value)
 
     def amsAddrStruct(self):
         """
         :summary: access to the c-types structure SAmsAddr
         """
-        return self.stAmsAddr
+        return self._ams_addr
 
     def setAdr(self, adrString):
         """
@@ -117,7 +129,10 @@ class AmsAddr():
             return
 
         for i in range(len(a)):
-            self.stAmsAddr.netId[i] = c_ubyte(int(a[i]))
+            self._ams_addr.netId[i] = c_ubyte(int(a[i]))
+
+    def __repr__(self):
+        return '<AmsAddress {}:{}>'.format(self.netid, self.port)
 
 
 class SAdsNotificationAttrib(Structure):
