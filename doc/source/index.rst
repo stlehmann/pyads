@@ -12,7 +12,6 @@ Contents:
    :maxdepth: 2
 
    pyads
-   modules
 
 
 Indices and tables

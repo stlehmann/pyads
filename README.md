@@ -6,51 +6,92 @@ pyads - Python package
 This is a python wrapper for TwinCATs ADS library. It provides python functions
 for communicating with TwinCAT devices. *pyads* uses the C API *AdsDLL.dll*. The
 documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
-### Some Samples
 
-**open port, set port number to 801**
+## Changelog
+
+### Version 2.0.0
+
+I wanted to make the Wrapper more pythonic so I created a new module named
+pyads.ads that contains all the functions from pyads.pyads but in a more
+pythonic way. You can still access the old functions by using the pyads.pyads
+module.
+
+Improvements:
+
+* more pythonic function names (e.g. 'write' instead of 'adsSyncWrite')
+* easier handling of reading and writing Strings
+* no error codes, if errors occur an Exception with the error code will be
+raised
+
+## Examples
+
+Open port and create a AmsAddr object for remote machine.
+
 ```python
->>> port = adsPortOpen()
->>> adr = adsGetLocalAddress()
->>> adr.setPort(PORT_SPS1)
+>>> import pyads
+>>> pyads.open_port()
+32828
+>>> pyads.get_local_address()
+<AmsAddress 192.168.0.109.1.1:32828>
+>>> adr = pyads.AmsAddr('5.33.160.54.1.1', 851)
 ```
 
-**set ADS-state and machine-state**
+You can read and write a variable by name from a remote machine.
+
 ```python
->>> adsSyncWriteControlReq(adr, ADSSTATE_STOP, 0, 0)
+>>> pyads.read_by_name(adr, 'global.bool_value', pyads.PLCTYPE_BOOL)
+True
+>>> pyads.write_by_name(adr, 'global.bool_value', False, pyads.PLCTYPE_BOOL)
+>>> pyads.read_by_name(adr, 'global.bool_value', pyads.PLCTYPE_BOOL)
+False
+
 ```
 
-**read bit %MX100.0, toggle it and write back to plc**
+If the name could not be found an Exception containing the error
+message and ADS Error number is raised.
+
 ```python
->>> data = adsSyncReadReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
->>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
+>>> pyads.read_by_name(adr, 'global.wrong_name', pyads.PLCTYPE_BOOL)
+ADSError: ADSError: symbol not found (1808)
+
 ```
 
-**write an UDINT value to MW0 and read it from plc**
+Reading and writing Strings is now easier as you don' t have to supply the
+length of a string anymore. For reading strings the maximum buffer length
+is 1024.
+
 ```python
->>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, PLCTYPE_UDINT)
->>> adsSyncReadReq(adr, INDEXGROUP_MEMORYBYTE, 0, PLCTYPE_UDINT)
+>>> pyads.read_by_name(adr, 'global.sample_string', pyads.PLCTYPE_STRING)
+'Hello World'
+>>> pyads.write_by_name(adr, 'global.sample_string', 'abc', pyads.PLCTYPE_STRING)
+>>> pyads.read_by_name(adr, 'global.sample_string', pyads.PLCTYPE_STRING)
+'abc'
 ```
 
-**write a string value in MW0 and read it from plc**
-```python
->>> s = "Hello World"
->>> adsSyncWriteReq(adr, INDEXGROUP_MEMORYBYTE, 0, s, len(s) * PLCTYPE_STRING)
->>> bufsize = 100
->>> adsSyncReadReq(adr, INDEXGROUP_MEMORY_BYTE, 0, bufsize * PLCTYPE_STRING)
+Setting the ADS state and machine state.
+
+```
+>>> pyads.write_control(adr, pyads.ADSSTATE_STOP, 0, 0)
 ```
 
-**read a value of type real from global variable foo**
+
+Toggle bitsize variables by address.
+
 ```python
->>> adsSyncReadByName(adr, ".foo", PLCTYPE_REAL)
+>>> data = pyads.read(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
+>>> pyads.write(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 ```
 
-**write a value of type real to global variable bar**
+Read and write udint variable by address.
+
 ```python
->>> adsSyncWriteByName(adr, ".bar", 1.234, PLCTYPE_REAL)
+>>> pyads.write(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, PLCTYPE_UDINT)
+>>> pyads.read(adr, INDEXGROUP_MEMORYBYTE, 0, PLCTYPE_UDINT)
+65536
 ```
 
-**close port**
+Finally close the ADS port.
+
 ```python
->>> adsPortClose()
+>>> pyads.close_port()
 ```

@@ -4,6 +4,14 @@ pyads package
 Submodules
 ----------
 
+pyads.ads module
+----------------
+
+.. automodule:: pyads.ads
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pyads.constants module
 ----------------------
 
