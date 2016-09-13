@@ -125,11 +125,10 @@ class AdsTestServer(threading.Thread):
             # Stop server loop execution
             self._run = False
 
-    def close(self):
-        if self.is_alive():
-            self.stop()
-
         self.server.close()
+
+    def close(self):
+        self.stop()
 
     def run(self):
         """
