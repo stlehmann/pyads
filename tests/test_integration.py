@@ -10,11 +10,9 @@ from unittest import TestCase
 import struct
 import sys
 
-from pyads.structs import AmsAddr
-
 from pyads import ads, constants
-
-from .utils.testserver import AdsTestServer
+from pyads.structs import AmsAddr
+from pyads.utils.testserver import AdsTestServer
 
 
 # These are pretty arbitrary
