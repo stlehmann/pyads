@@ -151,7 +151,10 @@ class AdsTestServer(threading.Thread):
 
             if ready:
                 # Accept connection from client
-                client, address = self.server.accept()
+                try:
+                    client, address = self.server.accept()
+                except:
+                    continue
 
                 logger.info('New connection from {0}:{1}'.format(*address))
 
