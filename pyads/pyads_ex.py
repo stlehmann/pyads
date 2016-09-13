@@ -90,11 +90,6 @@ def adsDelRoute(net_id):
         entry which is to be removed from the router.
 
     """
-    if sys.platform == 'win32':
-        raise RuntimeError(
-            'Router is not available on Win32 systems. '
-            'AMS routes must be configured using the TwinCAT router service.'
-        )
 
     delete_route = _adsDLL.AdsDelRoute
     delete_route.restype = ctypes.c_long
