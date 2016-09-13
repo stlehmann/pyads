@@ -40,7 +40,7 @@ class AdsApiTestCase(TestCase):
         # NOTE: On a Windows machine, this route needs to be configured
         # within the router service for the tests to work.
         if sys.platform == 'linux':
-            ads.add_route(cls.endpoint.netIdStruct(), TEST_SERVER_IP_ADDRESS)
+            ads.add_route(cls.endpoint, TEST_SERVER_IP_ADDRESS)
 
     @classmethod
     def tearDownClass(cls):
@@ -49,7 +49,7 @@ class AdsApiTestCase(TestCase):
         ads.close_port()
 
         if sys.platform == 'linux':
-            ads.delete_route(cls.endpoint.netIdStruct())
+            ads.delete_route(cls.endpoint)
 
     def setUp(self):
         # Clear request history before each test

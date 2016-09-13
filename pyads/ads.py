@@ -229,21 +229,21 @@ def write_by_name(adr, data_name, value, plc_datatype):
     return adsSyncWriteByName(adr, data_name, value, plc_datatype)
 
 
-def add_route(net_id, ip_address):
+def add_route(adr, ip_address):
     """
     :summary:  Establish a new route in the AMS Router (linux Only).
 
-    :param pyads.structs.SAmsNetId net_id: net id of routing endpoint
+    :param pyads.structs.AmsAddr adr: AMS Address of routing endpoint
     :param str ip_address: ip address of the routing endpoint
     """
-    return adsAddRoute(net_id, ip_address)
+    return adsAddRoute(adr.netIdStruct(), ip_address)
 
 
-def delete_route(net_id):
+def delete_route(adr):
     """
     :summary:  Remove existing route from the AMS Router (Linux Only).
 
-    :param pyads.structs.SAmsNetId net_id: net id associated with the routing
+    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
     """
-    return adsDelRoute(net_id)
+    return adsDelRoute(adr.netIdStruct())
