@@ -257,15 +257,16 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset, plcReadDataType,
     if err_code:
         raise ADSError(err_code)
 
+    if plcReadDataType == PLCTYPE_STRING:
+        return readData.value.decode('utf-8')
+
+    if type(plcReadDataType).__name__ == 'PyCArrayType':
+        return [i for i in readData]
+
     if hasattr(readData, 'value'):
         return readData.value
-    else:
-        if type(plcDataType).__name__ == 'PyCArrayType':
-            dout = [i for i in readData]
-            return dout
-        else:
-            # if we return structures, they may not have a value attribute
-            return readData
+
+    return readData
 
 
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
@@ -301,15 +302,16 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     if errCode:
         raise ADSError(errCode)
 
-    if hasattr(data, 'value'):
+    if plcDataType == PLCTYPE_STRING:
         return data.value.decode('utf-8')
-    else:
-        if type(plcDataType).__name__ == 'PyCArrayType':
-            dout = [i for i in data]
-            return dout.decode('utf-8')
-        else:
-            # if we return structures, they may not have a value attribute
-            return data
+
+    if type(plcDataType).__name__ == 'PyCArrayType':
+        return [i for i in data]
+
+    if hasattr(data, 'value'):
+        return data.value
+
+    return data
 
 
 def adsSyncReadByName(adr, dataName, plcDataType):
