@@ -12,7 +12,7 @@ import sys
 
 from pyads import ads, constants
 from pyads.structs import AmsAddr
-from pyads.utils.testserver import AdsTestServer
+from pyads.testserver import AdsTestServer
 
 
 # These are pretty arbitrary

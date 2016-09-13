@@ -110,11 +110,16 @@ Finally close the ADS port.
 Pyads includes a locally hosted dummy server which can be used to test your code without the need to connect to a physical device. 
 ```python
 import pyads
-from pyads.utils.testserver import AdsTestServer
+from pyads.testserver import AdsTestServer
 dummy_server = AdsTestServer()
 dummy_server.start()
 # Your code goes here
 dummy_server.stop()
+
+# Or as a context manager
+with AdsTestServer() as dummy_server:
+    # Your code goes here
+
 ```
 
 The dummy server response can be customized by defining a request handler and passing it to the server. This function will be passed the packet received by the server, and is expected to return response data.

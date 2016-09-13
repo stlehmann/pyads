@@ -33,6 +33,7 @@ setup(
       author = "Stefan Lehmann",
       author_email = "Stefan.St.Lehmann@gmail.com",
       packages = ["pyads"],
+      package_data = {'pyads': ['doc/*.*']},
       requires = [],
       provides=['pyads'],
       url = 'https://github.com/MrLeeh/pyads',
