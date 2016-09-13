@@ -102,7 +102,7 @@ class AdsTestServer(threading.Thread):
 
         super(AdsTestServer, self).__init__(*args, **kwargs)
 
-    def __open__(self):
+    def __enter__(self):
         self.start()
         return self
 
