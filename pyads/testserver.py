@@ -106,7 +106,7 @@ class AdsTestServer(threading.Thread):
         self.start()
         return self
 
-    def __close__(self):
+    def __exit__(self):
         self.close()
 
     def stop(self):
