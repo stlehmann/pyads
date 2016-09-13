@@ -12,7 +12,6 @@
 import ctypes
 import sys
 
-from os.path import abspath, dirname, join
 from functools import wraps
 
 from .structs import AmsAddr, SAmsAddr, AdsVersion, SAdsVersion
@@ -32,9 +31,7 @@ if sys.platform == 'win32':
     _adsDLL = ctypes.windll.TcAdsDll
 
 elif sys.platform == 'linux':
-    lib_dir = abspath(dirname(__file__))
-    lib_path = join(lib_dir, 'AdsLib.so')
-    _adsDLL = ctypes.CDLL(lib_path)
+    _adsDLL = ctypes.CDLL('adslib.so')
 
 else:
     raise RuntimeError('Unsupported platform {0}.'.format(sys.platform))
