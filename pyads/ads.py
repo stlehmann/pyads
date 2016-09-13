@@ -5,10 +5,24 @@
     :license: MIT, see LICENSE for details
 
 """
-from .pyads import adsPortOpen, adsPortClose, \
-    adsSyncWriteReq, adsSyncReadWriteReq, adsSyncReadReq, \
-    adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq, \
+import sys
+
+from .pyads import (
+    adsPortOpen, adsPortClose,
+    adsSyncWriteReq, adsSyncReadWriteReq, adsSyncReadReq,
+    adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq,
     adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress
+)
+
+from .pyads_ex import (
+    adsAddRoute, adsDelRoute, adsPortOpenEx, adsPortCloseEx,
+    adsGetLocalAddressEx, adsSyncReadStateReqEx, adsSyncReadDeviceInfoReqEx,
+    adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
+    adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx
+)
+
+linux = sys.platform == 'linux'
+port = None
 
 
 def open_port():
@@ -18,6 +32,12 @@ def open_port():
     :return: port number
 
     """
+    global port
+
+    if linux:
+        port = port or adsPortOpenEx()
+        return port
+
     return adsPortOpen()
 
 
@@ -26,7 +46,14 @@ def close_port():
     :summary: Close the connection to the TwinCAT message router.
 
     """
-    return adsPortClose()
+    global port
+
+    if linux:
+        adsPortCloseEx(port)
+        port = None
+        return
+
+    adsPortClose()
 
 
 def get_local_address():
@@ -35,6 +62,9 @@ def get_local_address():
     :rtype: AmsAddr
 
     """
+    if linux:
+        return adsGetLocalAddressEx(port)
+
     return adsGetLocalAddress()
 
 
@@ -47,6 +77,9 @@ def read_state(adr):
     :return: adsState, deviceState
 
     """
+    if linux:
+        return adsSyncReadStateReqEx(port, adr)
+
     return adsSyncReadStateReq(adr)
 
 
@@ -69,8 +102,14 @@ def write_control(adr, ads_state, device_state, data, plc_datatype):
            defined in the ADS-specification.
 
     """
-    return adsSyncWriteControlReq(adr, ads_state, device_state, data,
-                                  plc_datatype)
+    if linux:
+        return adsSyncWriteControlReqEx(
+            port, adr, ads_state, device_state, data, plc_datatype
+        )
+
+    return adsSyncWriteControlReq(
+        adr, ads_state, device_state, data, plc_datatype
+    )
 
 
 def read_device_info(adr):
@@ -81,6 +120,9 @@ def read_device_info(adr):
     :return: device name, version
 
     """
+    if linux:
+        return adsSyncReadDeviceInfoReqEx(port, adr)
+
     return adsSyncReadDeviceInfoReq(adr)
 
 
@@ -97,6 +139,11 @@ def write(adr, index_group, index_offset, value, plc_datatype):
         according to PLCTYPE constants
 
     """
+    if linux:
+        return adsSyncWriteReqEx(
+            port, adr, index_group, index_offset, value, plc_datatype
+        )
+
     adsSyncWriteReq(adr, index_group, index_offset, value, plc_datatype)
 
 
@@ -117,8 +164,16 @@ def read_write(adr, index_group, index_offset, plc_read_datatype,
     :return: value: **value**
 
     """
-    adsSyncReadWriteReq(adr, index_group, index_offset, plc_read_datatype,
-                        value, plc_write_datatype)
+    if linux:
+        return adsSyncReadWriteReqEx2(
+            port, adr, index_group, index_offset, plc_read_datatype,
+            value, plc_write_datatype
+        )
+
+    return adsSyncReadWriteReq(
+        adr, index_group, index_offset, plc_read_datatype,
+        value, plc_write_datatype
+    )
 
 
 def read(adr, index_group, index_offset, plc_datatype):
@@ -133,6 +188,11 @@ def read(adr, index_group, index_offset, plc_datatype):
     :return: value: **value**
 
     """
+    if linux:
+        return adsSyncReadReqEx2(
+            port, adr, index_group, index_offset, plc_datatype
+        )
+
     return adsSyncReadReq(adr, index_group, index_offset, plc_datatype)
 
 
@@ -146,6 +206,9 @@ def read_by_name(adr, data_name, plc_datatype):
     :return: value: **value**
 
     """
+    if linux:
+        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype)
+
     return adsSyncReadByName(adr, data_name, plc_datatype)
 
 
@@ -160,4 +223,27 @@ def write_by_name(adr, data_name, value, plc_datatype):
         according to PLCTYPE constants
 
     """
+    if linux:
+        return adsSyncWriteByNameEx(port, adr, data_name, value, plc_datatype)
+
     return adsSyncWriteByName(adr, data_name, value, plc_datatype)
+
+
+def add_route(net_id, ip_address):
+    """
+    :summary:  Establish a new route in the AMS Router (linux Only).
+
+    :param pyads.structs.SAmsNetId net_id: net id of routing endpoint
+    :param str ip_address: ip address of the routing endpoint
+    """
+    return adsAddRoute(net_id, ip_address)
+
+
+def delete_route(net_id):
+    """
+    :summary:  Remove existing route from the AMS Router (Linux Only).
+
+    :param pyads.structs.SAmsNetId net_id: net id associated with the routing
+        entry which is to be removed from the router.
+    """
+    return adsDelRoute(net_id)

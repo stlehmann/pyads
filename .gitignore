@@ -19,3 +19,7 @@ deploy.py
 *.sublime-workspace
 README.rst
 *.sublime-project
+
+#Source for local copy of Linux ADS lib
+*so
+
