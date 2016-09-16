@@ -28,6 +28,15 @@ pyads.pyads module
     :undoc-members:
     :show-inheritance:
 
+pyads.pyads_ex module
+------------------
+
+.. automodule:: pyads.pyads_ex
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 pyads.structs module
 --------------------
 

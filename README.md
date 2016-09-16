@@ -4,26 +4,29 @@ pyads - Python package
 [![Code Issues](http://www.quantifiedcode.com/api/v1/project/3e884877fac4408ea0d33ec4a788a212/badge.svg)](http://www.quantifiedcode.com/app/project/3e884877fac4408ea0d33ec4a788a212)
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
-for communicating with TwinCAT devices. *pyads* uses the C API *AdsDLL.dll*. The
-documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
+for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
 
-## Changelog
+## Installation
+```bash
+pip install pyads 
+```
+or
+```bash
+git clone https://github.com/MrLeeh/pyads.git
+```
 
-### Version 2.0.0
+### Windows
+Make sure that you have the `TcAdsDll.dll` provided by Beckhoff installed on your PATH.
 
-I wanted to make the Wrapper more pythonic so I created a new module named
-pyads.ads that contains all the functions from pyads.pyads but in a more
-pythonic way. You can still access the old functions by using the pyads.pyads
-module.
+### Linux
+Install the Linux ADS library from https://github.com/dabrowne/ADS
+```bash
+git clone https://github.com/dabrowne/ADS.git
+cd ADS
+sudo make install
+```
 
-Improvements:
-
-* more pythonic function names (e.g. 'write' instead of 'adsSyncWrite')
-* easier handling of reading and writing Strings
-* no error codes, if errors occur an Exception with the error code will be
-raised
-
-## Examples
+## Usage
 
 Open port and create a AmsAddr object for remote machine.
 
@@ -36,7 +39,13 @@ Open port and create a AmsAddr object for remote machine.
 >>> adr = pyads.AmsAddr('5.33.160.54.1.1', 851)
 ```
 
-You can read and write a variable by name from a remote machine.
+Add a route to the remote machine (Linux only - Windows routes must be added in the TwinCat Router).
+```python
+>>> remote_ip = '192.168.0.100'
+>>> pyads.add_route(adr, remote_ip)
+```
+
+Read and write a variable by name from a remote machine.
 
 ```python
 >>> pyads.read_by_name(adr, 'global.bool_value', pyads.PLCTYPE_BOOL)
@@ -95,3 +104,50 @@ Finally close the ADS port.
 ```python
 >>> pyads.close_port()
 ```
+
+
+## Offline Testing
+Pyads includes a locally hosted dummy server which can be used to test your code without the need to connect to a physical device. 
+```python
+import pyads
+from pyads.testserver import AdsTestServer
+dummy_server = AdsTestServer()
+dummy_server.start()
+# Your code goes here
+dummy_server.stop()
+
+# Or as a context manager
+with AdsTestServer() as dummy_server:
+    # Your code goes here
+
+```
+
+The dummy server response can be customized by defining a request handler and passing it to the server. This function will be passed the packet received by the server, and is expected to return response data.
+```python
+dummy_server = AdsTestServer(handler=request_handler_fn)
+```
+
+For an example handler function, see `pyads.utils.testserver.default_handler`.
+
+## Changelog
+
+### Version 2.1.0
+Linux support!
+
+Pyads now has Linux compatibility by wrapping the [open source ADS library](https://github.com/dabrowne/ADS) provided by Beckhoff. The main API is identical on both Linux and Windows, however the Linux implementation includes a built in router which needs to be managed programmatically using `pyads.add_route(ams_address, ip_address)` and `pyads.delete_route(ams_address)`.
+
+Version 2.1.0 also features vastly improved test coverage of the API, and the addition of a dummy test server for full integration testing.
+
+### Version 2.0.0
+
+I wanted to make the Wrapper more pythonic so I created a new module named
+pyads.ads that contains all the functions from pyads.pyads but in a more
+pythonic way. You can still access the old functions by using the pyads.pyads
+module.
+
+Improvements:
+
+* more pythonic function names (e.g. 'write' instead of 'adsSyncWrite')
+* easier handling of reading and writing Strings
+* no error codes, if errors occur an Exception with the error code will be
+raised

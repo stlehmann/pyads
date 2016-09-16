@@ -20,7 +20,7 @@ class SAdsVersion(Structure):
     ]
 
 
-class AdsVersion ():
+class AdsVersion():
 
     """
     :summary: contains version number, revision number,
@@ -43,6 +43,14 @@ class AdsVersion ():
         self.build = stAdsVersion.build
 
 
+class SAmsNetId(Structure):
+    """
+    :summary: structure with array of 6 bytes used to describe a net id
+    """
+    _pack_ = 1
+    _fields_ = [("b", c_ubyte * 6)]
+
+
 class SAmsAddr(Structure):
 
     """
@@ -50,7 +58,7 @@ class SAmsAddr(Structure):
 
     """
     _pack_ = 1
-    _fields_ = [("netId", c_ubyte * 6),
+    _fields_ = [("netId", SAmsNetId),
                 ("port", c_ushort)]
 
 
@@ -78,26 +86,28 @@ class AmsAddr():
         :rtype: string
         :return:  textual representation of the AMS adress
         """
-        tmpList = [
-            str(self._ams_addr.netId[i])
-            for i in range(sizeof(self._ams_addr.netId))
-        ]
-        netId = ".".join(tmpList) + ": " + str(self._ams_addr.port)
-        return netId
+        return self.netid + ": " + str(self._ams_addr.port)
 
     # property netid
     @property
     def netid(self):
-        return '.'.join(map(str, self._ams_addr.netId))
+        return '.'.join(map(str, self._ams_addr.netId.b))
 
     @netid.setter
     def netid(self, value):
-        id_numbers = list(map(int, value.split('.')))
-        if len(id_numbers) != 6:
-            raise ValueError('no valid netid')
+        # Check if the value is already an instance of the SAmsNetId struct
+        if isinstance(value, SAmsNetId):
+            self._ams_addr.netId = value
 
-        for i, nr in enumerate(id_numbers):
-            self._ams_addr.netId[i] = c_ubyte(nr)
+        # Otherwise, attempt to parse the id as a string
+        else:
+            id_numbers = list(map(int, value.split('.')))
+
+            if len(id_numbers) != 6:
+                raise ValueError('no valid netid')
+
+            # Fill the netId struct with data
+            self._ams_addr.netId.b = (c_ubyte * 6)(*id_numbers)
 
     # property port
     @property
@@ -114,22 +124,22 @@ class AmsAddr():
         """
         return self._ams_addr
 
+    def netIdStruct(self):
+        """
+        :summary: access to the c-types structure SAmsNetId
+        """
+        return self._ams_addr.netId
+
     def setAdr(self, adrString):
         """
         :summary: Sets the AMS-adress according to the given string
-                  containing the IP-adress
+                  containing the IP-address
 
         :type adrString: string
-        :param adrString: ip-adress of an ADS device
+        :param adrString: ip-address of an ADS device
 
         """
-        a = adrString.split(".")
-
-        if not len(a) == 6:
-            return
-
-        for i in range(len(a)):
-            self._ams_addr.netId[i] = c_ubyte(int(a[i]))
+        self.netid = adrString
 
     def __repr__(self):
         return '<AmsAddress {}:{}>'.format(self.netid, self.port)

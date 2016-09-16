@@ -9,8 +9,10 @@
     :license: MIT, see LICENSE for details
 
 """
+import sys
 
 from ctypes import *
+from functools import wraps
 
 from .constants import *
 from .structs import *
@@ -18,7 +20,8 @@ from .errorcodes import ERROR_CODES
 
 
 # load dynamic ADS library
-_adsDLL = windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
+if sys.platform == 'win32':
+    _adsDLL = windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
 
 
 class ADSError(Exception):
@@ -30,6 +33,20 @@ class ADSError(Exception):
         return "ADSError: " + self.msg
 
 
+def win32_only(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if sys.platform != 'win32':
+            raise RuntimeError(
+                '{0} is only supported when using the TcAdsDll (win32).'
+                .format(fn.__name__)
+            )
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+@win32_only
 def adsGetDllVersion():
     """
     :summary: Return version, revision and build of the ADS library.
@@ -44,6 +61,7 @@ def adsGetDllVersion():
     return AdsVersion(stVersion)
 
 
+@win32_only
 def adsPortOpen():
     """
     :summary:  Connect to the TwinCAT message router.
@@ -57,6 +75,7 @@ def adsPortOpen():
     return portNr
 
 
+@win32_only
 def adsPortClose():
     """
     :summary: Close the connection to the TwinCAT message router.
@@ -69,6 +88,7 @@ def adsPortClose():
         raise ADSError(errCode)
 
 
+@win32_only
 def adsGetLocalAddress():
     """
     :summary: Return the local AMS-address and the port number.
@@ -88,6 +108,7 @@ def adsGetLocalAddress():
     return adsLocalAddr
 
 
+@win32_only
 def adsSyncReadStateReq(adr):
     """
     :summary: Read the current ADS-state and the machine-state from the
@@ -112,6 +133,7 @@ def adsSyncReadStateReq(adr):
     return (adsState.value, deviceState.value)
 
 
+@win32_only
 def adsSyncReadDeviceInfoReq(adr):
     """
     :summary: Read the name and the version number of the ADS-server
@@ -134,6 +156,7 @@ def adsSyncReadDeviceInfoReq(adr):
     return (devNameStringBuffer.value.decode(), AdsVersion(stVersion))
 
 
+@win32_only
 def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
     """
     :summary: Change the ADS state and the machine-state of the ADS-server
@@ -175,6 +198,7 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
         raise ADSError(errCode)
 
 
+@win32_only
 def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
     """
     :summary: Send data synchronous to an ADS-device
@@ -213,6 +237,7 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
         raise ADSError(errCode)
 
 
+@win32_only
 def adsSyncReadWriteReq(adr, indexGroup, indexOffset, plcReadDataType,
                         value, plcWriteDataType):
     """
@@ -269,6 +294,7 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset, plcReadDataType,
     return readData
 
 
+@win32_only
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     """
     :summary: Read data synchronous from an ADS-device
@@ -314,6 +340,7 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     return data
 
 
+@win32_only
 def adsSyncReadByName(adr, dataName, plcDataType):
     """
     :summary: Read data synchronous from an ADS-device from data name
@@ -340,6 +367,7 @@ def adsSyncReadByName(adr, dataName, plcDataType):
     return value
 
 
+@win32_only
 def adsSyncWriteByName(adr, dataName, value, plcDataType):
     """
     :summary: Send data synchronous to an ADS-device from data name
