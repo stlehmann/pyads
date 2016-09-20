@@ -13,7 +13,6 @@ build/
 venv/
 
 *.tox
-tox.ini
 deploy.py
 
 *.sublime-workspace
@@ -23,3 +22,4 @@ README.rst
 #Source for local copy of Linux ADS lib
 *so
 
+.cache/
