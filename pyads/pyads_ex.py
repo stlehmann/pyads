@@ -5,8 +5,9 @@
 
     Contains cross platform ADS extension functions.
 
-    :copyright: (c) 2013 by Stefan Lehmann
+    :Author: David Browne <davidabrowne@gmail.com>
     :license: MIT, see LICENSE for details
+
 
 """
 import ctypes
