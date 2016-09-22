@@ -16,6 +16,14 @@ class AdsTest(unittest.TestCase):
         self.assertEqual(adr.netid, netid)
         self.assertEqual(adr.port, port)
 
+        # check if ams addr struct has been changed
+        ams_addr_numbers = [x for x in adr._ams_addr.netId.b]
+        netid_numbers = [int(x) for x in netid.split('.')]
+        self.assertEqual(len(ams_addr_numbers), len(netid_numbers))
+        for i in range(len(ams_addr_numbers)):
+            self.assertEqual(ams_addr_numbers[i], netid_numbers[i])
+        self.assertEqual(adr.port, adr._ams_addr.port)
+
 
 if __name__ == '__main__':
     unittest.main()

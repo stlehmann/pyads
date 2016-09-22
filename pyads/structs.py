@@ -62,7 +62,7 @@ class SAmsAddr(Structure):
                 ("port", c_ushort)]
 
 
-class AmsAddr():
+class AmsAddr(object):
 
     """
     :summary: wrapper for SAmsAddr-structure to adress an ADS device

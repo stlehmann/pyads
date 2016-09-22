@@ -13,6 +13,7 @@ server level by specifying the `handler` kwarg in the server constructor.
 Author: David Browne <davidabrowne@gmail.com>
 
 """
+from __future__ import absolute_import
 import atexit
 import logging
 import select
@@ -95,12 +96,12 @@ class AdsTestServer(threading.Thread):
         atexit.register(self.close)
 
         # Daemonize the server thread
-        kwargs.update(daemon=True)
 
         # Container for client connection threads
         self.clients = []
 
         super(AdsTestServer, self).__init__(*args, **kwargs)
+        self.daemon = True
 
     def __enter__(self):
         self.start()
@@ -161,8 +162,9 @@ class AdsTestServer(threading.Thread):
                 # Delegate handling of connection to client thread
                 client_thread = AdsClientConnection(
                     handler=self.handler, client=client, address=address,
-                    server=self, daemon=True
+                    server=self
                 )
+                client_thread.daemon = True
                 client_thread.start()
                 self.clients.append(client_thread)
 
