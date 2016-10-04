@@ -6,7 +6,7 @@ python:
 # command to install dependencies
 install:
   - sudo apt-get update
-  - sudo apt-get upgrade g++
+  - sudo apt-get install -y g++
   - sudo apt-get install -y git
   - git clone https://github.com/dabrowne/ADS.git
   - cd ADS
