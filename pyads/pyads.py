@@ -9,7 +9,8 @@
     :license: MIT, see LICENSE for details
 
 """
-from ctypes import windll, c_long, sizeof, pointer, c_int, \
+import ctypes
+from ctypes import c_long, sizeof, pointer, c_int, \
     c_ulong, c_char_p, create_string_buffer, memmove, addressof
 from functools import wraps
 
@@ -22,7 +23,7 @@ from .utils import platform_is_windows
 
 # load dynamic ADS library
 if platform_is_windows():
-    _adsDLL = windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
+    _adsDLL = ctypes.windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
 
 
 class ADSError(Exception):
