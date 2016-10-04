@@ -21,7 +21,7 @@ from .pyads_ex import (
     adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx
 )
 
-linux = sys.platform == 'linux'
+linux = sys.platform.startswith('linux')
 port = None
 
 
