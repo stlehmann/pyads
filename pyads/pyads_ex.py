@@ -31,7 +31,7 @@ PY3 = sys.version_info[0] == 3
 if sys.platform == 'win32':
     _adsDLL = ctypes.windll.TcAdsDll
 
-elif sys.platform == 'linux':
+elif sys.platform.startswith('linux'):
     _adsDLL = ctypes.CDLL('adslib.so')
 
 else:
