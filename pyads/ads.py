@@ -6,6 +6,7 @@
 
 """
 import sys
+from .utils import platform_is_linux
 
 from .pyads import (
     adsPortOpen, adsPortClose,
@@ -21,7 +22,7 @@ from .pyads_ex import (
     adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx
 )
 
-linux = sys.platform.startswith('linux')
+linux = platform_is_linux()
 port = None
 
 

@@ -17,10 +17,11 @@ from functools import wraps
 from .constants import *
 from .structs import *
 from .errorcodes import ERROR_CODES
+from .utils import platform_is_windows
 
 
 # load dynamic ADS library
-if sys.platform == 'win32':
+if platform_is_windows():
     _adsDLL = windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
 
 
@@ -36,7 +37,7 @@ class ADSError(Exception):
 def win32_only(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        if sys.platform != 'win32':
+        if not platform_is_windows():
             raise RuntimeError(
                 '{0} is only supported when using the TcAdsDll (win32).'
                 .format(fn.__name__)

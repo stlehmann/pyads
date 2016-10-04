@@ -8,9 +8,9 @@ Author: David Browne <davidabrowne@gmail.com>
 from unittest import TestCase
 
 import struct
-import sys
 
 from pyads import ads, constants
+from pyads.utils import platform_is_linux
 from pyads.structs import AmsAddr
 from pyads.testserver import AdsTestServer
 
@@ -37,7 +37,7 @@ class AdsApiTestCase(TestCase):
 
         # NOTE: On a Windows machine, this route needs to be configured
         # within the router service for the tests to work.
-        if sys.platform == 'linux':
+        if platform_is_linux():
             ads.add_route(cls.endpoint, TEST_SERVER_IP_ADDRESS)
 
     @classmethod
@@ -46,7 +46,7 @@ class AdsApiTestCase(TestCase):
 
         ads.close_port()
 
-        if sys.platform == 'linux':
+        if platform_is_linux():
             ads.delete_route(cls.endpoint)
 
     def setUp(self):
