@@ -1,13 +1,18 @@
 language: python
+sudo: required
+dist: trusty
+
+addons:
+  apt:
+    packages:
+    - git
+   
 python:
   - "2.7"
   - "3.5"
 
 # command to install dependencies
 install:
-  - sudo apt-get update
-  - sudo apt-get install -y g++
-  - sudo apt-get install -y git
   - git clone https://github.com/dabrowne/ADS.git
   - cd ADS
   - sudo make install
