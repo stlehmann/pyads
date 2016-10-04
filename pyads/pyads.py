@@ -9,13 +9,13 @@
     :license: MIT, see LICENSE for details
 
 """
-import sys
-
-from ctypes import *
+from ctypes import windll, c_long, sizeof, pointer, c_int, \
+    c_ulong, c_char_p, create_string_buffer, memmove, addressof
 from functools import wraps
 
-from .constants import *
-from .structs import *
+from .constants import PLCTYPE_STRING, PLCTYPE_UDINT, ADSIGRP_SYM_HNDBYNAME, \
+    ADSIGRP_SYM_VALBYHND, ADSIGRP_SYM_RELEASEHND, STRING_BUFFER
+from .structs import AdsVersion, SAdsVersion, SAmsAddr, AmsAddr
 from .errorcodes import ERROR_CODES
 from .utils import platform_is_windows
 

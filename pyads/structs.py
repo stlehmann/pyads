@@ -8,7 +8,7 @@
     :license: MIT, see LICENSE for details
 
 """
-from ctypes import *
+from ctypes import c_byte, c_short, Structure, c_ubyte, c_ushort, c_ulong
 
 
 class SAdsVersion(Structure):
