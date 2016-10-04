@@ -9,7 +9,8 @@
     :license: MIT, see LICENSE for details
 
 """
-from ctypes import *
+from ctypes import c_bool, c_byte, c_int8, c_uint8, c_int16, c_uint16, \
+    c_int32, c_uint32, c_float, c_double, c_char, c_short
 
 STRING_BUFFER = 1024
 
@@ -19,7 +20,7 @@ PLCTYPE_BYTE = c_byte
 PLCTYPE_DATE = c_int32
 PLCTYPE_DINT = c_int32
 PLCTYPE_DT = c_int32
-PLCTYPE_DWORD = c_int32
+PLCTYPE_DWORD = c_uint32
 PLCTYPE_INT = c_int16
 PLCTYPE_LREAL = c_double
 PLCTYPE_REAL = c_float
@@ -30,7 +31,7 @@ PLCTYPE_TOD = c_int32
 PLCTYPE_UDINT = c_uint32
 PLCTYPE_UINT = c_uint16
 PLCTYPE_USINT = c_uint8
-PLCTYPE_WORD = c_int16
+PLCTYPE_WORD = c_uint16
 
 
 def PLCTYPE_ARR_REAL(n):
