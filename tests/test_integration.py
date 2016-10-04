@@ -4,7 +4,8 @@ Integration testing for the pyads module.
 Author: David Browne <davidabrowne@gmail.com>
 
 """
-
+import time
+import unittest
 from unittest import TestCase
 
 import struct
@@ -34,6 +35,9 @@ class AdsApiTestCase(TestCase):
 
         # Open AMS Port
         ads.open_port()
+
+        # wait a bit otherwise error might occur
+        time.sleep(1)
 
         # NOTE: On a Windows machine, this route needs to be configured
         # within the router service for the tests to work.
@@ -319,3 +323,7 @@ class AdsApiTestCase(TestCase):
 
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+
+if __name__ == '__main__':
+    unittest.main()
