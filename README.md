@@ -26,6 +26,9 @@ git clone https://github.com/dabrowne/ADS.git
 cd ADS
 sudo make install
 ```
+## Documentation
+
+Read the API documentation on http://pythonhosted.org/pyads/.
 
 ## Usage
 
