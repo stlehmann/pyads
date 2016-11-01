@@ -18,4 +18,10 @@ install:
   - sudo make install
   - cd ..
   - sudo pip install .
-script: py.test
+  - pip install coverage
+  - pip install coveralls
+  - pip install pytest-cov
+script:
+  py.test -v --cov pyads
+after_success:
+  coveralls
