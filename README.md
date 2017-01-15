@@ -38,15 +38,20 @@ Open port and create a AmsAddr object for remote machine.
 >>> import pyads
 >>> pyads.open_port()
 32828
->>> pyads.get_local_address()
-<AmsAddress 192.168.0.109.1.1:32828>
->>> adr = pyads.AmsAddr('5.33.160.54.1.1', 851)
 ```
 
-Add a route to the remote machine (Linux only - Windows routes must be added in the TwinCat Router).
+Add a route to the remote machine (Linux only - Windows routes must be added in the TwinCat Router UI).
 ```python
 >>> remote_ip = '192.168.0.100'
 >>> pyads.add_route(adr, remote_ip)
+```
+
+Get the AMS address of the local machine. This may need to be added to the routing table of the remote machine.
+__NOTE: On Linux machines at least one route must be added before the call to `get_local_address` will function properly.__
+```python
+>>> pyads.get_local_address()
+<AmsAddress 192.168.0.109.1.1:32828>
+>>> adr = pyads.AmsAddr('5.33.160.54.1.1', 851)
 ```
 
 Read and write a variable by name from a remote machine.
