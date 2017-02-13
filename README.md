@@ -96,15 +96,15 @@ Setting the ADS state and machine state.
 Toggle bitsize variables by address.
 
 ```python
->>> data = pyads.read(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
+>>> data = pyads.read(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
 >>> pyads.write(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 ```
 
 Read and write udint variable by address.
 
 ```python
->>> pyads.write(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, PLCTYPE_UDINT)
->>> pyads.read(adr, INDEXGROUP_MEMORYBYTE, 0, PLCTYPE_UDINT)
+>>> pyads.write(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
+>>> pyads.read(adr, INDEXGROUP_MEMORYBYTE, 0, pyads.PLCTYPE_UDINT)
 65536
 ```
 
