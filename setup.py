@@ -6,6 +6,7 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 import versioneer
 
+
 class PyTest(TestCommand):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
@@ -23,8 +24,10 @@ class PyTest(TestCommand):
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
 
+
 cmdclass = versioneer.get_cmdclass()
 cmdclass.update({'test': PyTest})
+
 
 setup(
       name = "pyads",

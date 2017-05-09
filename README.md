@@ -8,11 +8,13 @@ for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAd
 
 ## Installation
 ```bash
-pip install pyads 
+$ pip install pyads
 ```
 or
 ```bash
-git clone https://github.com/MrLeeh/pyads.git
+$ git clone https://github.com/MrLeeh/pyads.git
+$ python setup.py install
+
 ```
 
 ### Windows
@@ -107,7 +109,7 @@ Finally close the ADS port.
 
 
 ## Offline Testing
-Pyads includes a locally hosted dummy server which can be used to test your code without the need to connect to a physical device. 
+Pyads includes a locally hosted dummy server which can be used to test your code without the need to connect to a physical device.
 ```python
 import pyads
 from pyads.testserver import AdsTestServer
