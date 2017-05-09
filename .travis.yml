@@ -1,14 +1,27 @@
 language: python
+sudo: required
+dist: trusty
+
+addons:
+  apt:
+    packages:
+    - git
+   
 python:
   - "2.7"
   - "3.5"
 
 # command to install dependencies
 install:
-  - apt-get install -y git
   - git clone https://github.com/dabrowne/ADS.git
   - cd ADS
   - sudo make install
   - cd ..
-  - pip install .
-script: py.test
+  - sudo pip install .
+  - pip install coverage
+  - pip install coveralls
+  - pip install pytest-cov
+script:
+  py.test -v --cov pyads
+after_success:
+  coveralls

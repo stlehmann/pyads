@@ -15,6 +15,7 @@ import sys
 
 from functools import wraps
 
+from .utils import platform_is_linux, platform_is_windows
 from .structs import AmsAddr, SAmsAddr, AdsVersion, SAdsVersion
 from .pyads import ADSError
 from .constants import (
@@ -28,10 +29,10 @@ PY3 = sys.version_info[0] == 3
 
 
 # load dynamic ADS library
-if sys.platform == 'win32':
+if platform_is_windows():
     _adsDLL = ctypes.windll.TcAdsDll
 
-elif sys.platform == 'linux':
+elif platform_is_linux:
     _adsDLL = ctypes.CDLL('adslib.so')
 
 else:
@@ -50,7 +51,7 @@ def router_function(fn):
     """
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        if sys.platform == 'win32':
+        if platform_is_windows():
             raise RuntimeError(
                 'Router interface is not available on Win32 systems.\n'
                 'Configure AMS routes using the TwinCAT router service.'

@@ -4,13 +4,14 @@ Integration testing for the pyads module.
 Author: David Browne <davidabrowne@gmail.com>
 
 """
-
+import time
+import unittest
 from unittest import TestCase
 
 import struct
-import sys
 
 from pyads import ads, constants
+from pyads.utils import platform_is_linux
 from pyads.structs import AmsAddr
 from pyads.testserver import AdsTestServer
 
@@ -35,9 +36,12 @@ class AdsApiTestCase(TestCase):
         # Open AMS Port
         ads.open_port()
 
+        # wait a bit otherwise error might occur
+        time.sleep(1)
+
         # NOTE: On a Windows machine, this route needs to be configured
         # within the router service for the tests to work.
-        if sys.platform == 'linux':
+        if platform_is_linux():
             ads.add_route(cls.endpoint, TEST_SERVER_IP_ADDRESS)
 
     @classmethod
@@ -46,7 +50,7 @@ class AdsApiTestCase(TestCase):
 
         ads.close_port()
 
-        if sys.platform == 'linux':
+        if platform_is_linux():
             ads.delete_route(cls.endpoint)
 
     def setUp(self):
@@ -319,3 +323,7 @@ class AdsApiTestCase(TestCase):
 
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -2,6 +2,7 @@ pyads - Python package
 ======================
 
 [![Code Issues](http://www.quantifiedcode.com/api/v1/project/3e884877fac4408ea0d33ec4a788a212/badge.svg)](http://www.quantifiedcode.com/app/project/3e884877fac4408ea0d33ec4a788a212)
+[![Build Status](https://travis-ci.org/MrLeeh/pyads.svg?branch=master)](https://travis-ci.org/MrLeeh/pyads)
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
 for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
@@ -27,6 +28,9 @@ git clone https://github.com/dabrowne/ADS.git
 cd ADS
 sudo make install
 ```
+## Documentation
+
+Read the API documentation on http://pythonhosted.org/pyads/.
 
 ## Usage
 
@@ -36,15 +40,20 @@ Open port and create a AmsAddr object for remote machine.
 >>> import pyads
 >>> pyads.open_port()
 32828
->>> pyads.get_local_address()
-<AmsAddress 192.168.0.109.1.1:32828>
->>> adr = pyads.AmsAddr('5.33.160.54.1.1', 851)
 ```
 
-Add a route to the remote machine (Linux only - Windows routes must be added in the TwinCat Router).
+Add a route to the remote machine (Linux only - Windows routes must be added in the TwinCat Router UI).
 ```python
 >>> remote_ip = '192.168.0.100'
 >>> pyads.add_route(adr, remote_ip)
+```
+
+Get the AMS address of the local machine. This may need to be added to the routing table of the remote machine.
+__NOTE: On Linux machines at least one route must be added before the call to `get_local_address` will function properly.__
+```python
+>>> pyads.get_local_address()
+<AmsAddress 192.168.0.109.1.1:32828>
+>>> adr = pyads.AmsAddr('5.33.160.54.1.1', 851)
 ```
 
 Read and write a variable by name from a remote machine.
@@ -89,15 +98,15 @@ Setting the ADS state and machine state.
 Toggle bitsize variables by address.
 
 ```python
->>> data = pyads.read(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, PLCTYPE_BOOL)
+>>> data = pyads.read(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
 >>> pyads.write(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 ```
 
 Read and write udint variable by address.
 
 ```python
->>> pyads.write(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, PLCTYPE_UDINT)
->>> pyads.read(adr, INDEXGROUP_MEMORYBYTE, 0, PLCTYPE_UDINT)
+>>> pyads.write(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
+>>> pyads.read(adr, INDEXGROUP_MEMORYBYTE, 0, pyads.PLCTYPE_UDINT)
 65536
 ```
 
