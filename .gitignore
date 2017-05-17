@@ -22,4 +22,7 @@ README.rst
 #Source for local copy of Linux ADS lib
 *so
 
-.cache/
+.cache/*
+
+doc/make.bat
+.coverage
