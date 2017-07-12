@@ -12,14 +12,16 @@ from .pyads import (
     adsPortOpen, adsPortClose,
     adsSyncWriteReq, adsSyncReadWriteReq, adsSyncReadReq,
     adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq,
-    adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress
+    adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress,
+    adsSyncAddDeviceNotificationReq, adsSyncDelDeviceNotificationReq
 )
 
 from .pyads_ex import (
     adsAddRoute, adsDelRoute, adsPortOpenEx, adsPortCloseEx,
     adsGetLocalAddressEx, adsSyncReadStateReqEx, adsSyncReadDeviceInfoReqEx,
     adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
-    adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx
+    adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx,
+    adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx
 )
 
 linux = platform_is_linux()
@@ -248,3 +250,15 @@ def delete_route(adr):
         entry which is to be removed from the router.
     """
     return adsDelRoute(adr.netIdStruct())
+
+def add_device_notification(adr, data_name, attr, callback):
+    if linux:
+        return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr, callback)
+    else:
+        return adsSyncAddDeviceNotificationReq(adr, data_name, attr, callback)
+
+def del_device_notification(adr, notification, hUser):
+    if linux:
+        adsSyncDelDeviceNotificationReqEx(port, adr, notification, hUser)
+    else:
+        adsSyncDelDeviceNotificationReq(adr, notification, hUser)
