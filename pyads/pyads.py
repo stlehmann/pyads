@@ -11,12 +11,12 @@
 """
 import ctypes
 from ctypes import c_long, sizeof, pointer, c_int, \
-    c_ulong, c_char_p, create_string_buffer, memmove, addressof, c_void_p, POINTER, byref
+    c_ulong, c_char_p, create_string_buffer, memmove, addressof
 from functools import wraps
 
 from .constants import PLCTYPE_STRING, PLCTYPE_UDINT, ADSIGRP_SYM_HNDBYNAME, \
     ADSIGRP_SYM_VALBYHND, ADSIGRP_SYM_RELEASEHND, STRING_BUFFER
-from .structs import AdsVersion, SAdsVersion, SAmsAddr, AmsAddr, SAdsNotificationAttrib, SAdsNotificationHeader
+from .structs import AdsVersion, SAdsVersion, SAmsAddr, AmsAddr
 from .errorcodes import ERROR_CODES
 from .utils import platform_is_windows
 
@@ -390,62 +390,3 @@ def adsSyncWriteByName(adr, dataName, value, plcDataType):
 
     # Release the handle of the PLC-variable
     adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hnl, PLCTYPE_UDINT)
-
-
-NOTEFUNC = None
-if platform_is_windows():
-    NOTEFUNC = ctypes.WINFUNCTYPE(c_void_p, POINTER(SAmsAddr),
-                                  POINTER(SAdsNotificationHeader), c_ulong)
-
-c_callback = None
-
-@win32_only
-def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback):
-    global c_callback # use global variable to prevent garbage collection
-    adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReq
-
-    pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    hnl = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
-                              data_name, PLCTYPE_STRING)
-
-    nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
-    nIndexOffset = ctypes.c_ulong(hnl)
-    attrib = pNoteAttrib.notificationAttribStruct()
-    
-    pNotification = ctypes.c_ulong()
-    nHUser = ctypes.c_ulong(hnl)
-    if NOTEFUNC == None:
-        raise TypeError("Callback function type can't be None")
-    adsSyncAddDeviceNotificationReqFct.argtypes = [ctypes.POINTER(SAmsAddr),
-                                                   ctypes.c_ulong, ctypes.c_ulong,
-                                                   ctypes.POINTER(SAdsNotificationAttrib),
-                                                   NOTEFUNC, ctypes.c_ulong,
-                                                   ctypes.POINTER(ctypes.c_ulong)]
-    adsSyncAddDeviceNotificationReqFct.restype = c_ulong
-    c_callback = NOTEFUNC(callback)
-    err_code = adsSyncAddDeviceNotificationReqFct( pAmsAddr, nIndexGroup, nIndexOffset,
-                                                   pointer(attrib),
-                                                   c_callback, nHUser,
-                                                   pointer(pNotification))
-    
-
-    if err_code:
-        raise ADSError(err_code)
-
-    return (pNotification.value, hnl)
-
-@win32_only
-def adsSyncDelDeviceNotificationReq(adr, hNotification, hUser):
-    adsSyncDelDeviceNotificationReqFct = _adsDLL.AdsSyncDelDeviceNotificationReq
-
-    pAmsAddr = pointer(adr.amsAddrStruct())
-    nHNotification = c_ulong(hNotification)
-    err_code = adsSyncDelDeviceNotificationReqFct(pAmsAddr, nHNotification)
-    
-    if err_code:
-        raise ADSError(err_code)
-    
-    adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hUser, PLCTYPE_UDINT)
-    
-
-    
