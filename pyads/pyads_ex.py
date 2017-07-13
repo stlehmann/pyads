@@ -499,10 +499,10 @@ if platform_is_linux:
     LNOTEFUNC = ctypes.CFUNCTYPE(None, ctypes.POINTER(SAmsAddr),
                                  ctypes.POINTER(SAdsNotificationHeader), ctypes.c_ulong)
 
-c_callback = None
+callback_store = dict()
 
 def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib, callback):
-    global c_callback
+    global callback_store
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
@@ -532,7 +532,7 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib, callbac
 
     if err_code:
         raise ADSError(err_code)
-
+    callback_store[pNotification.value] = c_callback
     return (pNotification.value, hnl)
 
 def adsSyncDelDeviceNotificationReqEx(port, adr, hNotification, hUser):
@@ -540,7 +540,7 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, hNotification, hUser):
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     nHNotification = ctypes.c_ulong(hNotification)
     err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr, nHNotification)
-    
+    callback_store[hNotification] = None
     if err_code:
         raise ADSError(err_code)
     

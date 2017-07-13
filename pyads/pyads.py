@@ -397,11 +397,11 @@ if platform_is_windows():
     NOTEFUNC = ctypes.WINFUNCTYPE(c_void_p, POINTER(SAmsAddr),
                                   POINTER(SAdsNotificationHeader), c_ulong)
 
-c_callback = None
+callback_store = dict()
 
 @win32_only
 def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback):
-    global c_callback # use global variable to prevent garbage collection
+    global callback_store # use global variable to prevent garbage collection
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReq
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
@@ -431,7 +431,7 @@ def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback):
 
     if err_code:
         raise ADSError(err_code)
-
+    callback_store[pNotification.value] = c_callback
     return (pNotification.value, hnl)
 
 @win32_only
@@ -441,7 +441,7 @@ def adsSyncDelDeviceNotificationReq(adr, hNotification, hUser):
     pAmsAddr = pointer(adr.amsAddrStruct())
     nHNotification = c_ulong(hNotification)
     err_code = adsSyncDelDeviceNotificationReqFct(pAmsAddr, nHNotification)
-    
+    callback_store[hNotification] = None
     if err_code:
         raise ADSError(err_code)
     
