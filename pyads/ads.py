@@ -12,15 +12,19 @@ from .pyads import (
     adsPortOpen, adsPortClose,
     adsSyncWriteReq, adsSyncReadWriteReq, adsSyncReadReq,
     adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq,
-    adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress
+    adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress,
+    adsSyncAddDeviceNotificationReq, adsSyncDelDeviceNotificationReq
 )
 
 from .pyads_ex import (
     adsAddRoute, adsDelRoute, adsPortOpenEx, adsPortCloseEx,
     adsGetLocalAddressEx, adsSyncReadStateReqEx, adsSyncReadDeviceInfoReqEx,
     adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
-    adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx
+    adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx,
+    adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx
 )
+
+from .structs import AmsAddr
 
 linux = platform_is_linux()
 port = None
@@ -248,3 +252,144 @@ def delete_route(adr):
         entry which is to be removed from the router.
     """
     return adsDelRoute(adr.netIdStruct())
+
+def add_device_notification(adr, data_name, attr, callback):
+    if linux:
+        return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr, callback)
+    else:
+        return adsSyncAddDeviceNotificationReq(adr, data_name, attr, callback)
+
+def del_device_notification(adr, notification, hUser):
+    if linux:
+        adsSyncDelDeviceNotificationReqEx(port, adr, notification, hUser)
+    else:
+        adsSyncDelDeviceNotificationReq(adr, notification, hUser)
+
+class PLC_Connection(object):
+    def __init__(self, ams_net_id, ams_net_port, ip_address = None):
+        self._port = None
+        self._adr = AmsAddr(ams_net_id, ams_net_port)
+        if ip_address == None:
+            self.ip_address = '.'.join(ams_net_id.split('.')[:4])
+        else:
+            self.ip_address = ip_address
+        self._open = False
+            
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, _type, _val, _traceback):
+        self.close()
+
+    def open(self):
+        """
+        :summary:  Connect to the TwinCAT message router.
+        """
+        if self._open: return
+        if linux:
+            self._port = adsPortOpenEx()
+            adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+        else:
+            self._port = adsPortOpen()
+        self._open = True
+            
+    def close(self):
+        """
+        :summary: Close the connection to the TwinCAT message router.
+        """
+        if not self._open: return
+        if linux:
+            adsDelRoute(self._adr.netIdStruct())
+            adsPortCloseEx(self._port)
+            self._port = None
+        else:
+            adsPortClose()
+        self._open = False
+
+
+    def get_local_address(self):
+        if linux:
+            return adsGetLocalAddressEx(self._port)
+        else:
+            return adsGetLocalAddress()
+
+    def read_state(self):
+        if linux:
+            return adsSyncReadStateReqEx(self._port, self._adr)
+        else:
+            return adsSyncReadStateReq(self._adr)
+
+    def write_control(self, ads_state, device_state, data, plc_datatype):
+        if linux:
+            return adsSyncWriteControlReqEx(self._port, self._adr, ads_state,
+                                            device_state, data, plc_datatype)
+        else:
+            return adsSyncWriteControlReq(self._adr, ads_state, device_state,
+                                          data, plc_datatype)
+
+    def read_device_info(self):
+        if linux:
+            return adsSyncReadDeviceInfoReqEx(self._port, self._adr)
+        else:
+            return adsSyncReadDeviceInfoReq(self._adr)
+
+
+    def write(self, index_group, index_offset, value, plc_datatype):
+        if linux:
+            return adsSyncWriteReqEx(self._port, self._adr, index_group,
+                                     index_offset, value, plc_datatype)
+        else:
+            adsSyncWriteReq(self._adr, index_group, index_offset, value,
+                            plc_datatype)
+
+
+    def read_write(self, index_group, index_offset, plc_read_datatype,
+                   value, plc_write_datatype):
+        if linux:
+            return adsSyncReadWriteReqEx2(self._port, self._adr, index_group,
+                                          index_offset, plc_read_datatype,
+                                          value, plc_write_datatype)
+        else:
+            return adsSyncReadWriteReq(self._adr, index_group, index_offset,
+                                       plc_read_datatype,value, plc_write_datatype)
+
+
+    def read(self, index_group, index_offset, plc_datatype):
+        if linux:
+            return adsSyncReadReqEx2(self._port, self._adr, index_group,
+                                     index_offset, plc_datatype)
+        else:
+            return adsSyncReadReq(self._adr, index_group, index_offset, plc_datatype)
+
+
+    def read_by_name(self, data_name, plc_datatype):
+        if linux:
+            return adsSyncReadByNameEx(self._port, self._adr, data_name,
+                                       plc_datatype)
+        else:
+            return adsSyncReadByName(self._adr, data_name, plc_datatype)
+
+
+    def write_by_name(self, data_name, value, plc_datatype):
+        if linux:
+            return adsSyncWriteByNameEx(self._port, self._adr, data_name,
+                                        value, plc_datatype)
+        else:
+            return adsSyncWriteByName(self._adr, data_name, value, plc_datatype)
+
+    def add_device_notification(self, data_name, attr, callback):
+        if linux:
+            return adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
+                                                     data_name, attr, callback)
+        else:
+            return adsSyncAddDeviceNotificationReq(self._adr, data_name,
+                                                   attr, callback)
+
+    def del_device_notification(self, notification, hUser):
+        if linux:
+            adsSyncDelDeviceNotificationReqEx(self._port, self._adr,
+                                              notification, hUser)
+        else:
+            adsSyncDelDeviceNotificationReq(self._adr, notification,
+                                            hUser)
