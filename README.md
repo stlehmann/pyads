@@ -3,6 +3,7 @@ pyads - Python package
 
 [![Code Issues](http://www.quantifiedcode.com/api/v1/project/3e884877fac4408ea0d33ec4a788a212/badge.svg)](http://www.quantifiedcode.com/app/project/3e884877fac4408ea0d33ec4a788a212)
 [![Build Status](https://travis-ci.org/MrLeeh/pyads.svg?branch=master)](https://travis-ci.org/MrLeeh/pyads)
+[![Coverage Status](https://coveralls.io/repos/github/MrLeeh/pyads/badge.svg?branch=dev)](https://coveralls.io/github/MrLeeh/pyads?branch=dev)
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
 for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
@@ -98,15 +99,15 @@ Setting the ADS state and machine state.
 Toggle bitsize variables by address.
 
 ```python
->>> data = pyads.read(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
->>> pyads.write(adr, INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
+>>> data = pyads.read(adr, pyads.INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
+>>> pyads.write(adr, pyads.INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 ```
 
 Read and write udint variable by address.
 
 ```python
->>> pyads.write(adr, INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
->>> pyads.read(adr, INDEXGROUP_MEMORYBYTE, 0, pyads.PLCTYPE_UDINT)
+>>> pyads.write(adr, pyads.INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
+>>> pyads.read(adr, pyads.INDEXGROUP_MEMORYBYTE, 0, pyads.PLCTYPE_UDINT)
 65536
 ```
 

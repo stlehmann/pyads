@@ -4,8 +4,8 @@ from .structs import AmsAddr, NotificationAttrib
 
 from .ads import open_port, close_port, get_local_address, read_state, \
     write_control, read_device_info, write, read_write, read, \
-    read_by_name, write_by_name, add_route, delete_route, add_device_notification, \
-    del_device_notification, PLC_Connection
+    read_by_name, write_by_name, add_route, delete_route, \
+    add_device_notification, del_device_notification, PLC_Connection
 
 from .constants import PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_DATE, PLCTYPE_DINT, \
     PLCTYPE_DT, PLCTYPE_DWORD, PLCTYPE_INT, PLCTYPE_LREAL, PLCTYPE_REAL, \
@@ -17,14 +17,18 @@ from .constants import PORT_EVENTLOGGER, PORT_IO, PORT_LOGGER, PORT_NC, \
     PORT_NOCKE, PORT_SCOPE, PORT_SPECIALTASK1, PORT_SPECIALTASK2, PORT_SPS1, \
     PORT_SPS2, PORT_SPS3, PORT_SPS4, PORT_SYSTEMSERVICE
 
+from .constants import INDEXGROUP_MEMORYBYTE, INDEXGROUP_MEMORYBIT, \
+    INDEXGROUP_MEMORYSIZE, INDEYGROUP_RETAIN, INDEXGROUP_RETAINSIZE, \
+    INDEXGROUP_DATA, INDEXGROUP_DATASIZE
+
 from .constants import ADSSTATE_INVALID, ADSSTATE_IDLE, ADSSTATE_RESET, \
     ADSSTATE_INIT, ADSSTATE_START, ADSSTATE_RUN, ADSSTATE_STOP, \
     ADSSTATE_SAVECFG, ADSSTATE_LOADCFG, ADSSTATE_POWERFAILURE, \
     ADSSTATE_POWERGOOD, ADSSTATE_ERROR, ADSSTATE_SHUTDOWN, ADSSTATE_SUSPEND, \
     ADSSTATE_RESUME, ADSSTATE_CONFIG, ADSSTATE_RECONFIG
 
-from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, ADSTRANS_CLIENT1REQ, \
-    ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
+from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, \
+    ADSTRANS_CLIENT1REQ, ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
 
 from ._version import get_versions
 __version__ = get_versions()['version']
