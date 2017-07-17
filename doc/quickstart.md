@@ -22,6 +22,7 @@ added in the TwinCat Router UI).
 
 ```python
 >>> remote_ip = '192.168.0.100'
+>>> adr = pyads.AmsAddr('127.0.0.1.1.1', pyads.PORT_SPS1)
 >>> pyads.add_route(adr, remote_ip)
 ```
 Get the AMS address of the local machine. This may need to be added to 
