@@ -20,6 +20,7 @@ def get_files_rec(directory):
         res.append((path, files))
     return res
 
+
 data_files = get_files_rec('src')
 
 
@@ -32,7 +33,10 @@ def remove_binaries():
 
 
 def copy_sharedlib():
-    shutil.copy('src/adslib.so', 'pyads/adslib.so')
+    try:
+        shutil.copy('src/adslib.so', 'pyads/adslib.so')
+    except OSError:
+        pass
 
 
 def remove_sharedlib():
@@ -72,30 +76,12 @@ class install(_install):
         _install.run(self)
 
 
-# class install(_install):
-#     def run(self):
-#         try:
-#             subprocess.call(['make', 'clean', '-C', 'src'])
-#             subprocess.call(['make', '-C', 'src'])
-#             subprocess.call(['cp', 'src/adslib.so', 'pyads/adslib.so'])
-#         except Exception as e:
-#             print(e)
-#             print(
-#                 '------------------------------------\n'
-#                 'Error compiling the adslib library. '
-#                 'Please install manually from https://github.com/dabrowne/ADS or '
-#                 'visit https://github.com/MrLeeh/pyads for details.\n'
-#                 '------------------------------------'
-#             )
-#         _install.run(self)
-
-
 class PyTest(TestCommand):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args=[]
+        self.pytest_args = []
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -119,16 +105,16 @@ cmdclass.update({
 
 
 setup(
-      name = "pyads",
-      version = versioneer.get_version(),
-      description = "Python wrapper for TwinCAT ADS library",
-      author = "Stefan Lehmann",
-      author_email = "Stefan.St.Lehmann@gmail.com",
-      packages = ["pyads"],
+      name="pyads",
+      version=versioneer.get_version(),
+      description="Python wrapper for TwinCAT ADS library",
+      author="Stefan Lehmann",
+      author_email="Stefan.St.Lehmann@gmail.com",
+      packages=["pyads"],
       package_data={'pyads': ['adslib.so']},
-      requires = [],
+      requires=[],
       provides=['pyads'],
-      url = 'https://github.com/MrLeeh/pyads',
+      url='https://github.com/MrLeeh/pyads',
       classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
