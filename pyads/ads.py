@@ -265,7 +265,7 @@ def del_device_notification(adr, notification, hUser):
     else:
         adsSyncDelDeviceNotificationReq(adr, notification, hUser)
 
-class PLC_Connection(object):
+class Connection(object):
     def __init__(self, ams_net_id, ams_net_port, ip_address = None):
         self._port = None
         self._adr = AmsAddr(ams_net_id, ams_net_port)
