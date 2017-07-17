@@ -11,6 +11,7 @@
 
 """
 import ctypes
+import os
 import sys
 
 from functools import wraps
@@ -33,7 +34,14 @@ if platform_is_windows():
     _adsDLL = ctypes.windll.TcAdsDll
 
 elif platform_is_linux:
-    _adsDLL = ctypes.CDLL('adslib.so')
+    # try to load local adslib.so in favor to global one
+    local_adslib = os.path.join(os.path.dirname(__file__), 'adslib.so')
+    if os.path.isfile(local_adslib):
+        adslib = local_adslib
+    else:
+        adslib = 'adslib.so'
+
+    _adsDLL = ctypes.CDLL(adslib)
 
 else:
     raise RuntimeError('Unsupported platform {0}.'.format(sys.platform))

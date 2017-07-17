@@ -24,3 +24,5 @@ README.rst
 
 .cache/
 ADS/
+doc_old/
+doc/_build/
