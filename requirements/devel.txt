@@ -9,6 +9,7 @@ babel==2.4.0              # via sphinx
 certifi==2017.4.17        # via requests
 chardet==3.0.4            # via requests
 commonmark==0.5.4         # via recommonmark
+coverage==4.4.1
 docutils==0.13.1          # via recommonmark, sphinx
 idna==2.5                 # via requests
 imagesize==0.7.1          # via sphinx
