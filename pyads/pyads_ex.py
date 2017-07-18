@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     pyads.pyads_ex
-    ~~~~~~~~~~~
+    ~~~~~~~~~~~~~~
 
     Contains cross platform ADS extension functions.
 
