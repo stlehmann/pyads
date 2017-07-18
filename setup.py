@@ -64,8 +64,9 @@ class clean(_clean):
 
 class sdist(_sdist):
     def run(self):
+        create_binaries()
+        copy_sharedlib()
         remove_binaries()
-        remove_sharedlib()
         _sdist.run(self)
 
 
