@@ -8,7 +8,8 @@
     :license: MIT, see LICENSE for details
 
 """
-from ctypes import c_byte, c_short, Structure, c_ubyte, c_ushort, c_ulong
+from ctypes import c_byte, c_short, Structure, c_ubyte, c_ushort, c_ulong, c_ulonglong, \
+    POINTER, Union, c_uint32, c_uint64
 
 
 class SAdsVersion(Structure):
@@ -145,13 +146,71 @@ class AmsAddr(object):
         return '<AmsAddress {}:{}>'.format(self.netid, self.port)
 
 
+class NotificationAttrib(object):
+    def __init__(self, length = None, trans_mode = None,
+                 max_delay = None, cycle_time = None):
+        self._attrib = SAdsNotificationAttrib()
+        if length:
+            self._attrib.cbLength   = length
+        if trans_mode:
+            self._attrib.nTransMode = trans_mode
+        if max_delay:
+            self._attrib.nMaxDelay  = max_delay
+        if cycle_time:
+            self._attrib.nCycleTime = cycle_time
+
+    def notificationAttribStruct(self):
+        return self._attrib
+
+    @property
+    def length(self):
+        return self._attrib.cbLength
+    @length.setter
+    def length(self, val):
+        self._attrib.cbLength   = val
+
+    @property
+    def trans_mode(self):
+        return self._attrib.nTransMode
+    @trans_mode.setter
+    def trans_mode(self, val):
+        self._attrib.nTransMode = val
+        
+    @property
+    def max_delay(self):
+        return self._attrib.nMaxDelay
+    @max_delay.setter
+    def max_delay(self, val):
+        self._attrib.nMaxDelay  = val
+
+    @property
+    def cycle_time(self):
+        return self._attrib.nCycleTime
+    @cycle_time.setter
+    def cycle_time(self, val):
+        self._attrib.nCycleTime = val
+        self._attrib.dwChangeFilter = val
+        
+    def __repr__(self):
+        return '<NotificationAttrib {} {} {} {}>'.format(self.length, self.trans_mode,
+                                                         self.max_delay, self.cycle_time)
+
+class _AttribUnion(Union):
+    _fields_ = [("nCycleTime", c_uint32), ("dwChangeFilter", c_uint32)]
 class SAdsNotificationAttrib(Structure):
     _pack_ = 1
-    _fields_ = [("cbLength", c_ulong),
-                ("nTransMode", c_ulong),
-                ("nMaxDelay", c_ulong),
-                ("nCycleTime", c_ulong)]
+    _anonymous_ = ("AttribUnion",)
+    _fields_ = [("cbLength", c_uint32),
+                ("nTransMode", c_uint32),
+                ("nMaxDelay", c_uint32),
+                ("AttribUnion", _AttribUnion),]
 
+class SAdsNotificationHeader(Structure):
+    _pack_ = 1
+    _fields_ = [("nTimeStamp", c_uint64),
+                ("hNotification", c_uint32),
+                ("cbSampleSize", c_uint32),
+                ("data", POINTER(c_ubyte))]
 
 class SAdsSymbolUploadInfo(Structure):
 

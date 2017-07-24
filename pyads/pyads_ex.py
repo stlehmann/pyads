@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
     pyads.pyads_ex
-    ~~~~~~~~~~~
+    ~~~~~~~~~~~~~~
 
     Contains cross platform ADS extension functions.
 
@@ -11,12 +11,13 @@
 
 """
 import ctypes
+import os
 import sys
 
 from functools import wraps
 
 from .utils import platform_is_linux, platform_is_windows
-from .structs import AmsAddr, SAmsAddr, AdsVersion, SAdsVersion
+from .structs import AmsAddr, SAmsAddr, AdsVersion, SAdsVersion, SAdsNotificationAttrib, SAdsNotificationHeader
 from .pyads import ADSError
 from .constants import (
     PLCTYPE_STRING, STRING_BUFFER, ADSIGRP_SYM_HNDBYNAME, PLCTYPE_UDINT,
@@ -33,7 +34,14 @@ if platform_is_windows():
     _adsDLL = ctypes.windll.TcAdsDll
 
 elif platform_is_linux:
-    _adsDLL = ctypes.CDLL('adslib.so')
+    # try to load local adslib.so in favor to global one
+    local_adslib = os.path.join(os.path.dirname(__file__), 'adslib.so')
+    if os.path.isfile(local_adslib):
+        adslib = local_adslib
+    else:
+        adslib = 'adslib.so'
+
+    _adsDLL = ctypes.CDLL(adslib)
 
 else:
     raise RuntimeError('Unsupported platform {0}.'.format(sys.platform))
@@ -494,3 +502,57 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
     adsSyncWriteReqEx(
         port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT
     )
+LNOTEFUNC = None
+if platform_is_linux:
+    LNOTEFUNC = ctypes.CFUNCTYPE(None, ctypes.POINTER(SAmsAddr),
+                                 ctypes.POINTER(SAdsNotificationHeader), ctypes.c_ulong)
+
+callback_store = dict()
+
+def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib, callback):
+    global callback_store
+    adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
+
+    pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
+    hnl = adsSyncReadWriteReqEx2(port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
+                              data_name, PLCTYPE_STRING)
+
+    nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
+    nIndexOffset = ctypes.c_ulong(hnl)
+    attrib = pNoteAttrib.notificationAttribStruct()
+    
+    pNotification = ctypes.c_ulong()
+    nHUser = ctypes.c_ulong(hnl)
+    if LNOTEFUNC == None:
+        raise TypeError("Callback function type can't be None")
+    adsSyncAddDeviceNotificationReqFct.argtypes = [ctypes.c_ulong, ctypes.POINTER(SAmsAddr),
+                                                   ctypes.c_ulong, ctypes.c_ulong,
+                                                   ctypes.POINTER(SAdsNotificationAttrib),
+                                                   LNOTEFUNC, ctypes.c_ulong,
+                                                   ctypes.POINTER(ctypes.c_ulong)]
+    adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
+    
+    c_callback = LNOTEFUNC(callback)
+    err_code = adsSyncAddDeviceNotificationReqFct(port, pAmsAddr, nIndexGroup, nIndexOffset,
+                                                  ctypes.byref(attrib),
+                                                  c_callback, nHUser,
+                                                  ctypes.byref(pNotification))
+
+    if err_code:
+        raise ADSError(err_code)
+    callback_store[pNotification.value] = c_callback
+    return (pNotification.value, hnl)
+
+def adsSyncDelDeviceNotificationReqEx(port, adr, hNotification, hUser):
+    adsSyncDelDeviceNotificationReqFct = _adsDLL.AdsSyncDelDeviceNotificationReqEx
+    pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
+    nHNotification = ctypes.c_ulong(hNotification)
+    err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr, nHNotification)
+    callback_store[hNotification] = None
+    if err_code:
+        raise ADSError(err_code)
+    
+    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, hUser, PLCTYPE_UDINT)
+    
+
+    
