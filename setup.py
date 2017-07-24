@@ -10,7 +10,7 @@ from setuptools.command.install import install as _install
 from distutils.command.build import build as _build
 from distutils.command.clean import clean as _clean
 from distutils.command.sdist import sdist as _sdist
-import versioneer
+from pyads.version import version
 
 
 def platform_is_linux():
@@ -101,19 +101,18 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 
-cmdclass = versioneer.get_cmdclass()
-cmdclass.update({
+cmdclass = {
     'test': PyTest,
     'build': build,
     'clean': clean,
     'sdist': sdist,
     'install': install,
-})
+}
 
 
 setup(
       name="pyads",
-      version=versioneer.get_version(),
+      version=version,
       description="Python wrapper for TwinCAT ADS library",
       author="Stefan Lehmann",
       author_email="Stefan.St.Lehmann@gmail.com",
