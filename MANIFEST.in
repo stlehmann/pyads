@@ -1,2 +1,3 @@
 include versioneer.py
 include pyads/_version.py
+include src/*

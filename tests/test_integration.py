@@ -12,7 +12,7 @@ import struct
 
 from pyads import ads, constants
 from pyads.utils import platform_is_linux
-from pyads.structs import AmsAddr
+from pyads.structs import AmsAddr, NotificationAttrib
 from pyads.testserver import AdsTestServer
 
 
@@ -323,6 +323,22 @@ class AdsApiTestCase(TestCase):
 
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+    def test_device_notification(self):
+
+        def callback(adr, notification, user):
+            pass
+
+        handle_name = 'TestHandle'
+        attr = NotificationAttrib()
+
+        notification, user = ads.add_device_notification(
+            self.endpoint, handle_name, attr, callback 
+        )
+
+        ads.del_device_notification(
+            self.endpoint, notification, user
+        )
 
 
 if __name__ == '__main__':
