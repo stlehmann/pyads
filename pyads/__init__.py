@@ -30,5 +30,4 @@ from .constants import ADSSTATE_INVALID, ADSSTATE_IDLE, ADSSTATE_RESET, \
 from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, \
     ADSTRANS_CLIENT1REQ, ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
 
-from .version import version
-__version__ = version
+__version__ = '2.2.0'

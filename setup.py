@@ -10,7 +10,6 @@ from setuptools.command.install import install as _install
 from distutils.command.build import build as _build
 from distutils.command.clean import clean as _clean
 from distutils.command.sdist import sdist as _sdist
-from pyads.version import version
 
 
 def platform_is_linux():
@@ -112,7 +111,7 @@ cmdclass = {
 
 setup(
       name="pyads",
-      version=version,
+      version='2.2.0',
       description="Python wrapper for TwinCAT ADS library",
       author="Stefan Lehmann",
       author_email="Stefan.St.Lehmann@gmail.com",
