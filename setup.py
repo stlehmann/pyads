@@ -13,6 +13,10 @@ from distutils.command.sdist import sdist as _sdist
 import versioneer
 
 
+def platform_is_linux():
+    return sys.platform.startswith('linux')
+
+
 def get_files_rec(directory):
     res = []
     for (path, directory, filenames) in os.walk(directory):
@@ -48,30 +52,34 @@ def remove_sharedlib():
 
 class build(_build):
     def run(self):
-        remove_binaries()
-        create_binaries()
-        copy_sharedlib()
-        remove_binaries()
+        if platform_is_linux():
+            remove_binaries()
+            create_binaries()
+            copy_sharedlib()
+            remove_binaries()
         _build.run(self)
 
 
 class clean(_clean):
     def run(self):
-        remove_binaries()
-        remove_sharedlib()
+        if platform_is_linux():
+            remove_binaries()
+            remove_sharedlib()
         _clean.run(self)
 
 
 class sdist(_sdist):
     def run(self):
-        remove_binaries()
+        if platform_is_linux():
+            remove_binaries()
         _sdist.run(self)
 
 
 class install(_install):
     def run(self):
-        create_binaries()
-        copy_sharedlib()
+        if platform_is_linux():
+            create_binaries()
+            copy_sharedlib()
         _install.run(self)
 
 
