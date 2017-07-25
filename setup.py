@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # -*-coding: utf-8 -*-
+import io
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -10,6 +12,23 @@ from setuptools.command.install import install as _install
 from distutils.command.build import build as _build
 from distutils.command.clean import clean as _clean
 from distutils.command.sdist import sdist as _sdist
+
+
+def read(*names, **kwargs):
+    with io.open(
+        os.path.join(os.path.dirname(__file__), *names),
+        encoding=kwargs.get("encoding", "utf8")
+    ) as fp:
+        return fp.read()
+
+
+def find_version(*file_paths):
+    version_file = read(*file_paths)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
 
 
 def platform_is_linux():
@@ -110,17 +129,17 @@ cmdclass = {
 
 
 setup(
-      name="pyads",
-      version='2.2.0',
-      description="Python wrapper for TwinCAT ADS library",
-      author="Stefan Lehmann",
-      author_email="Stefan.St.Lehmann@gmail.com",
-      packages=["pyads"],
-      package_data={'pyads': ['adslib.so']},
-      requires=[],
-      provides=['pyads'],
-      url='https://github.com/MrLeeh/pyads',
-      classifiers=[
+    name="pyads",
+    version=find_version('pyads', '__init__.py'),
+    description="Python wrapper for TwinCAT ADS library",
+    author="Stefan Lehmann",
+    author_email="Stefan.St.Lehmann@gmail.com",
+    packages=["pyads"],
+    package_data={'pyads': ['adslib.so']},
+    requires=[],
+    provides=['pyads'],
+    url='https://github.com/MrLeeh/pyads',
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
@@ -129,7 +148,7 @@ setup(
         'Topic :: Software Development :: Libraries',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: Microsoft :: Windows :: Windows 7'
-      ],
-      cmdclass=cmdclass,
-      data_files=data_files
+    ],
+    cmdclass=cmdclass,
+    data_files=data_files
 )
