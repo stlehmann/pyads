@@ -4,6 +4,8 @@ pyads - Python package
 [![Build Status](https://travis-ci.org/MrLeeh/pyads.svg?branch=master)](https://travis-ci.org/MrLeeh/pyads)
 [![Coverage Status](https://coveralls.io/repos/github/MrLeeh/pyads/badge.svg?branch=master)](https://coveralls.io/github/MrLeeh/pyads?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/pyads/badge/?version=latest)](http://pyads.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/pyads.svg)](https://badge.fury.io/py/pyads)
+
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
 for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
