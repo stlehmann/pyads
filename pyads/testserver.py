@@ -35,7 +35,7 @@ logger.addHandler(stdout_handler)
 logger.setLevel(logging.DEBUG)
 logger.propagate = False  # "Overwrite" default handler
 
-null_logger = logging.getLogger(__name__+'_null')
+null_logger = logging.getLogger(__name__ + '_null')
 null_logger.addHandler(logging.NullHandler())
 
 ADS_PORT = 0xBF02
@@ -47,7 +47,8 @@ AmsTcpHeader = namedtuple('AmsTcpHeader', ('length', ))
 AmsHeader = namedtuple(
     'AmsHeader', (
         'target_net_id', 'target_port', 'source_net_id', 'source_port',
-        'command_id', 'state_flags', 'length', 'error_code', 'invoke_id', 'data'
+        'command_id', 'state_flags', 'length', 'error_code', 'invoke_id',
+        'data'
     )
 )
 
@@ -347,15 +348,18 @@ def default_handler(request):
         version_build = '\x03\x00'.encode('utf-8')
         device_name = 'TestServer\x00'.encode('utf-8')
 
-        response_content = major_version + minor_version + version_build + device_name
+        response_content = major_version + minor_version + version_build + \
+            device_name
 
     elif command_id == constants.ADSCOMMAND_READ:
         logger.info('Command received: READ')
         # Parse requested data length
         response_length = struct.unpack('<I', request.ams_header.data[8:12])[0]
         # Create response of repeated 0x0F with a null terminator for strings
-        response_value = (('\x0F' * (response_length - 1)) + '\x00').encode('utf-8')
-        response_content = struct.pack('<I', len(response_value)) + response_value
+        response_value = ((('\x0F' * (response_length - 1)) + '\x00')
+                          .encode('utf-8'))
+        response_content = (struct.pack('<I', len(response_value)) +
+                            response_value)
 
     elif command_id == constants.ADSCOMMAND_WRITE:
         logger.info('Command received: WRITE')
@@ -396,8 +400,10 @@ def default_handler(request):
         # Parse requested data length
         response_length = struct.unpack('<I', request.ams_header.data[8:12])[0]
         # Create response of repeated 0x0F with a null terminator for strings
-        response_value = (('\x0F' * (response_length - 1)) + '\x00').encode('utf-8')
-        response_content = struct.pack('<I', len(response_value)) + response_value
+        response_value = ((('\x0F' * (response_length - 1)) + '\x00')
+                          .encode('utf-8'))
+        response_content = (struct.pack('<I', len(response_value)) +
+                            response_value)
 
     else:
         logger.info('Unknown Command: {0}'.format(hex(command_id)))
