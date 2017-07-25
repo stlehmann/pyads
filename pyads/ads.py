@@ -5,7 +5,6 @@
     :license: MIT, see LICENSE for details
 
 """
-import sys
 from .utils import platform_is_linux
 
 from .pyads import (
@@ -101,10 +100,11 @@ def write_control(adr, ads_state, device_state, data, plc_datatype):
     :note: Despite changing the ADS-state and the machine-state it is possible
            to send additional data to the ADS-server. For current ADS-devices
            additional data is not progressed.
-           Every ADS-device is able to communicate its current state to other devices.
+           Every ADS-device is able to communicate its current state to other
+           devices.
            There is a difference between the device-state and the state of the
-           ADS-interface (AdsState). The possible states of an ADS-interface are
-           defined in the ADS-specification.
+           ADS-interface (AdsState). The possible states of an ADS-interface
+           are defined in the ADS-specification.
 
     """
     if linux:
@@ -160,8 +160,8 @@ def read_write(adr, index_group, index_offset, plc_read_datatype,
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
-    :param int plc_read_datatype: type of the data given to the PLC to respond to,
-        according to PLCTYPE constants
+    :param int plc_read_datatype: type of the data given to the PLC to respond
+        to, according to PLCTYPE constants
     :param value: value to write to the storage address of the PLC
     :param plc_write_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
@@ -253,17 +253,21 @@ def delete_route(adr):
     """
     return adsDelRoute(adr.netIdStruct())
 
+
 def add_device_notification(adr, data_name, attr, callback):
     if linux:
-        return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr, callback)
+        return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr,
+                                                 callback)
     else:
         return adsSyncAddDeviceNotificationReq(adr, data_name, attr, callback)
+
 
 def del_device_notification(adr, notification, hUser):
     if linux:
         adsSyncDelDeviceNotificationReqEx(port, adr, notification, hUser)
     else:
         adsSyncDelDeviceNotificationReq(adr, notification, hUser)
+
 
 class Connection(object):
     """
@@ -277,15 +281,15 @@ class Connection(object):
         to first 4 parts of the Ams net id.
 
     """
-    def __init__(self, ams_net_id, ams_net_port, ip_address = None):
+    def __init__(self, ams_net_id, ams_net_port, ip_address=None):
         self._port = None
         self._adr = AmsAddr(ams_net_id, ams_net_port)
-        if ip_address == None:
+        if ip_address is None:
             self.ip_address = '.'.join(ams_net_id.split('.')[:4])
         else:
             self.ip_address = ip_address
         self._open = False
-            
+
     def __enter__(self):
         self.open()
         return self
@@ -298,20 +302,22 @@ class Connection(object):
         :summary:  Connect to the TwinCAT message router.
 
         """
-        if self._open: return
+        if self._open:
+            return
         if linux:
             self._port = adsPortOpenEx()
             adsAddRoute(self._adr.netIdStruct(), self.ip_address)
         else:
             self._port = adsPortOpen()
         self._open = True
-            
+
     def close(self):
         """
         :summary: Close the connection to the TwinCAT message router.
 
         """
-        if not self._open: return
+        if not self._open:
+            return
         if linux:
             adsDelRoute(self._adr.netIdStruct())
             adsPortCloseEx(self._port)
@@ -319,7 +325,6 @@ class Connection(object):
         else:
             adsPortClose()
         self._open = False
-
 
     def get_local_address(self):
         """
@@ -354,13 +359,13 @@ class Connection(object):
         :param data: additional data
         :param int plc_datatype: datatype, according to PLCTYPE constants
 
-        :note: Despite changing the ADS-state and the machine-state it is possible
-               to send additional data to the ADS-server. For current ADS-devices
-               additional data is not progressed.
-               Every ADS-device is able to communicate its current state to other devices.
-               There is a difference between the device-state and the state of the
-               ADS-interface (AdsState). The possible states of an ADS-interface are
-               defined in the ADS-specification.
+        :note: Despite changing the ADS-state and the machine-state it is
+            possible to send additional data to the ADS-server. For current
+            ADS-devices additional data is not progressed.
+            Every ADS-device is able to communicate its current state to other
+            devices. There is a difference between the device-state and the
+            state of the ADS-interface (AdsState). The possible states of an
+            ADS-interface are defined in the ADS-specification.
 
         """
         if linux:
@@ -382,7 +387,6 @@ class Connection(object):
         else:
             return adsSyncReadDeviceInfoReq(self._adr)
 
-
     def write(self, index_group, index_offset, value, plc_datatype):
         """
         :summary: Send data synchronous to an ADS-device
@@ -402,7 +406,6 @@ class Connection(object):
             adsSyncWriteReq(self._adr, index_group, index_offset, value,
                             plc_datatype)
 
-
     def read_write(self, index_group, index_offset, plc_read_datatype,
                    value, plc_write_datatype):
         """
@@ -410,11 +413,11 @@ class Connection(object):
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
-        :param int plc_read_datatype: type of the data given to the PLC to respond to,
-            according to PLCTYPE constants
+        :param int plc_read_datatype: type of the data given to the PLC to
+            respond to, according to PLCTYPE constants
         :param value: value to write to the storage address of the PLC
-        :param plc_write_datatype: type of the data given to the PLC, according to
-            PLCTYPE constants
+        :param plc_write_datatype: type of the data given to the PLC,
+            according to PLCTYPE constants
         :rtype: PLCTYPE
         :return: value: **value**
 
@@ -425,8 +428,8 @@ class Connection(object):
                                           value, plc_write_datatype)
         else:
             return adsSyncReadWriteReq(self._adr, index_group, index_offset,
-                                       plc_read_datatype,value, plc_write_datatype)
-
+                                       plc_read_datatype, value,
+                                       plc_write_datatype)
 
     def read(self, index_group, index_offset, plc_datatype):
         """
@@ -434,8 +437,8 @@ class Connection(object):
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
-        :param int plc_datatype: type of the data given to the PLC, according to
-            PLCTYPE constants
+        :param int plc_datatype: type of the data given to the PLC, according
+            to PLCTYPE constants
         :return: value: **value**
 
         """
@@ -443,15 +446,15 @@ class Connection(object):
             return adsSyncReadReqEx2(self._port, self._adr, index_group,
                                      index_offset, plc_datatype)
         else:
-            return adsSyncReadReq(self._adr, index_group, index_offset, plc_datatype)
-
+            return adsSyncReadReq(self._adr, index_group, index_offset,
+                                  plc_datatype)
 
     def read_by_name(self, data_name, plc_datatype):
         """
         :summary: Read data synchronous from an ADS-device from data name
         :param string data_name: data name
-        :param int plc_datatype: type of the data given to the PLC, according to
-            PLCTYPE constants
+        :param int plc_datatype: type of the data given to the PLC, according
+            to PLCTYPE constants
         :return: value: **value**
 
         """
@@ -460,7 +463,6 @@ class Connection(object):
                                        plc_datatype)
         else:
             return adsSyncReadByName(self._adr, data_name, plc_datatype)
-
 
     def write_by_name(self, data_name, value, plc_datatype):
         """
@@ -476,7 +478,8 @@ class Connection(object):
             return adsSyncWriteByNameEx(self._port, self._adr, data_name,
                                         value, plc_datatype)
         else:
-            return adsSyncWriteByName(self._adr, data_name, value, plc_datatype)
+            return adsSyncWriteByName(self._adr, data_name, value,
+                                      plc_datatype)
 
     def add_device_notification(self, data_name, attr, callback):
         """
@@ -488,11 +491,11 @@ class Connection(object):
         :param callback: callback function that gets executed on in the event
             of a notification
 
-        :rtype: (int, int) 
+        :rtype: (int, int)
         :returns: notification handle, user handle
 
-        Save the notification handle and the user handle on creating a 
-        notification if you want to be able to remove the notification 
+        Save the notification handle and the user handle on creating a
+        notification if you want to be able to remove the notification
         later in your code.
 
         **Usage**:
@@ -512,7 +515,7 @@ class Connection(object):
             >>>         adr, attr, mycallback)
             >>>
             >>>     # Remove notification
-            >>>     plc.del_device_notification(hnotification, huser) 
+            >>>     plc.del_device_notification(hnotification, huser)
 
         """
         if linux:
@@ -526,7 +529,7 @@ class Connection(object):
         """
         :summary: Remove a device notification
 
-        :param notification: address of the variable that contains the handle 
+        :param notification: address of the variable that contains the handle
             of the notification
         :param hUser: user handle
 
