@@ -1,48 +1,26 @@
-"""
-Integration testing for the pyads module.
-
-Author: David Browne <davidabrowne@gmail.com>
-
-"""
 import time
 import unittest
-from unittest import TestCase
-
+import pyads
 import struct
-
-from pyads import ads, constants
-from pyads.utils import platform_is_linux
-from pyads.structs import AmsAddr, NotificationAttrib
 from pyads.testserver import AdsTestServer
+from pyads import constants
 
 
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = '127.0.0.1.1.1'
 TEST_SERVER_IP_ADDRESS = '127.0.0.1'
-TEST_SERVER_AMS_PORT = constants.PORT_SPS1
+TEST_SERVER_AMS_PORT = pyads.PORT_SPS1
 
 
-class AdsApiTestCase(TestCase):
+class AdsConnectionClassTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Start dummy ADS Endpoint
         cls.test_server = AdsTestServer(logging=False)
         cls.test_server.start()
 
-        # Endpoint AMS Address
-        cls.endpoint = AmsAddr(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
-
-        # Open AMS Port
-        ads.open_port()
-
         # wait a bit otherwise error might occur
         time.sleep(1)
-
-        # NOTE: On a Windows machine, this route needs to be configured
-        # within the router service for the tests to work.
-        if platform_is_linux():
-            ads.add_route(cls.endpoint, TEST_SERVER_IP_ADDRESS)
 
     @classmethod
     def tearDownClass(cls):
@@ -51,14 +29,11 @@ class AdsApiTestCase(TestCase):
         # wait a bit for server to shutdown
         time.sleep(1)
 
-        ads.close_port()
-
-        if platform_is_linux():
-            ads.delete_route(cls.endpoint)
-
     def setUp(self):
-        # Clear request history before each test
         self.test_server.request_history = []
+        self.plc = pyads.Connection(TEST_SERVER_AMS_NET_ID,
+                                    TEST_SERVER_AMS_PORT,
+                                    TEST_SERVER_IP_ADDRESS)
 
     def assert_command_id(self, request, target_id):
         # Check the request code received by the server
@@ -66,54 +41,71 @@ class AdsApiTestCase(TestCase):
         command_id = struct.unpack('<H', command_id)[0]
         self.assertEqual(command_id, target_id)
 
+    def test_initialization(self):
+
+        with self.assertRaises(TypeError):
+            pyads.Connection()
+
+        with self.assertRaises(AttributeError):
+            pyads.Connection(None, None)
+
+    def test_no_ip_address(self):
+        """
+        Autogenerate IP-address from AMS net id if no ip address is given 
+        on initialization.
+
+        """
+        plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+        self.assertEqual(TEST_SERVER_IP_ADDRESS, plc.ip_address)
+
+    def test_open_twice(self):
+        # try to close connection before open 
+        self.plc.close()
+
+        with self.plc:
+            # connection should now be open
+            self.assertTrue(self.plc.is_open)
+            self.plc.open()
+
+        # connection should now be closed
+        self.assertFalse(self.plc.is_open)
+
     def test_read_device_info(self):
-        # Make request to read device info
-        name, version = ads.read_device_info(self.endpoint)
+        with self.plc:
+            name, version = self.plc.read_device_info()
+            requests = self.test_server.request_history
 
-        # Retrieve list of received requests from server
-        requests = self.test_server.request_history
+            self.assertEqual(len(requests), 1)
+            self.assert_command_id(requests[0],
+                                   constants.ADSCOMMAND_READDEVICEINFO)
 
-        # Assert that the server received a request
-        self.assertEqual(len(requests), 1)
-
-        # Assert that the server received the correct command
-        self.assert_command_id(requests[0], constants.ADSCOMMAND_READDEVICEINFO)
-
-        # Check the response data from the server
-        self.assertEqual(name, 'TestServer')
-        self.assertEqual(version.version, 1)
-        self.assertEqual(version.revision, 2)
-        self.assertEqual(version.build, 3)
 
     def test_read_uint(self):
-        # Make request to read data from a random index (the test server will
-        # return the same thing regardless)
-        result = ads.read(
-            self.endpoint, index_group=constants.INDEXGROUP_DATA,
-            index_offset=1, plc_datatype=constants.PLCTYPE_UDINT
-        )
+        with self.plc:
+            result = self.plc.read(pyads.INDEXGROUP_DATA, 1,
+                                   pyads.PLCTYPE_UDINT)
 
-        # Retrieve list of received requests from server
-        requests = self.test_server.request_history
+            # Retrieve list of received requests from server
+            requests = self.test_server.request_history
 
-        # Assert that the server received a request
-        self.assertEqual(len(requests), 1)
+            # Assert that the server received a request
+            self.assertEqual(len(requests), 1)
 
-        # Assert that the server received the correct command
-        self.assert_command_id(requests[0], constants.ADSCOMMAND_READ)
+            # Assert that the server received the correct command
+            self.assert_command_id(requests[0], constants.ADSCOMMAND_READ)
 
-        # Test server just returns repeated bytes of 0x0F terminated with 0x00
-        expected_result = struct.unpack('<I', '\x0F\x0F\x0F\x00'.encode('utf-8'))[0]
+            # Test server just returns repeated bytes of 0x0F terminated with 0x00
+            expected_result = struct.unpack('<I', '\x0F\x0F\x0F\x00'.encode('utf-8'))[0]
 
-        self.assertEqual(result, expected_result)
+            self.assertEqual(result, expected_result)
 
     def test_read_string(self):
         # Make request to read data from a random index (the test server will
         # return the same thing regardless)
-        result = ads.read(
-            self.endpoint, index_group=constants.INDEXGROUP_DATA,
-            index_offset=1, plc_datatype=constants.PLCTYPE_STRING
-        )
+        with self.plc:
+            result = self.plc.read(index_group=constants.INDEXGROUP_DATA,
+                                   index_offset=1,
+                                   plc_datatype=constants.PLCTYPE_STRING)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -128,16 +120,17 @@ class AdsApiTestCase(TestCase):
         # and null terminated with \x00 by our test server. The \x00 will get
         # chopped off during parsing to python string type
         expected_result = '\x0F' * 1023
-
         self.assertEqual(result, expected_result)
 
     def test_write_uint(self):
         value = 100
 
-        ads.write(
-            self.endpoint, index_group=constants.INDEXGROUP_DATA,
-            index_offset=1, value=value, plc_datatype=constants.PLCTYPE_UDINT
-        )
+        with self.plc:
+            self.plc.write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1, value=value,
+                plc_datatype=constants.PLCTYPE_UDINT
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -156,10 +149,12 @@ class AdsApiTestCase(TestCase):
     def test_write_float(self):
         value = 123.456
 
-        ads.write(
-            self.endpoint, index_group=constants.INDEXGROUP_DATA,
-            index_offset=1, value=value, plc_datatype=constants.PLCTYPE_REAL
-        )
+        with self.plc:
+            self.plc.write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1, value=value,
+                plc_datatype=constants.PLCTYPE_REAL
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -184,10 +179,12 @@ class AdsApiTestCase(TestCase):
     def test_write_string(self):
         value = "Test String 1234."
 
-        ads.write(
-            self.endpoint, index_group=constants.INDEXGROUP_DATA,
-            index_offset=1, value=value, plc_datatype=constants.PLCTYPE_STRING
-        )
+        with self.plc:
+            self.plc.write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1, value=value,
+                plc_datatype=constants.PLCTYPE_STRING
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -207,7 +204,9 @@ class AdsApiTestCase(TestCase):
         self.assertEqual(sent_value, received_value)
 
     def test_read_state(self):
-        ads_state, device_state = ads.read_state(self.endpoint)
+
+        with self.plc:
+            ads_state, device_state = self.plc.read_state()
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -227,11 +226,11 @@ class AdsApiTestCase(TestCase):
     def test_write_control(self):
         # Set the ADS State to reset
         # Device state is unused I think? Always seems to be zero
-        ads.write_control(
-            self.endpoint,
-            ads_state=constants.ADSSTATE_RESET, device_state=0, data=0,
-            plc_datatype=constants.PLCTYPE_BYTE
-        )
+        with self.plc:
+            self.plc.write_control(
+                ads_state=constants.ADSSTATE_RESET, device_state=0, data=0,
+                plc_datatype=constants.PLCTYPE_BYTE
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -245,11 +244,12 @@ class AdsApiTestCase(TestCase):
     def test_read_write(self):
         write_value = 100
 
-        read_value = ads.read_write(
-            self.endpoint, index_group=constants.INDEXGROUP_DATA,
-            index_offset=1, plc_read_datatype=constants.PLCTYPE_UDINT,
-            value=write_value, plc_write_datatype=constants.PLCTYPE_UDINT
-        )
+        with self.plc:
+            read_value = self.plc.read_write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1, plc_read_datatype=constants.PLCTYPE_UDINT,
+                value=write_value, plc_write_datatype=constants.PLCTYPE_UDINT
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -272,8 +272,9 @@ class AdsApiTestCase(TestCase):
     def test_read_by_name(self):
         handle_name = "TestHandle"
 
-        read_value = ads.read_by_name(self.endpoint, handle_name,
-                                      constants.PLCTYPE_BYTE)
+        with self.plc:
+            read_value = self.plc.read_by_name(handle_name,
+                                               constants.PLCTYPE_BYTE)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -304,9 +305,10 @@ class AdsApiTestCase(TestCase):
         handle_name = "TestHandle"
         value = "Test Value"
 
-        ads.write_by_name(
-            self.endpoint, handle_name, value, constants.PLCTYPE_STRING
-        )
+        with self.plc:
+            self.plc.write_by_name(
+                handle_name, value, constants.PLCTYPE_STRING
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -332,23 +334,50 @@ class AdsApiTestCase(TestCase):
             pass
 
         handle_name = 'TestHandle'
-        attr = NotificationAttrib()
+        attr = pyads.NotificationAttrib()
         requests = self.test_server.request_history
 
-        notification, user = ads.add_device_notification(
-            self.endpoint, handle_name, attr, callback 
-        )
+        with self.plc:
+            notification, user = self.plc.add_device_notification(
+                handle_name, attr, callback 
+            )
 
-        # Assert that Read/Write command was used to get the handle by name
-        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
-        # Assert that ADDDEVICENOTIFICATION was used to add device notification
-        self.assert_command_id(requests[1], constants.ADSCOMMAND_ADDDEVICENOTE)
+            # Assert that Read/Write command was used to get the handle by name
+            self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+            # Assert that ADDDEVICENOTIFICATION was used to add device notification
+            self.assert_command_id(requests[1], constants.ADSCOMMAND_ADDDEVICENOTE)
 
-        ads.del_device_notification(self.endpoint, notification, user)
+            self.plc.del_device_notification(notification, user)
 
         # Assert that ADDDEVICENOTIFICATION was used to add device notification
         self.assert_command_id(requests[2], constants.ADSCOMMAND_DELDEVICENOTE)
 
+    def test_multiple_connect(self):
+        """
+        Using context manager multiple times after each other for 
+        disconnecting and connecting to/from server should work without any
+        errors.
+
+        """
+        handle_name = "TestHandle"
+        value = "Test Value"
+
+        with self.plc:
+            self.assertTrue(self.plc.is_open)
+            self.plc.write_by_name(
+                handle_name, value, constants.PLCTYPE_STRING
+            )
+        self.assertFalse(self.plc.is_open)
+        with self.plc:
+            self.assertTrue(self.plc.is_open)
+            self.plc.read_by_name(
+                handle_name, constants.PLCTYPE_STRING
+            )
+        self.assertFalse(self.plc.is_open)
+
+
 
 if __name__ == '__main__':
     unittest.main()
+    if __name__ == '__main__':
+        unittest.main()

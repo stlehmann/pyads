@@ -540,3 +540,12 @@ class Connection(object):
         else:
             adsSyncDelDeviceNotificationReq(self._adr, notification,
                                             hUser)
+    
+    @property
+    def is_open(self):
+        """
+        Shows the current connection state.
+
+        :return: True if connection is open
+        """
+        return self._open
