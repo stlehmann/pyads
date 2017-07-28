@@ -110,8 +110,6 @@ def adsDelRoute(net_id):
     """
 
     delete_route = _adsDLL.AdsDelRoute
-    delete_route.restype = ctypes.c_long
-
     delete_route(net_id)
 
 
