@@ -110,12 +110,7 @@ def adsDelRoute(net_id):
     """
 
     delete_route = _adsDLL.AdsDelRoute
-    delete_route.restype = ctypes.c_long
-
-    error_code = delete_route(net_id)
-
-    if error_code:
-        raise ADSError(error_code)
+    delete_route(net_id)
 
 
 def adsPortOpenEx():
