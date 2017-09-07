@@ -254,12 +254,12 @@ def delete_route(adr):
     return adsDelRoute(adr.netIdStruct())
 
 
-def add_device_notification(adr, data_name, attr, callback):
+def add_device_notification(adr, data_name, attr, callback, userInt = None):
     if linux:
         return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr,
-                                                 callback)
+                                                 callback, userInt)
     else:
-        return adsSyncAddDeviceNotificationReq(adr, data_name, attr, callback)
+        return adsSyncAddDeviceNotificationReq(adr, data_name, attr, callback, userInt)
 
 
 def del_device_notification(adr, notification, hUser):
@@ -481,7 +481,7 @@ class Connection(object):
             return adsSyncWriteByName(self._adr, data_name, value,
                                       plc_datatype)
 
-    def add_device_notification(self, data_name, attr, callback):
+    def add_device_notification(self, data_name, attr, callback, userInt = None):
         """
         :summary: Add a device notification
 
@@ -520,10 +520,10 @@ class Connection(object):
         """
         if linux:
             return adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
-                                                     data_name, attr, callback)
+                                                     data_name, attr, callback, userInt)
         else:
             return adsSyncAddDeviceNotificationReq(self._adr, data_name,
-                                                   attr, callback)
+                                                   attr, callback, userInt)
 
     def del_device_notification(self, notification, hUser):
         """

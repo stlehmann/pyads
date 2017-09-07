@@ -510,7 +510,7 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
 
 
 def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
-                                      callback):
+                                      callback, userInt = None):
     global callback_store
 
     adsSyncAddDeviceNotificationReqFct = \
@@ -525,6 +525,9 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
     nHUser = ctypes.c_ulong(hnl)
+    if userInt != None and type(userInt) in [int, long]:
+        nHUser = ctypes.c_ulong(userInt)
+    
     if LNOTEFUNC is None:
         raise TypeError("Callback function type can't be None")
     adsSyncAddDeviceNotificationReqFct.argtypes = [
