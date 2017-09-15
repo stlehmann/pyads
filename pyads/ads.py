@@ -12,7 +12,8 @@ from .pyads import (
     adsSyncWriteReq, adsSyncReadWriteReq, adsSyncReadReq,
     adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq,
     adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress,
-    adsSyncAddDeviceNotificationReq, adsSyncDelDeviceNotificationReq
+    adsSyncAddDeviceNotificationReq, adsSyncDelDeviceNotificationReq,
+    adsSyncSetTimeout
 )
 
 from .pyads_ex import (
@@ -20,7 +21,8 @@ from .pyads_ex import (
     adsGetLocalAddressEx, adsSyncReadStateReqEx, adsSyncReadDeviceInfoReqEx,
     adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
     adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx,
-    adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx
+    adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx,
+    adsSyncSetTimeoutEx
 )
 
 from .structs import AmsAddr
@@ -268,6 +270,11 @@ def del_device_notification(adr, notification, hUser):
     else:
         adsSyncDelDeviceNotificationReq(adr, notification, hUser)
 
+def set_timeout(ms):
+    if linux:
+        adsSyncSetTimeoutEx(port, ms)
+    else:
+        adsSyncSetTimeout(ms)
 
 class Connection(object):
     """
@@ -549,3 +556,9 @@ class Connection(object):
         :return: True if connection is open
         """
         return self._open
+
+    def set_timeout(self, ms):
+        if linux:
+            adsSyncSetTimeoutEx(self._port, ms)
+        else:
+            adsSyncSetTimeout(ms)

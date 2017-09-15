@@ -566,3 +566,10 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, hNotification, hUser):
 
     adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, hUser,
                       PLCTYPE_UDINT)
+
+def adsSyncSetTimeoutEx(port, nMs):
+    adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeoutEx
+    cms = c_long(nMs)
+    err_code = adsSyncSetTimeoutFct(port, cms)
+    if err_code:
+        raise ADSError(err_code)
