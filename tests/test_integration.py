@@ -336,7 +336,7 @@ class AdsApiTestCase(TestCase):
         requests = self.test_server.request_history
 
         notification, user = ads.add_device_notification(
-            self.endpoint, handle_name, attr, callback 
+            self.endpoint, handle_name, attr, callback
         )
 
         # Assert that Read/Write command was used to get the handle by name
