@@ -32,7 +32,8 @@ def find_version(*file_paths):
 
 
 def platform_is_linux():
-    return sys.platform.startswith('linux')
+    return sys.platform.startswith('linux') or \
+           sys.platform.startswith('darwin')
 
 
 def get_files_rec(directory):
