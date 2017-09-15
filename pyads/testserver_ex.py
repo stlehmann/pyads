@@ -424,13 +424,22 @@ class BasicHandler(AbstractHandler):
         error_code = ('\x00' * 4).encode('utf-8')
         response_data = error_code + response_content
 
-        return AmsResponseData(state, request.ams_header.error_code, response_data)
+        return AmsResponseData(state, request.ams_header.error_code,
+                               response_data)
+
+
+class PLCVariable:
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
 
 
 class AdvancedHandler(AbstractHandler):
 
     def __init__(self):
         self._data = defaultdict(lambda: bytes(16))
+        self._named_data = []
 
     def handle_request(self, request):
         # Extract command id from the request
@@ -472,15 +481,20 @@ class AdvancedHandler(AbstractHandler):
                                            plc_datatype)
             )
 
-            # Create response of repeated 0x0F with a null
-            # terminator for strings
-            response_value = (
-                self._data[(index_group, index_offset)][:plc_datatype]
-            )
+            # value by handle is demanded return from named data store
+            if index_group == constants.ADSIGRP_SYM_VALBYHND:
+
+                response_value = self._named_data[index_offset].value
+
+            else:
+                # Create response of repeated 0x0F with a null
+                # terminator for strings
+                response_value = (
+                    self._data[(index_group, index_offset)][:plc_datatype]
+                )
 
             return (struct.pack('<I', len(response_value)) +
                     response_value)
-
 
         def handle_write():
             data = request.ams_header.data
@@ -495,11 +509,14 @@ class AdvancedHandler(AbstractHandler):
                  'data length={}, value={}')
                 .format(index_group, index_offset, plc_datatype, value)
             )
-            # Parse requested data length
-            response_length = plc_datatype
 
-            # Create response of repeated 0x0F with a null
-            # terminator for strings
+            if index_group == constants.ADSIGRP_SYM_RELEASEHND:
+                return b''
+
+            elif index_group == constants.ADSIGRP_SYM_VALBYHND:
+                self._named_data[index_offset].value = value
+                return b''
+
             self._data[(index_group, index_offset)] = value
 
             # no return value needed
@@ -523,14 +540,34 @@ class AdvancedHandler(AbstractHandler):
                         write_data)
             )
 
-            # read stored data
-            read_data = self._data[(index_group, index_offset)][:read_length]
+            # Get variable handle by name if  demanded
+            # else just return the value stored
+            if index_group == constants.ADSIGRP_SYM_HNDBYNAME:
 
-            # store write data
-            self._data[(index_group, index_offset)] = write_data
+                var_name = write_data.decode()
+
+                # Try to find var name in named vars
+                names = [x.name for x in self._named_data]
+
+                try:
+                    handle = names.index(var_name)
+                except ValueError:
+                    self._named_data.append(
+                        PLCVariable(name=var_name, value=bytes(16))
+                    )
+                    handle = len(self._named_data) - 1
+
+                read_data = struct.pack('<I', handle)
+
+            else:
+
+                # read stored data
+                read_data = self._data[(index_group, index_offset)][:read_length]
+
+                # store write data
+                self._data[(index_group, index_offset)] = write_data
 
             return struct.pack('<I', len(read_data)) + read_data
-
 
         def handle_read_state():
             logger.info('Command received: READ_STATE')
@@ -553,12 +590,12 @@ class AdvancedHandler(AbstractHandler):
         def handle_delete_devicenote():
             logger.info('Command received: DELETE_DEVICE_NOTIFICATION')
             # No response data required
-            return b'' 
+            return b''
 
         def handle_devicenote():
             logger.info('Command received: DEVICE_NOTIFICATION')
             # No response data required
-            return b'' 
+            return b''
 
         # Function map
         function_map = {
