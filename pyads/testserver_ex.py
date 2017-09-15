@@ -430,7 +430,7 @@ class BasicHandler(AbstractHandler):
 class AdvancedHandler(AbstractHandler):
 
     def __init__(self):
-        self._data = {}
+        self._data = defaultdict(lambda: bytes(16))
 
     def handle_request(self, request):
         # Extract command id from the request
@@ -472,23 +472,105 @@ class AdvancedHandler(AbstractHandler):
                                            plc_datatype)
             )
 
+            # Create response of repeated 0x0F with a null
+            # terminator for strings
+            response_value = (
+                self._data[(index_group, index_offset)][:plc_datatype]
+            )
+
+            return (struct.pack('<I', len(response_value)) +
+                    response_value)
+
+
+        def handle_write():
+            data = request.ams_header.data
+
+            index_group = struct.unpack('<I', data[:4])[0]
+            index_offset = struct.unpack('<I', data[4:8])[0]
+            plc_datatype = struct.unpack('<I', data[8:12])[0]
+            value = data[12:(12 + plc_datatype)]
+
+            logger.info(
+                ('Command received: WRITE (index group={}, index offset={}, '
+                 'data length={}, value={}')
+                .format(index_group, index_offset, plc_datatype, value)
+            )
             # Parse requested data length
             response_length = plc_datatype
 
             # Create response of repeated 0x0F with a null
             # terminator for strings
-            response_value = (('\x0F' * (response_length - 1)) +
-                              '\x00').encode('utf-8')
+            self._data[(index_group, index_offset)] = value
 
-            response_content = (struct.pack('<I', len(response_value)) +
-                                response_value)
+            # no return value needed
+            return b''
 
-            return response_content
+        def handle_read_write():
+            data = request.ams_header.data
+
+            # parse the request
+            index_group = struct.unpack('<I', data[:4])[0]
+            index_offset = struct.unpack('<I', data[4:8])[0]
+            read_length = struct.unpack('<I', data[8:12])[0]
+            write_length = struct.unpack('<I', data[12:16])[0]
+            write_data = data[16:(16 + write_length)]
+
+            logger.info(
+                ('Command received: READWRITE '
+                 '(index group={}, index offset={}, read length={}, '
+                 'write length={}, write data={})')
+                .format(index_group, index_offset, read_length, write_length,
+                        write_data)
+            )
+
+            # read stored data
+            read_data = self._data[(index_group, index_offset)][:read_length]
+
+            # store write data
+            self._data[(index_group, index_offset)] = write_data
+
+            return struct.pack('<I', len(read_data)) + read_data
+
+
+        def handle_read_state():
+            logger.info('Command received: READ_STATE')
+            ads_state = struct.pack('<I', constants.ADSSTATE_RUN)
+            # I don't know what an appropriate value for device state is.
+            # I suspect it may be unsued..
+            device_state = struct.pack('<I', 0)
+            return ads_state + device_state
+
+        def handle_writectrl():
+            logger.info('Command received: WRITE_CONTROL')
+            # No response data required
+            return b''
+
+        def handle_add_devicenote():
+            logger.info('Command received: ADD_DEVICE_NOTIFICATION')
+            handle = ('\x0F' * 4).encode('utf-8')
+            return handle
+
+        def handle_delete_devicenote():
+            logger.info('Command received: DELETE_DEVICE_NOTIFICATION')
+            # No response data required
+            return b'' 
+
+        def handle_devicenote():
+            logger.info('Command received: DEVICE_NOTIFICATION')
+            # No response data required
+            return b'' 
 
         # Function map
         function_map = {
             constants.ADSCOMMAND_READDEVICEINFO: handle_read_device_info,
             constants.ADSCOMMAND_READ: handle_read,
+            constants.ADSCOMMAND_WRITE: handle_write,
+            constants.ADSCOMMAND_READWRITE: handle_read_write,
+            constants.ADSCOMMAND_READSTATE: handle_read_state,
+            constants.ADSCOMMAND_WRITECTRL: handle_writectrl,
+            constants.ADSCOMMAND_ADDDEVICENOTE: handle_add_devicenote,
+            constants.ADSCOMMAND_DELDEVICENOTE: handle_delete_devicenote,
+            constants.ADSCOMMAND_DEVICENOTE: handle_devicenote,
         }
 
         # Try to map the command id to a function, else return error code
