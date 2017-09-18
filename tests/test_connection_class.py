@@ -334,7 +334,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             pass
 
         handle_name = 'TestHandle'
-        attr = pyads.NotificationAttrib()
+        attr = pyads.NotificationAttrib(length=4)
         requests = self.test_server.request_history
 
         with self.plc:

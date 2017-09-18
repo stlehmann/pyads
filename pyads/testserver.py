@@ -14,7 +14,6 @@ Author: David Browne <davidabrowne@gmail.com>
 
 """
 from __future__ import absolute_import
-from abc import ABCMeta, abstractmethod
 import atexit
 import logging
 import select
@@ -323,12 +322,11 @@ class AdsClientConnection(threading.Thread):
         return AmsPacket(tcp_header, ams_header)
 
 
-class AbstractHandler(metaclass=ABCMeta):
+class AbstractHandler:
     """
     Abstract Handler class to provide a base class for handling requests.
 
     """
-    @abstractmethod
     def handle_request(self, request):
         """
         :param AmsPacket request: The request data received from the client
@@ -336,7 +334,7 @@ class AbstractHandler(metaclass=ABCMeta):
         :return: Data needed to construct the AMS response packet
 
         """
-        pass
+        raise not NotImplementedError()
 
 
 class BasicHandler(AbstractHandler):

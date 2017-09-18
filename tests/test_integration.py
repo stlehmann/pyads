@@ -332,7 +332,7 @@ class AdsApiTestCase(TestCase):
             pass
 
         handle_name = 'TestHandle'
-        attr = NotificationAttrib()
+        attr = NotificationAttrib(length=4)
         requests = self.test_server.request_history
 
         notification, user = ads.add_device_notification(
