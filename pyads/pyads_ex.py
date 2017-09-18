@@ -510,7 +510,7 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
 
 
 def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
-                                      callback, userInt = None):
+                                      callback, user_handle=None):
     global callback_store
 
     adsSyncAddDeviceNotificationReqFct = \
@@ -524,10 +524,11 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
     nIndexOffset = ctypes.c_ulong(hnl)
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
+
     nHUser = ctypes.c_ulong(hnl)
-    if userInt != None and type(userInt) in [int, long]:
-        nHUser = ctypes.c_ulong(userInt)
-    
+    if user_handle is not None:
+        nHUser = ctypes.c_ulong(user_handle)
+
     if LNOTEFUNC is None:
         raise TypeError("Callback function type can't be None")
     adsSyncAddDeviceNotificationReqFct.argtypes = [
@@ -552,19 +553,21 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
     return (pNotification.value, hnl)
 
 
-def adsSyncDelDeviceNotificationReqEx(port, adr, hNotification, hUser):
+def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
+                                      user_handle):
+
     adsSyncDelDeviceNotificationReqFct = \
         _adsDLL.AdsSyncDelDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    nHNotification = ctypes.c_ulong(hNotification)
+    nHNotification = ctypes.c_ulong(notification_handle)
     err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr,
                                                   nHNotification)
-    callback_store[hNotification] = None
+    callback_store[notification_handle] = None
     if err_code:
         raise ADSError(err_code)
 
-    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, hUser,
+    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle,
                       PLCTYPE_UDINT)
 
 def adsSyncSetTimeoutEx(port, nMs):

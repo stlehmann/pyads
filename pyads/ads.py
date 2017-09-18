@@ -256,25 +256,59 @@ def delete_route(adr):
     return adsDelRoute(adr.netIdStruct())
 
 
-def add_device_notification(adr, data_name, attr, callback, userInt = None):
+def add_device_notification(adr, data_name, attr, callback, user_handle=None):
+    """
+    :summary: Add a device notification
+
+    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
+        entry which is to be removed from the router.
+    :param str data_name: PLC storage address
+    :param pyads.structs.NotificationAttrib attr: object that contains
+        all the attributes for the definition of a notification
+    :param callback: callback function that gets executed on in the event
+        of a notification
+
+    :rtype: (int, int)
+    :returns: notification handle, user handle
+
+    Save the notification handle and the user handle on creating a
+    notification if you want to be able to remove the notification
+    later in your code.
+
+    """
     if linux:
         return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr,
-                                                 callback, userInt)
+                                                 callback, user_handle)
     else:
-        return adsSyncAddDeviceNotificationReq(adr, data_name, attr, callback, userInt)
+        return adsSyncAddDeviceNotificationReq(adr, data_name, attr,
+                                               callback, user_handle)
 
 
-def del_device_notification(adr, notification, hUser):
+def del_device_notification(adr, notification_handle, user_handle):
+    """
+    :summary: Remove a device notification
+
+    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
+        entry which is to be removed from the router.
+    :param notification_handle: address of the variable that contains
+        the handle of the notification
+    :param user_handle: user handle
+
+    """
     if linux:
-        adsSyncDelDeviceNotificationReqEx(port, adr, notification, hUser)
+        adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
+                                          user_handle)
     else:
-        adsSyncDelDeviceNotificationReq(adr, notification, hUser)
+        adsSyncDelDeviceNotificationReq(adr, notification_handle,
+                                        user_handle)
+
 
 def set_timeout(ms):
     if linux:
         adsSyncSetTimeoutEx(port, ms)
     else:
         adsSyncSetTimeout(ms)
+
 
 class Connection(object):
     """
@@ -288,6 +322,7 @@ class Connection(object):
         to first 4 parts of the Ams net id.
 
     """
+
     def __init__(self, ams_net_id, ams_net_port, ip_address=None):
         self._port = None
         self._adr = AmsAddr(ams_net_id, ams_net_port)
@@ -488,7 +523,8 @@ class Connection(object):
             return adsSyncWriteByName(self._adr, data_name, value,
                                       plc_datatype)
 
-    def add_device_notification(self, data_name, attr, callback, userInt = None):
+    def add_device_notification(self, data_name, attr, callback,
+                                user_handle=None):
         """
         :summary: Add a device notification
 
@@ -508,16 +544,24 @@ class Connection(object):
         **Usage**:
 
             >>> import pyads
+            >>> from ctypes import size_of
+            >>>
+            >>> # Connect to the local TwinCAT PLC
             >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
             >>>
-            >>> # Create callback function
+            >>> # Create callback function that prints the value
             >>> def mycallback(adr, notification, user):
-            >>>     pass
+            >>>     contents = notification.contents
+            >>>     value = next(
+            >>>         map(int,
+            >>>             bytearray(contents.data)[0:contents.cbSampleSize])
+            >>>     )
+            >>>     print(value)
             >>>
             >>> with plc:
+            >>>     # Add notification with default settings
+            >>>     attr = pyads.NotificationAttrib(size_of(pyads.PLCTYPE_INT))
             >>>
-            >>>     # Add notification
-            >>>     attr = pyads.NotificationAttrib()
             >>>     hnotification, huser = plc.add_device_notification(
             >>>         adr, attr, mycallback)
             >>>
@@ -527,26 +571,27 @@ class Connection(object):
         """
         if linux:
             return adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
-                                                     data_name, attr, callback, userInt)
+                                                     data_name, attr, callback,
+                                                     user_handle)
         else:
             return adsSyncAddDeviceNotificationReq(self._adr, data_name,
-                                                   attr, callback, userInt)
+                                                   attr, callback, user_handle)
 
-    def del_device_notification(self, notification, hUser):
+    def del_device_notification(self, notification_handle, user_handle):
         """
         :summary: Remove a device notification
 
-        :param notification: address of the variable that contains the handle
-            of the notification
-        :param hUser: user handle
+        :param notification_handle: address of the variable that contains
+            the handle of the notification
+        :param user_handle: user handle
 
         """
         if linux:
             adsSyncDelDeviceNotificationReqEx(self._port, self._adr,
-                                              notification, hUser)
+                                              notification_handle, user_handle)
         else:
-            adsSyncDelDeviceNotificationReq(self._adr, notification,
-                                            hUser)
+            adsSyncDelDeviceNotificationReq(self._adr, notification_handle,
+                                            user_handle)
 
     @property
     def is_open(self):

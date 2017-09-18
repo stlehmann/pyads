@@ -403,7 +403,8 @@ callback_store = dict()
 
 
 @win32_only
-def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback, userInt = None):
+def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback,
+                                    user_handle=None):
     global callback_store   # use global variable to prevent garbage collection
     adsSyncAddDeviceNotificationReqFct = \
         _adsDLL.AdsSyncAddDeviceNotificationReq
@@ -418,9 +419,9 @@ def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback, userI
 
     pNotification = ctypes.c_ulong()
     nHUser = ctypes.c_ulong(hnl)
-    if userInt != None and type(userInt) in [int, long]:
-        nHUser = ctypes.c_ulong(userInt)
-        
+    if user_handle is not None:
+        nHUser = ctypes.c_ulong(user_handle)
+
     if NOTEFUNC is None:
         raise TypeError("Callback function type can't be None")
     adsSyncAddDeviceNotificationReqFct.argtypes = [
@@ -445,18 +446,19 @@ def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback, userI
 
 
 @win32_only
-def adsSyncDelDeviceNotificationReq(adr, hNotification, hUser):
+def adsSyncDelDeviceNotificationReq(adr, notification_handle, user_handle):
     adsSyncDelDeviceNotificationReqFct = \
         _adsDLL.AdsSyncDelDeviceNotificationReq
 
     pAmsAddr = pointer(adr.amsAddrStruct())
-    nHNotification = c_ulong(hNotification)
+    nHNotification = c_ulong(notification_handle)
     err_code = adsSyncDelDeviceNotificationReqFct(pAmsAddr, nHNotification)
-    callback_store[hNotification] = None
+    callback_store[notification_handle] = None
     if err_code:
         raise ADSError(err_code)
 
-    adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, hUser, PLCTYPE_UDINT)
+    adsSyncWriteReq(adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
+
 
 @win32_only
 def adsSyncSetTimeout(nMs):
