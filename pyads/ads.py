@@ -540,7 +540,7 @@ class Connection(object):
         else:
             adsSyncDelDeviceNotificationReq(self._adr, notification,
                                             hUser)
-    
+
     @property
     def is_open(self):
         """

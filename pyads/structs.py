@@ -10,6 +10,7 @@
 """
 from ctypes import c_byte, c_short, Structure, c_ubyte, c_ushort, c_ulong, \
     c_ulonglong, POINTER, Union, c_uint32, c_uint64
+from .constants import ADSTRANS_SERVERONCHA
 
 
 class SAdsVersion(Structure):
@@ -147,8 +148,8 @@ class AmsAddr(object):
 
 
 class NotificationAttrib(object):
-    def __init__(self, length=None, trans_mode=None, max_delay=None,
-                 cycle_time=None):
+    def __init__(self, length, trans_mode=ADSTRANS_SERVERONCHA,
+                 max_delay=100, cycle_time=100):
         self._attrib = SAdsNotificationAttrib()
         if length:
             self._attrib.cbLength = length
