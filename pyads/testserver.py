@@ -1,5 +1,5 @@
 """
-Simple ADS TCP/IP server implementation to allow for functional testing of
+Extended ADS TCP/IP server implementation to allow for functional testing of
 the ADS protocol without connection to a physical device.
 
 Consists of a server thread which will listen for connections and delegate
@@ -14,6 +14,7 @@ Author: David Browne <davidabrowne@gmail.com>
 
 """
 from __future__ import absolute_import
+from abc import ABCMeta, abstractmethod
 import atexit
 import logging
 import select
@@ -21,7 +22,7 @@ import socket
 import struct
 import threading
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from pyads import constants
 
@@ -74,7 +75,7 @@ class AdsTestServer(threading.Thread):
     def __init__(self, handler=None, ip_address='', port=ADS_PORT,
                  logging=True, *args, **kwargs):
 
-        self.handler = handler or default_handler
+        self.handler = handler or BasicHandler()
         self.ip_address = ip_address
         self.port = port
         self._run = True
@@ -162,8 +163,10 @@ class AdsTestServer(threading.Thread):
 
                 # Delegate handling of connection to client thread
                 client_thread = AdsClientConnection(
-                    handler=self.handler, client=client, address=address,
-                    server=self
+                    handler=self.handler,
+                    client=client,
+                    address=address,
+                    server=self,
                 )
                 client_thread.daemon = True
                 client_thread.start()
@@ -236,7 +239,7 @@ class AdsClientConnection(threading.Thread):
             self.server.request_history.append(request_packet)
 
             # Delegate request handling and get response data
-            response = self.handler(request_packet)
+            response = self.handler.handle_request(request_packet)
 
             if isinstance(response, (AmsResponseData, )):
                 # Convert request, response data (tuples) to a valid ADS
@@ -320,106 +323,325 @@ class AdsClientConnection(threading.Thread):
         return AmsPacket(tcp_header, ams_header)
 
 
-def default_handler(request):
+class AbstractHandler(metaclass=ABCMeta):
     """
-    :summary: Default request handler to print the request data.
-
-    :param AmsPacket request: The request data received from the client
-    :rtype: AmsResponseData
-    :return: Data needed to construct the AMS response packet
+    Abstract Handler class to provide a base class for handling requests.
 
     """
-    # Extract command id from the request
-    command_id_bytes = request.ams_header.command_id
-    command_id = struct.unpack('<H', command_id_bytes)[0]
+    @abstractmethod
+    def handle_request(self, request):
+        """
+        :param AmsPacket request: The request data received from the client
+        :rtype: AmsResponseData
+        :return: Data needed to construct the AMS response packet
 
-    # Set AMS state correctly for response
-    state = struct.unpack('<H', request.ams_header.state_flags)[0]
-    state = state | 0x0001  # Set response flag
-    state = struct.pack('<H', state)
+        """
+        pass
 
-    # Handle request
-    if command_id == constants.ADSCOMMAND_READDEVICEINFO:
-        logger.info('Command received: READ_DEVICE_INFO')
 
-        # Create dummy response: version 1.2.3, device name 'TestServer'
-        major_version = '\x01'.encode('utf-8')
-        minor_version = '\x02'.encode('utf-8')
-        version_build = '\x03\x00'.encode('utf-8')
-        device_name = 'TestServer\x00'.encode('utf-8')
+class BasicHandler(AbstractHandler):
+    """
+    :summary: Basic request handler to print the request data and
+        return some default values.
 
-        response_content = major_version + minor_version + version_build + \
-            device_name
+    """
+    def handle_request(self, request):
+        # Extract command id from the request
+        command_id_bytes = request.ams_header.command_id
+        command_id = struct.unpack('<H', command_id_bytes)[0]
 
-    elif command_id == constants.ADSCOMMAND_READ:
-        logger.info('Command received: READ')
-        # Parse requested data length
-        response_length = struct.unpack('<I', request.ams_header.data[8:12])[0]
-        # Create response of repeated 0x0F with a null terminator for strings
-        response_value = ((('\x0F' * (response_length - 1)) + '\x00')
-                          .encode('utf-8'))
-        response_content = (struct.pack('<I', len(response_value)) +
-                            response_value)
+        # Set AMS state correctly for response
+        state = struct.unpack('<H', request.ams_header.state_flags)[0]
+        state = state | 0x0001  # Set response flag
+        state = struct.pack('<H', state)
 
-    elif command_id == constants.ADSCOMMAND_WRITE:
-        logger.info('Command received: WRITE')
-        # No response data required
-        response_content = ''.encode('utf-8')
+        # Handle request
+        if command_id == constants.ADSCOMMAND_READDEVICEINFO:
+            logger.info('Command received: READ_DEVICE_INFO')
 
-    elif command_id == constants.ADSCOMMAND_READSTATE:
-        logger.info('Command received: READ_STATE')
-        ads_state = struct.pack('<I', constants.ADSSTATE_RUN)
-        # I don't know what an appropriate value for device state is.
-        # I suspect it may be unsued..
-        device_state = struct.pack('<I', 0)
+            # Create dummy response: version 1.2.3, device name 'TestServer'
+            major_version = '\x01'.encode('utf-8')
+            minor_version = '\x02'.encode('utf-8')
+            version_build = '\x03\x00'.encode('utf-8')
+            device_name = 'TestServer\x00'.encode('utf-8')
 
-        response_content = ads_state + device_state
+            response_content = major_version + minor_version + version_build + device_name
 
-    elif command_id == constants.ADSCOMMAND_WRITECTRL:
-        logger.info('Command received: WRITE_CONTROL')
-        # No response data required
-        response_content = ''.encode('utf-8')
+        elif command_id == constants.ADSCOMMAND_READ:
+            logger.info('Command received: READ')
+            # Parse requested data length
+            response_length = struct.unpack('<I', request.ams_header.data[8:12])[0]
+            # Create response of repeated 0x0F with a null terminator for strings
+            response_value = (('\x0F' * (response_length - 1)) + '\x00').encode('utf-8')
+            response_content = struct.pack('<I', len(response_value)) + response_value
 
-    elif command_id == constants.ADSCOMMAND_ADDDEVICENOTE:
-        logger.info('Command received: ADD_DEVICE_NOTIFICATION')
-        handle = ('\x0F' * 4).encode('utf-8')
-        response_content = handle
+        elif command_id == constants.ADSCOMMAND_WRITE:
+            logger.info('Command received: WRITE')
+            # No response data required
+            response_content = ''.encode('utf-8')
 
-    elif command_id == constants.ADSCOMMAND_DELDEVICENOTE:
-        logger.info('Command received: DELETE_DEVICE_NOTIFICATION')
-        # No response data required
-        response_content = ''.encode('utf-8')
+        elif command_id == constants.ADSCOMMAND_READSTATE:
+            logger.info('Command received: READ_STATE')
+            ads_state = struct.pack('<I', constants.ADSSTATE_RUN)
+            # I don't know what an appropriate value for device state is.
+            # I suspect it may be unsued..
+            device_state = struct.pack('<I', 0)
 
-    elif command_id == constants.ADSCOMMAND_DEVICENOTE:
-        logger.info('Command received: DEVICE_NOTIFICATION')
-        # No response data required
-        response_content = ''.encode('utf-8')
+            response_content = ads_state + device_state
 
-    elif command_id == constants.ADSCOMMAND_READWRITE:
-        logger.info('Command received: READ_WRITE')
-        # Parse requested data length
-        response_length = struct.unpack('<I', request.ams_header.data[8:12])[0]
-        # Create response of repeated 0x0F with a null terminator for strings
-        response_value = ((('\x0F' * (response_length - 1)) + '\x00')
-                          .encode('utf-8'))
-        response_content = (struct.pack('<I', len(response_value)) +
-                            response_value)
+        elif command_id == constants.ADSCOMMAND_WRITECTRL:
+            logger.info('Command received: WRITE_CONTROL')
+            # No response data required
+            response_content = ''.encode('utf-8')
 
-    else:
-        logger.info('Unknown Command: {0}'.format(hex(command_id)))
-        # Set error code to 'unknown command ID'
-        error_code = '\x08\x00\x00\x00'.encode('utf-8')
-        return AmsResponseData(state, error_code, ''.encode('utf-8'))
+        elif command_id == constants.ADSCOMMAND_ADDDEVICENOTE:
+            logger.info('Command received: ADD_DEVICE_NOTIFICATION')
+            handle = ('\x0F' * 4).encode('utf-8')
+            response_content = handle
 
-    # Set no error in response
-    error_code = ('\x00' * 4).encode('utf-8')
-    response_data = error_code + response_content
+        elif command_id == constants.ADSCOMMAND_DELDEVICENOTE:
+            logger.info('Command received: DELETE_DEVICE_NOTIFICATION')
+            # No response data required
+            response_content = ''.encode('utf-8')
 
-    return AmsResponseData(state, request.ams_header.error_code, response_data)
+        elif command_id == constants.ADSCOMMAND_DEVICENOTE:
+            logger.info('Command received: DEVICE_NOTIFICATION')
+            # No response data required
+            response_content = ''.encode('utf-8')
+
+        elif command_id == constants.ADSCOMMAND_READWRITE:
+            logger.info('Command received: READ_WRITE')
+            # Parse requested data length
+            response_length = struct.unpack('<I', request.ams_header.data[8:12])[0]
+            # Create response of repeated 0x0F with a null terminator for strings
+            response_value = (('\x0F' * (response_length - 1)) + '\x00').encode('utf-8')
+            response_content = struct.pack('<I', len(response_value)) + response_value
+
+        else:
+            logger.info('Unknown Command: {0}'.format(hex(command_id)))
+            # Set error code to 'unknown command ID'
+            error_code = '\x08\x00\x00\x00'.encode('utf-8')
+            return AmsResponseData(state, error_code, ''.encode('utf-8'))
+
+        # Set no error in response
+        error_code = ('\x00' * 4).encode('utf-8')
+        response_data = error_code + response_content
+
+        return AmsResponseData(state, request.ams_header.error_code,
+                               response_data)
+
+
+class PLCVariable:
+    """ Storage item for named data """
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+
+class AdvancedHandler(AbstractHandler):
+    """
+    The advanced handler allows to store and restore data via read, write and
+    read_write functions. There are two separate storage areas access by
+    address and access by name. The purpose of this handler to test read/write
+    access and test basic interaction.
+
+    """
+
+    def __init__(self):
+        self._data = defaultdict(lambda: bytes(16))
+        self._named_data = []
+
+    def handle_request(self, request):
+        # Extract command id from the request
+        command_id_bytes = request.ams_header.command_id
+        command_id = struct.unpack('<H', command_id_bytes)[0]
+
+        # Set AMS state correctly for response
+        state = struct.unpack('<H', request.ams_header.state_flags)[0]
+        state = state | 0x0001  # Set response flag
+        state = struct.pack('<H', state)
+
+        def handle_read_device_info():
+            """
+            Create dummy response: version 1.2.3, device name 'TestServer'
+
+            """
+            logger.info('Command received: READ_DEVICE_INFO')
+
+            major_version = '\x01'.encode('utf-8')
+            minor_version = '\x02'.encode('utf-8')
+            version_build = '\x03\x00'.encode('utf-8')
+            device_name = 'TestServer\x00'.encode('utf-8')
+
+            response_content = (major_version + minor_version +
+                                version_build + device_name)
+
+            return response_content
+
+        def handle_read():
+            data = request.ams_header.data
+
+            index_group = struct.unpack('<I', data[:4])[0]
+            index_offset = struct.unpack('<I', data[4:8])[0]
+            plc_datatype = struct.unpack('<I', data[8:12])[0]
+
+            logger.info(
+                ('Command received: READ (index group={}, index offset={}, '
+                 'data length={})').format(index_group, index_offset,
+                                           plc_datatype)
+            )
+
+            # value by handle is demanded return from named data store
+            if index_group == constants.ADSIGRP_SYM_VALBYHND:
+
+                response_value = self._named_data[index_offset].value
+
+            else:
+                # Create response of repeated 0x0F with a null
+                # terminator for strings
+                response_value = (
+                    self._data[(index_group, index_offset)][:plc_datatype]
+                )
+
+            return (struct.pack('<I', len(response_value)) +
+                    response_value)
+
+        def handle_write():
+            data = request.ams_header.data
+
+            index_group = struct.unpack('<I', data[:4])[0]
+            index_offset = struct.unpack('<I', data[4:8])[0]
+            plc_datatype = struct.unpack('<I', data[8:12])[0]
+            value = data[12:(12 + plc_datatype)]
+
+            logger.info(
+                ('Command received: WRITE (index group={}, index offset={}, '
+                 'data length={}, value={}')
+                .format(index_group, index_offset, plc_datatype, value)
+            )
+
+            if index_group == constants.ADSIGRP_SYM_RELEASEHND:
+                return b''
+
+            elif index_group == constants.ADSIGRP_SYM_VALBYHND:
+                self._named_data[index_offset].value = value
+                return b''
+
+            self._data[(index_group, index_offset)] = value
+
+            # no return value needed
+            return b''
+
+        def handle_read_write():
+            data = request.ams_header.data
+
+            # parse the request
+            index_group = struct.unpack('<I', data[:4])[0]
+            index_offset = struct.unpack('<I', data[4:8])[0]
+            read_length = struct.unpack('<I', data[8:12])[0]
+            write_length = struct.unpack('<I', data[12:16])[0]
+            write_data = data[16:(16 + write_length)]
+
+            logger.info(
+                ('Command received: READWRITE '
+                 '(index group={}, index offset={}, read length={}, '
+                 'write length={}, write data={})')
+                .format(index_group, index_offset, read_length, write_length,
+                        write_data)
+            )
+
+            # Get variable handle by name if  demanded
+            # else just return the value stored
+            if index_group == constants.ADSIGRP_SYM_HNDBYNAME:
+
+                var_name = write_data.decode()
+
+                # Try to find var name in named vars
+                names = [x.name for x in self._named_data]
+
+                try:
+                    handle = names.index(var_name)
+                except ValueError:
+                    self._named_data.append(
+                        PLCVariable(name=var_name, value=bytes(16))
+                    )
+                    handle = len(self._named_data) - 1
+
+                read_data = struct.pack('<I', handle)
+
+            else:
+
+                # read stored data
+                read_data = self._data[(index_group, index_offset)][:read_length]
+
+                # store write data
+                self._data[(index_group, index_offset)] = write_data
+
+            return struct.pack('<I', len(read_data)) + read_data
+
+        def handle_read_state():
+            logger.info('Command received: READ_STATE')
+            ads_state = struct.pack('<I', constants.ADSSTATE_RUN)
+            # I don't know what an appropriate value for device state is.
+            # I suspect it may be unsued..
+            device_state = struct.pack('<I', 0)
+            return ads_state + device_state
+
+        def handle_writectrl():
+            logger.info('Command received: WRITE_CONTROL')
+            # No response data required
+            return b''
+
+        def handle_add_devicenote():
+            logger.info('Command received: ADD_DEVICE_NOTIFICATION')
+            handle = ('\x0F' * 4).encode('utf-8')
+            return handle
+
+        def handle_delete_devicenote():
+            logger.info('Command received: DELETE_DEVICE_NOTIFICATION')
+            # No response data required
+            return b''
+
+        def handle_devicenote():
+            logger.info('Command received: DEVICE_NOTIFICATION')
+            # No response data required
+            return b''
+
+        # Function map
+        function_map = {
+            constants.ADSCOMMAND_READDEVICEINFO: handle_read_device_info,
+            constants.ADSCOMMAND_READ: handle_read,
+            constants.ADSCOMMAND_WRITE: handle_write,
+            constants.ADSCOMMAND_READWRITE: handle_read_write,
+            constants.ADSCOMMAND_READSTATE: handle_read_state,
+            constants.ADSCOMMAND_WRITECTRL: handle_writectrl,
+            constants.ADSCOMMAND_ADDDEVICENOTE: handle_add_devicenote,
+            constants.ADSCOMMAND_DELDEVICENOTE: handle_delete_devicenote,
+            constants.ADSCOMMAND_DEVICENOTE: handle_devicenote,
+        }
+
+        # Try to map the command id to a function, else return error code
+        try:
+
+            response_content = function_map[command_id]()
+
+        except KeyError:
+            logger.info('Unknown Command: {0}'.format(hex(command_id)))
+            # Set error code to 'unknown command ID'
+            error_code = '\x08\x00\x00\x00'.encode('utf-8')
+            return AmsResponseData(state, error_code, ''.encode('utf-8'))
+
+        # Set no error in response
+        error_code = ('\x00' * 4).encode('utf-8')
+        response_data = error_code + response_content
+
+        return AmsResponseData(state, request.ams_header.error_code,
+                               response_data)
 
 
 if __name__ == '__main__':
-    server = AdsTestServer()
+    server = AdsTestServer(handler=AdvancedHandler())
     try:
         server.start()
         server.join()
