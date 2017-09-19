@@ -154,7 +154,7 @@ can be seen here:
 >>>
 >>> # To remove the device notification just use the del_device_notication
     # function.
->>> plc.del_device_notification(handles)
+>>> plc.del_device_notification(*handles)
 ```
 
 This examples uses the default values for NotificationAttrib. The default

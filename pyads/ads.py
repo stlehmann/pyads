@@ -5,6 +5,8 @@
     :license: MIT, see LICENSE for details
 
 """
+from ctypes import memmove, addressof, c_ubyte
+
 from .utils import platform_is_linux
 
 from .pyads import (
@@ -607,3 +609,29 @@ class Connection(object):
             adsSyncSetTimeoutEx(self._port, ms)
         else:
             adsSyncSetTimeout(ms)
+
+
+def notification(datatype):
+
+    def notification_decorator(func):
+
+        def func_wrapper(addr, notification, user):
+            contents = notification.contents
+
+            if datatype == str:
+                dest = (c_ubyte * contents.cbSampleSize)()
+                memmove(addressof(dest), addressof(contents.data),
+                        contents.cbSampleSize)
+                # I had some NULL bytes in my string...
+                value = bytearray(dest).split(b'\x00')[0].decode('utf-8')
+            else:
+
+                value = next(map(
+                    datatype, bytearray(contents.data)[0:contents.cbSampleSize]
+                ))
+
+            return func(value)
+
+        return func_wrapper
+
+    return notification_decorator
