@@ -8,6 +8,7 @@
 from ctypes import memmove, addressof, c_ubyte
 
 from .utils import platform_is_linux
+from .filetimes import filetime_to_dt
 
 from .pyads import (
     adsPortOpen, adsPortClose,
@@ -333,6 +334,7 @@ class Connection(object):
         else:
             self.ip_address = ip_address
         self._open = False
+        self._notifications = {}
 
     def __enter__(self):
         self.open()
@@ -572,12 +574,18 @@ class Connection(object):
 
         """
         if linux:
-            return adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
-                                                     data_name, attr, callback,
-                                                     user_handle)
+            notification_handle, user_handle = (
+                adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
+                                                  data_name, attr, callback,
+                                                  user_handle)
+            )
         else:
-            return adsSyncAddDeviceNotificationReq(self._adr, data_name,
-                                                   attr, callback, user_handle)
+            notification_handle, user_handle = (
+                adsSyncAddDeviceNotificationReq(self._adr, data_name,
+                                                attr, callback, user_handle)
+            )
+
+        self._notifications[notification_handle] = data_name
 
     def del_device_notification(self, notification_handle, user_handle):
         """
@@ -610,28 +618,75 @@ class Connection(object):
         else:
             adsSyncSetTimeout(ms)
 
+    def notification(self, datatype=None):
+        """
+        **Decorator**
 
-def notification(datatype):
+        A decorator that can be used for callback functions in order to
+        convert the data of the NotificationHeader into Python types.
 
-    def notification_decorator(func):
+        At the moment only basic Python types (int, float, str) are supported.
 
-        def func_wrapper(addr, notification, user):
-            contents = notification.contents
+        :param datatype: Python datatype of the result value (int, float, str).
+            If None is given the raw value will be returned.
 
-            if datatype == str:
-                dest = (c_ubyte * contents.cbSampleSize)()
-                memmove(addressof(dest), addressof(contents.data),
-                        contents.cbSampleSize)
-                # I had some NULL bytes in my string...
-                value = bytearray(dest).split(b'\x00')[0].decode('utf-8')
-            else:
+        The callback functions need to be of the following type:
 
-                value = next(map(
-                    datatype, bytearray(contents.data)[0:contents.cbSampleSize]
-                ))
+        >>> def callback(handle, name, timestamp, value)
 
-            return func(value)
+        * `handle`: the notification handle
+        * `name`: the variable name
+        * `timestamp`: the timestamp as datetime value
+        * `value`: the converted value of the variable
 
-        return func_wrapper
+        **Usage**:
 
-    return notification_decorator
+            >>> import pyads
+            >>>
+            >>> plc = pyads.Connection('172.18.3.25.1.1', 851)
+            >>>
+            >>>
+            >>> @plc.notification(str)
+            >>> def callback(handle, name, timestamp, value):
+            >>>     print(handle, name, timestamp, value)
+            >>>
+            >>>
+            >>> with plc:
+            >>>    attr = pyads.NotificationAttrib(20,
+            >>>                                    pyads.ADSTRANS_SERVERCYCLE)
+            >>>    handles = plc.add_device_notification('GVL.test', attr,
+            >>>                                          callback)
+            >>>    while True:
+            >>>        pass
+
+        """
+
+        def notification_decorator(func):
+
+            def func_wrapper(addr, notification, user):
+                contents = notification.contents
+
+                if datatype is None:
+                    value = contents.data
+
+                elif datatype == str:
+                    dest = (c_ubyte * contents.cbSampleSize)()
+                    memmove(addressof(dest), addressof(contents.data),
+                            contents.cbSampleSize)
+                    # I had some NULL bytes in my string...
+                    value = bytearray(dest).split(b'\x00')[0].decode('utf-8')
+                else:
+
+                    value = next(map(
+                        datatype,
+                        bytearray(contents.data)[0:contents.cbSampleSize]
+                    ))
+
+                dt = filetime_to_dt(contents.nTimeStamp)
+                data_name = self._notifications.get(contents.hNotification)
+
+                return func(contents.hNotification, data_name, dt, value)
+
+            return func_wrapper
+
+        return notification_decorator

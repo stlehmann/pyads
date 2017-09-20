@@ -5,8 +5,7 @@ from .structs import AmsAddr, NotificationAttrib
 from .ads import open_port, close_port, get_local_address, read_state, \
     write_control, read_device_info, write, read_write, read, \
     read_by_name, write_by_name, add_route, delete_route, \
-    add_device_notification, del_device_notification, Connection, \
-    notification
+    add_device_notification, del_device_notification, Connection
 
 from .constants import PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_DATE, \
     PLCTYPE_DINT, PLCTYPE_DT, PLCTYPE_DWORD, PLCTYPE_INT, PLCTYPE_LREAL, \

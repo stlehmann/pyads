@@ -8,7 +8,6 @@
     :Author: David Browne <davidabrowne@gmail.com>
     :license: MIT, see LICENSE for details
 
-
 """
 import ctypes
 import os
@@ -570,9 +569,10 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
     adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle,
                       PLCTYPE_UDINT)
 
+
 def adsSyncSetTimeoutEx(port, nMs):
     adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeoutEx
-    cms = c_long(nMs)
+    cms = ctypes.c_long(nMs)
     err_code = adsSyncSetTimeoutFct(port, cms)
     if err_code:
         raise ADSError(err_code)
