@@ -1,5 +1,6 @@
 import struct
 from ..structs import SAmsNetId
+from ..filetimes import filetime_to_dt, dt_to_filetime
 
 
 class AmsTcpHeader:
@@ -63,5 +64,32 @@ class AmsHeader:
             struct.pack('<I', self.length) +
             struct.pack('<I', self.error_code) +
             struct.pack('<I', self.invoke_id) +
+            self.data
+        )
+
+
+class AdsNotificationHeader:
+
+    def __init__(self, notification_handle, timestamp, sample_size, data):
+
+        self.notification_handle = notification_handle
+        self.timestamp = timestamp
+        self.sample_size = sample_size
+        self.data = data
+
+    @staticmethod
+    def from_bytes(data):
+        return AdsNotificationHeader(
+            notification_handle=struct.unpack('<I', data[0:4])[0],
+            timestamp=filetime_to_dt(struct.unpack('<Q', data[4:12])[0]),
+            sample_size=struct.unpack('<I', data[12:16])[0],
+            data=data[16:]
+        )
+
+    def to_bytes(self):
+        return (
+            struct.pack('<I', self.notification_handle) +
+            struct.pack('<Q', dt_to_filetime(self.timestamp)) +
+            struct.pack('<I', self.sample_size) +
             self.data
         )

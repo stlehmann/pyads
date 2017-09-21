@@ -1,8 +1,9 @@
 import unittest
-
+import datetime
 import pyads
 from pyads.testserver_ex import structs
 from pyads.structs import AmsAddr
+from pyads.filetimes import dt_to_filetime, filetime_to_dt
 
 
 class TestserverExStructsTestCase(unittest.TestCase):
@@ -59,6 +60,24 @@ class TestserverExStructsTestCase(unittest.TestCase):
         self.assertEqual(header1.length, header2.length)
         self.assertEqual(header1.error_code, header2.error_code)
         self.assertEqual(header1.invoke_id, header2.invoke_id)
+        self.assertEqual(header1.data, header2.data)
+
+    def test_adsnotificationheader(self):
+        header1 = structs.AdsNotificationHeader(
+            notification_handle=1,
+            timestamp=datetime.datetime.utcnow(),
+            sample_size=10,
+            data=bytearray(b'\x00' * 10)
+        )
+
+        data_bytes = header1.to_bytes()
+        header2 = structs.AdsNotificationHeader.from_bytes(data_bytes)
+
+        self.assertEqual(header1.notification_handle,
+                         header2.notification_handle)
+        self.assertEqual(header1.timestamp.utctimetuple(),
+                         header2.timestamp.utctimetuple())
+        self.assertEqual(header1.sample_size, header2.sample_size)
         self.assertEqual(header1.data, header2.data)
 
 
