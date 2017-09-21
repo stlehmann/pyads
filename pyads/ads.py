@@ -586,6 +586,7 @@ class Connection(object):
             )
 
         self._notifications[notification_handle] = data_name
+        return notification_handle, user_handle
 
     def del_device_notification(self, notification_handle, user_handle):
         """

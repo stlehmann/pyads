@@ -16,7 +16,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_server = AdsTestServer(logging=False)
+        cls.test_server = AdsTestServer(logging=True)
         cls.test_server.start()
 
         # wait a bit otherwise error might occur
@@ -333,8 +333,8 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         def callback(adr, notification, user):
             pass
 
-        handle_name = 'TestHandle'
-        attr = pyads.NotificationAttrib(length=4)
+        handle_name = 'test'
+        attr = pyads.NotificationAttrib(8)
         requests = self.test_server.request_history
 
         with self.plc:
