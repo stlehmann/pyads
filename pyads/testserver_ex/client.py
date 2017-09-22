@@ -2,6 +2,7 @@ import threading
 import atexit
 import logging
 import select
+from .structs import AmsPacket
 
 
 logger = logging.getLogger(__name__)
@@ -43,8 +44,22 @@ class AdsClientConnection(threading.Thread):
                 continue
 
             data, _ = self.client.recvfrom(4096)
-            logger.info(data)
 
             if not data:
                 self.close()
                 continue
+            
+            logger.info(data)
+
+            # construct AmsPacket object containing request data
+            request_packet = AmsPacket.from_bytes(data)
+
+            # add request packet to history
+            self.server.request_history.append(request_packet)
+
+            # create a response packet using the defined handler
+            response_packet = self.handler.handle_request(request_packet)
+
+            # send response to client
+            self.client.send(response_packet.to_bytes())
+

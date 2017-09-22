@@ -23,7 +23,6 @@ class TestserverExStructsTestCase(unittest.TestCase):
 
         # check for correct unpacking
         x = structs.AmsTcpHeader.from_bytes(b'\x00\x00\x1f\x00\x00\x00')
-        self.assertEqual(31, x.length)
 
         # check for correct packing
         x.length = 255
@@ -43,7 +42,6 @@ class TestserverExStructsTestCase(unittest.TestCase):
             length=6,
             error_code=1,
             invoke_id=2,
-            data=bytearray(b'\x01' * 6)
         )
 
         data_bytes = header1.to_bytes()
@@ -60,7 +58,6 @@ class TestserverExStructsTestCase(unittest.TestCase):
         self.assertEqual(header1.length, header2.length)
         self.assertEqual(header1.error_code, header2.error_code)
         self.assertEqual(header1.invoke_id, header2.invoke_id)
-        self.assertEqual(header1.data, header2.data)
 
     def test_adsnotificationheader(self):
         header1 = structs.AdsNotificationHeader(

@@ -3,7 +3,8 @@ import threading
 import socket
 import select
 import atexit
-from .clientconn import AdsClientConnection
+from .client import AdsClientConnection
+from .handler import AdvancedHandler
 
 ADS_PORT = 48898
 
@@ -22,11 +23,12 @@ class Testserver(threading.Thread):
     def __init__(self, handler=None, ip_address='', port=ADS_PORT,
                  logging=True):
 
-        self.handler = handler
+        self.handler = handler or AdvancedHandler()
         self.ip_address = ip_address
         self.port = port
         self._run = False
         self.clients = []
+        self.request_history = []
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -75,5 +77,5 @@ class Testserver(threading.Thread):
 
 
 if __name__ == '__main__':
-    testserver = Testserver(port=5000)
+    testserver = Testserver()
     testserver.run()

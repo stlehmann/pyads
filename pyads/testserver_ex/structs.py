@@ -24,8 +24,7 @@ class AmsHeader:
     """ Second layer of an ADS packet. """
 
     def __init__(self, target_net_id, target_port, source_net_id, source_port,
-                 command_id, state_flags, length, error_code, invoke_id,
-                 data):
+                 command_id, state_flags, length, error_code, invoke_id):
 
         self.target_net_id = target_net_id
         self.target_port = target_port
@@ -36,7 +35,6 @@ class AmsHeader:
         self.length = length
         self.error_code = error_code
         self.invoke_id = invoke_id
-        self.data = data
 
     @staticmethod
     def from_bytes(data):
@@ -50,7 +48,6 @@ class AmsHeader:
             length=struct.unpack('<I', data[20:24])[0],
             error_code=struct.unpack('<I', data[24:28])[0],
             invoke_id=struct.unpack('<I', data[28:32])[0],
-            data=data[32:],
         )
 
     def to_bytes(self):
@@ -63,8 +60,31 @@ class AmsHeader:
             struct.pack('<H', self.state_flags) +
             struct.pack('<I', self.length) +
             struct.pack('<I', self.error_code) +
-            struct.pack('<I', self.invoke_id) +
-            self.data
+            struct.pack('<I', self.invoke_id)
+        )
+
+
+class AmsPacket:
+
+    def __init__(self, amstcp_header, ams_header, ads_data):
+        
+        self.amstcp_header = amstcp_header
+        self.ams_header = ams_header
+        self.ads_data = ads_data
+
+    @staticmethod
+    def from_bytes(data):
+        return AmsPacket(
+                AmsTcpHeader.from_bytes(data[:6]),
+                AmsHeader.from_bytes(data[6:]),
+                data[32:],
+        )
+
+    def to_bytes(self):
+        return (
+            self.amstcp_header.to_bytes() +
+            self.ams_header.to_bytes() +
+            self.ads_data
         )
 
 
