@@ -67,7 +67,7 @@ class AmsHeader:
 class AmsPacket:
 
     def __init__(self, amstcp_header, ams_header, ads_data):
-        
+
         self.amstcp_header = amstcp_header
         self.ams_header = ams_header
         self.ads_data = ads_data
@@ -75,9 +75,9 @@ class AmsPacket:
     @staticmethod
     def from_bytes(data):
         return AmsPacket(
-                AmsTcpHeader.from_bytes(data[:6]),
-                AmsHeader.from_bytes(data[6:]),
-                data[32:],
+            AmsTcpHeader.from_bytes(data[:6]),
+            AmsHeader.from_bytes(data[6:]),
+            data[38:],
         )
 
     def to_bytes(self):

@@ -295,6 +295,7 @@ class AdsClientConnection(threading.Thread):
             '\x00\x00'.encode('utf-8') + struct.pack('<I', len(ams_header))
         )
 
+        import pdb; pdb.set_trace()  # breakpoint 5b34a698 //
         return ams_tcp_header + ams_header
 
     def construct_request(self, request_bytes):
@@ -478,7 +479,7 @@ class AdvancedHandler(AbstractHandler):
             return response_content
 
         def handle_read():
-            data = request.ams_header.data
+            data = request.ads_data
 
             index_group = struct.unpack('<I', data[:4])[0]
             index_offset = struct.unpack('<I', data[4:8])[0]

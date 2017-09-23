@@ -48,8 +48,6 @@ class AdsClientConnection(threading.Thread):
             if not data:
                 self.close()
                 continue
-            
-            logger.info(data)
 
             # construct AmsPacket object containing request data
             request_packet = AmsPacket.from_bytes(data)
@@ -62,4 +60,3 @@ class AdsClientConnection(threading.Thread):
 
             # send response to client
             self.client.send(response_packet.to_bytes())
-
