@@ -31,7 +31,11 @@ if platform_is_windows():
 class ADSError(Exception):
     def __init__(self, err_code):
         self.err_code = err_code
-        self.msg = "{} ({})".format(ERROR_CODES[self.err_code], self.err_code)
+        try:
+            self.msg = "{} ({})".format(ERROR_CODES[self.err_code],
+                                        self.err_code)
+        except KeyError:
+            self.msg = 'Unknown Error ({0})'.format(self.err_code)
 
     def __str__(self):
         return "ADSError: " + self.msg
