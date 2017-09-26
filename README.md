@@ -157,6 +157,11 @@ Toggle bitsize variables by address.
 
 # Changelog
 
+## Version 2.2.1
+
+Add a `callback` decorator to make value extraction from Device Notifications 
+more pythonic.
+
 ## Version 2.2.0
 
 Include shared library for Linux ADS communication. No manual installation
