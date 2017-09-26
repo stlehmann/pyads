@@ -157,6 +157,10 @@ Toggle bitsize variables by address.
 
 # Changelog
 
+## Version 2.2.1
+
+Improved support for Device Notifications.
+
 ## Version 2.2.0
 
 Include shared library for Linux ADS communication. No manual installation
