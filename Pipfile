@@ -3,7 +3,6 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 
 [dev-packages]
-
 sphinx = "*"
 pdbpp = "*"
 tox = "*"
