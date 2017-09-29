@@ -5,6 +5,7 @@
     :license: MIT, see LICENSE for details
 
 """
+import struct
 from ctypes import memmove, addressof, c_ubyte
 
 from .utils import platform_is_linux
@@ -666,22 +667,23 @@ class Connection(object):
 
             def func_wrapper(addr, notification, user):
                 contents = notification.contents
+                data = contents.data
+                data_size = contents.cbSampleSize
 
                 if datatype is None:
-                    value = contents.data
+                    value = data
 
                 elif datatype == str:
-                    dest = (c_ubyte * contents.cbSampleSize)()
-                    memmove(addressof(dest), addressof(contents.data),
-                            contents.cbSampleSize)
+                    dest = (c_ubyte * data_size)()
+                    memmove(addressof(dest), addressof(data), data_size)
                     # I had some NULL bytes in my string...
                     value = bytearray(dest).split(b'\x00')[0].decode('utf-8')
-                else:
 
-                    value = next(map(
-                        datatype,
-                        bytearray(contents.data)[0:contents.cbSampleSize]
-                    ))
+                elif datatype == float:
+                    value = struct.unpack('<f', bytearray(data[:data_size]))[0]
+
+                else:
+                    value = next(map(datatype, bytearray(data)[:data_size]))
 
                 dt = filetime_to_dt(contents.nTimeStamp)
                 data_name = self._notifications.get(contents.hNotification)
