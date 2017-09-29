@@ -217,8 +217,8 @@ class SAdsNotificationAttrib(Structure):
 
 class SAdsNotificationHeader(Structure):
     _pack_ = 1
-    _fields_ = [("nTimeStamp", c_uint64),
-                ("hNotification", c_uint32),
+    _fields_ = [("hNotification", c_uint32),
+                ("nTimeStamp", c_uint64),
                 ("cbSampleSize", c_uint32),
                 ("data", POINTER(c_ubyte))]
 
