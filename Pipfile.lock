@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1508e866e67abd6304b3b136c669e6e98e9a684c387ed9dad246448861539755"
+            "sha256": "360162edd6d8a92f62f5d6368c08315981cf5d10f33b2fe00dae0281fc9d11ad"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -20,12 +20,22 @@
         "requires": {},
         "sources": [
             {
+                "name": "pypi",
                 "url": "https://pypi.python.org/simple",
                 "verify_ssl": true
             }
         ]
     },
-    "default": {},
+    "default": {
+        "pyads": {
+            "hashes": [
+                "sha256:8f15490b5a0dfefa9fdcacb273be246bd14c5736a99588ea87e24fbf6538e080",
+                "sha256:03bb6cf5b1f5441991a555bdb53a97b64b7d083dc184ed249950fea1f83879dc",
+                "sha256:100123ca1db1a988857c335ef847b2649d0e826209508702240d5da59adf8892"
+            ],
+            "version": "==2.2.2"
+        }
+    },
     "develop": {
         "alabaster": {
             "hashes": [
@@ -265,10 +275,10 @@
         },
         "tox": {
             "hashes": [
-                "sha256:49d88f2c217352c499450e9f61ca82fd9c8873d01a45555bb342a32f2b6753a2",
-                "sha256:d9c279e707d2cfef8d77d10f13b38b3e68b7e470018b45747560f6c3c66d6b83"
+                "sha256:b38ec36d3b7854464c3c1c8cdcc0bcf5691dcf1725fc2790a930acf949792053",
+                "sha256:adb44732982b207424b42f9a2d1e3f80240ecfbba0e374a27ae3779a5a934d0a"
             ],
-            "version": "==2.8.2"
+            "version": "==2.9.0"
         },
         "urllib3": {
             "hashes": [

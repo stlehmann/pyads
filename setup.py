@@ -135,7 +135,7 @@ setup(
     description="Python wrapper for TwinCAT ADS library",
     author="Stefan Lehmann",
     author_email="Stefan.St.Lehmann@gmail.com",
-    packages=["pyads"],
+    packages=["pyads", "pyads.testserver_ex"],
     package_data={'pyads': ['adslib.so']},
     requires=[],
     provides=['pyads'],
