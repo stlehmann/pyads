@@ -6,4 +6,9 @@ name = "pypi"
 [packages]
 
 [dev-packages]
+sphinx = "*"
+pdbpp = "*"
+tox = "*"
+pytest = "*"
+coverage = "*"
 ptpython = "*"

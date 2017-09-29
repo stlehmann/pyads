@@ -295,7 +295,6 @@ class AdsClientConnection(threading.Thread):
             '\x00\x00'.encode('utf-8') + struct.pack('<I', len(ams_header))
         )
 
-        import pdb; pdb.set_trace()  # breakpoint 5b34a698 //
         return ams_tcp_header + ams_header
 
     def construct_request(self, request_bytes):

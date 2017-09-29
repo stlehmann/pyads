@@ -1,6 +1,6 @@
 import logging
 import struct
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from .. import constants
 from .structs import AmsPacket, AmsTcpHeader, AmsHeader
 
@@ -8,12 +8,28 @@ from .structs import AmsPacket, AmsTcpHeader, AmsHeader
 logger = logging.getLogger(__name__)
 
 
+NotifyClient = namedtuple('NotifyClient', 'length client')
+
+
 class PLCVariable:
     """ Storage item for named data """
 
     def __init__(self, name, value):
         self.name = name
-        self.value = value
+        self._value = value
+        self.notify_clients = []
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        self._value = val
+        for notify_client in self.notify_clients:
+            notify_client.client.pending_notifications.append(
+                (self, notify_client.length)
+            )
 
 
 class AdvancedHandler:
@@ -22,7 +38,7 @@ class AdvancedHandler:
         self._data = defaultdict(lambda: bytearray(16))
         self._named_data = []
 
-    def handle_request(self, request):
+    def handle_request(self, request, client):
 
         def handle_read_device_info():
             """
@@ -158,8 +174,20 @@ class AdvancedHandler:
             return result
 
         def handle_add_devicenote():
+            data = request.ads_data
+            index_group = struct.unpack('<I', data[:4])[0]
+            index_offset = struct.unpack('<I', data[4:8])[0]
+            length = struct.unpack('<I', data[8:12])[0]
+
+            if index_group == constants.ADSIGRP_SYM_VALBYHND:
+                plc_var = self._named_data[index_offset]
+                plc_var.notify_clients.append(
+                    NotifyClient(length, client)
+                )
+
             logger.info('Command received: ADD_DEVICE_NOTIFICATION')
-            handle = ('\x0F' * 4).encode('utf-8')
+
+            handle = ('\x00' * 4).encode('utf-8')
             result = b'\x00' * 4
             return result + handle
 
@@ -201,7 +229,7 @@ class AdvancedHandler:
                 command_id=request.ams_header.command_id,
                 # set response flag
                 state_flags=request.ams_header.state_flags | 0x0001,
-                length=len(response_content),
+                data_length=len(response_content),
                 error_code=0,
                 invoke_id=request.ams_header.invoke_id,
             ),

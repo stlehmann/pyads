@@ -5,7 +5,9 @@ import select
 import atexit
 from .client import AdsClientConnection
 from .handler import AdvancedHandler
+from ..structs import AmsAddr
 
+AMS_NET_ID = '127.0.0.1.1.1'
 ADS_PORT = 48898
 
 
@@ -20,11 +22,12 @@ logger.setLevel(logging.INFO)
 
 class Testserver(threading.Thread):
 
-    def __init__(self, handler=None, ip_address='', port=ADS_PORT,
-                 logging=True):
+    def __init__(self, handler=None, ip_address='', ams_net_id=AMS_NET_ID,
+                 port=ADS_PORT, logging=True):
 
         self.handler = handler or AdvancedHandler()
         self.ip_address = ip_address
+        self.ams_addr = AmsAddr(ams_net_id, port)
         self.port = port
         self._run = False
         self.clients = []
