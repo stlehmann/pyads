@@ -30,3 +30,4 @@ doc/_build/
 # coverage files
 .coverage
 htmlcov/
+deploy

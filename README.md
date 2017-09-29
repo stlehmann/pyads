@@ -33,7 +33,7 @@ $ python setup.py install
 
 ## Creating routes
 
-ADS uses its own address system named AmsNetId to identify devices. The 
+ADS uses its own address system named AmsNetId to identify devices. The
 assignment of a devices to an AmsNetId happens via routing. Routing
 is handled differently on Windows and Linux.
 
@@ -46,7 +46,7 @@ Open a port and create a AmsAddr object for the remote machine.
 >>> pyads.open_port()
 32828
 ```
-Add a route to the remote machine (Linux only - Windows routes must be 
+Add a route to the remote machine (Linux only - Windows routes must be
 added in the TwinCat Router UI).
 
 ```python
@@ -54,16 +54,16 @@ added in the TwinCat Router UI).
 >>> adr = pyads.AmsAddr('127.0.0.1.1.1', pyads.PORT_SPS1)
 >>> pyads.add_route(adr, remote_ip)
 ```
-Get the AMS address of the local machine. This may need to be added to 
-the routing table of the remote machine. 
-**NOTE: On Linux machines at least one route must be added before the call 
+Get the AMS address of the local machine. This may need to be added to
+the routing table of the remote machine.
+**NOTE: On Linux machines at least one route must be added before the call
 to `get_local_address()` will function properly.**
 
 ### Creating routes on Windows
 
 On Windows you don't need to manually add the routes with pyads but instead you
-use the TwinCAT Router UI (TcSystemManager) which comes with the TwinCAT 
-installation. Have a look at the TwinCAT documentation 
+use the TwinCAT Router UI (TcSystemManager) which comes with the TwinCAT
+installation. Have a look at the TwinCAT documentation
 [infosys.beckhoff.com TcSystemManager][0] for further details.
 
 ## Testserver
@@ -73,7 +73,7 @@ the *pyads* package. To start it up simply run the following command from
 a separate console window.
 
 ```bash
-$ python -m pyads.testerver
+$ python -m pyads.testserver
 
 ```
 
@@ -87,7 +87,7 @@ the route to the testserver needs to be added from another python console.
 >>> pyads.add_route(adr, '127.0.0.1')
 ```
 
-## Usage 
+## Usage
 
 ### Connect to a remote device
 
@@ -157,11 +157,15 @@ Toggle bitsize variables by address.
 
 # Changelog
 
+## Version 2.2.3
+
+Extended testserver that keeps written values and supports Device Notifications.
+
 ## Version 2.2.1
 
 Improved support for Device Notifications.
 
-Add a `callback` decorator to make value extraction from Device Notifications 
+Add a `callback` decorator to make value extraction from Device Notifications
 more pythonic.
 
 ## Version 2.2.0
@@ -170,7 +174,7 @@ Include shared library for Linux ADS communication. No manual installation
 necessary anymore.
 
 `Connection` class to allow a more convenient object oriented workflow. Each
-device connection is now an object with methods for reading, writing, ... 
+device connection is now an object with methods for reading, writing, ...
 However it is still possible to use the old-style functional approach.
 
 Added device notifications. Device notifications can now be used to monitor
@@ -197,6 +201,7 @@ Improvements:
 * easier handling of reading and writing Strings
 * no error codes, if errors occur an Exception with the error code will be
 raised
+
 
 
 [0]: https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=
