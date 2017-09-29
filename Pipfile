@@ -4,7 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+
 pyads = "*"
+sphinx = "*"
+
 
 [dev-packages]
 
@@ -14,3 +17,5 @@ tox = "*"
 pytest = "*"
 coverage = "*"
 ptpython = "*"
+recommonmark = "*"
+"sphinx-rtd-theme" = "*"
