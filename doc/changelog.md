@@ -1,12 +1,24 @@
 # Changelog
 
+## Version 2.2.5
+
+Extended Testserver supports multiple device notifications
+
+## Version 2.2.4
+
+Notification callback decorator
+
+## Version 2.2.3
+
+Extended testserver that keeps written values and supports Device Notifications.
+
 ## Version 2.2.0
 
 Include shared library for Linux ADS communication. No manual installation
 necessary anymore.
 
 `Connection` class to allow a more convenient object oriented workflow. Each
-device connection is now an object with methods for reading, writing, ... 
+device connection is now an object with methods for reading, writing, ...
 However it is still possible to use the old-style functional approach.
 
 Added device notifications. Device notifications can now be used to monitor

@@ -190,6 +190,14 @@ or structures.
 
 # Changelog
 
+## Version 2.2.5
+
+Extended Testserver supports multiple device notifications
+
+## Version 2.2.4
+
+Notification callback decorator
+
 ## Version 2.2.3
 
 Extended testserver that keeps written values and supports Device Notifications.
