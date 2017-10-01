@@ -8,7 +8,7 @@ from .structs import AmsPacket, AmsTcpHeader, AmsHeader
 logger = logging.getLogger(__name__)
 
 
-NotifyClient = namedtuple('NotifyClient', 'length client')
+NotifyClient = namedtuple('NotifyClient', 'length client handle')
 
 
 class PLCVariable:
@@ -28,7 +28,7 @@ class PLCVariable:
         self._value = val
         for notify_client in self.notify_clients:
             notify_client.client.pending_notifications.append(
-                (self, notify_client.length)
+                (self, notify_client.length, notify_client.handle)
             )
 
 
@@ -37,6 +37,7 @@ class AdvancedHandler:
     def __init__(self):
         self._data = defaultdict(lambda: bytearray(16))
         self._named_data = []
+        self.notification_count = 0
 
     def handle_request(self, request, client):
 
@@ -182,13 +183,15 @@ class AdvancedHandler:
             if index_group == constants.ADSIGRP_SYM_VALBYHND:
                 plc_var = self._named_data[index_offset]
                 plc_var.notify_clients.append(
-                    NotifyClient(length, client)
+                    NotifyClient(length, client,
+                                 handle=self.notification_count)
                 )
 
             logger.info('Command received: ADD_DEVICE_NOTIFICATION')
 
-            handle = ('\x00' * 4).encode('utf-8')
+            handle = struct.pack('<I', self.notification_count)
             result = b'\x00' * 4
+            self.notification_count += 1
             return result + handle
 
         def handle_delete_devicenote():

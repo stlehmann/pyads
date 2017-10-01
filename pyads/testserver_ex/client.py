@@ -73,17 +73,17 @@ class AdsClientConnection(threading.Thread):
             # send response to client
             self.client.send(response_packet.to_bytes())
 
-            for notification, length in self.pending_notifications:
+            for notification, length, handle in self.pending_notifications:
                 packet = self.create_notification_packet(
-                    notification, length
+                    notification, length, handle
                 )
 
                 logger.info(packet)
                 self.client.send(packet.to_bytes())
 
-    def create_notification_packet(self, notification, length):
+    def create_notification_packet(self, notification, length, handle):
         sample = AdsNotificationSample(
-            handle=0,
+            handle=handle,
             sample_size=length,
             data=notification.value[:length],
         )
