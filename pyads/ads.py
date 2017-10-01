@@ -29,6 +29,13 @@ from .pyads_ex import (
     adsSyncSetTimeoutEx
 )
 
+from .constants import (
+    PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_DATE, PLCTYPE_DINT, PLCTYPE_DT,
+    PLCTYPE_DWORD, PLCTYPE_INT, PLCTYPE_LREAL, PLCTYPE_REAL, PLCTYPE_SINT,
+    PLCTYPE_STRING, PLCTYPE_TIME, PLCTYPE_TOD, PLCTYPE_UDINT, PLCTYPE_UINT,
+    PLCTYPE_USINT, PLCTYPE_WORD
+)
+
 from .structs import AmsAddr
 
 linux = platform_is_linux()
@@ -620,17 +627,15 @@ class Connection(object):
         else:
             adsSyncSetTimeout(ms)
 
-    def notification(self, datatype=None):
+    def notification(self, plc_datatype=None):
         """
         **Decorator**
 
         A decorator that can be used for callback functions in order to
-        convert the data of the NotificationHeader into Python types.
+        convert the data of the NotificationHeader into the fitting
+        Python type.
 
-        At the moment only basic Python types (int, float, str) are supported.
-
-        :param datatype: Python datatype of the result value (int, float, str).
-            If None is given the raw value will be returned.
+        :param plc_datatype: The PLC datatype that needs to be converted.
 
         The callback functions need to be of the following type:
 
@@ -648,7 +653,7 @@ class Connection(object):
             >>> plc = pyads.Connection('172.18.3.25.1.1', 851)
             >>>
             >>>
-            >>> @plc.notification(str)
+            >>> @plc.notification(pyads.PLCTYPE_STR)
             >>> def callback(handle, name, timestamp, value):
             >>>     print(handle, name, timestamp, value)
             >>>
@@ -670,20 +675,35 @@ class Connection(object):
                 data = contents.data
                 data_size = contents.cbSampleSize
 
-                if datatype is None:
-                    value = data
+                datatype_map = {
+                    PLCTYPE_BOOL: '<?',
+                    PLCTYPE_BYTE: '<c',
+                    PLCTYPE_DINT: '<i',
+                    PLCTYPE_DWORD: '<I',
+                    PLCTYPE_INT: '<h',
+                    PLCTYPE_LREAL: '<d',
+                    PLCTYPE_REAL: '<f',
+                    PLCTYPE_SINT: '<b',
+                    PLCTYPE_UDINT: '<L',
+                    PLCTYPE_UINT: '<H',
+                    PLCTYPE_USINT: '<B',
+                    PLCTYPE_WORD: '<H',
+                }
 
-                elif datatype == str:
+                if plc_datatype == PLCTYPE_STRING:
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
                     # I had some NULL bytes in my string...
                     value = bytearray(dest).split(b'\x00')[0].decode('utf-8')
 
-                elif datatype == float:
-                    value = struct.unpack('<f', bytearray(data[:data_size]))[0]
+                elif plc_datatype not in datatype_map:
+                    value = data
 
                 else:
-                    value = next(map(datatype, bytearray(data)[:data_size]))
+                    value = struct.unpack(
+                        datatype_map[plc_datatype],
+                        bytearray(data)[:data_size]
+                    )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
                 data_name = self._notifications.get(contents.hNotification)

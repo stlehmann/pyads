@@ -194,5 +194,35 @@ def callbackString(adr, notification, user):
         var = str(bytearray(dest)).split('\x00')[0]
 ```
 
+#### Device Notification callback
+
+To make the handling of notifications more Pythonic a notification decorator has
+been introduced in version 2.2.4. This decorator takes care of converting the
+ctype values transfered via ADS to python datatypes.
+
+```python
+>>> import pyads
+>>> plc = pyads.Connection('127.0.0.1.1.1', 48898)
+>>> plc.open()
+>>>
+>>> @plc.notification(pyads.PLCTYPE_INT)
+>>> def callback(handle, name, timestamp, value):
+>>>     print(
+>>>         '{0}: received new notitifiction for variable "{1}", value: {2}'
+>>>         .format(name, timestamp, value)
+>>>     )
+>>>
+>>> plc.add_device_notification('GVL.intvar', pyads.NotificationAttrib(2),
+                                callback)
+>>> # Write to the variable to trigger a notification
+>>> plc.write_by_name('GVL.intvar', 123, pyads.PLCTYPE_INT)
+
+2017-10-01 10:41:23.640000: received new notitifiction for variable "GVL.intvar", value: abc
+
+```
+
+The notification callback works for all basic plc datatypes but not for arrays
+or structures.
+
 [0]: https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=
 [1]: https://infosys.beckhoff.de/content/1033/tcadsdll2/html/tcadsdll_strucadsnotificationattrib.htm
