@@ -33,7 +33,7 @@ def find_version(*file_paths):
 
 def platform_is_linux():
     return sys.platform.startswith('linux') or \
-           sys.platform.startswith('darwin')
+        sys.platform.startswith('darwin')
 
 
 def get_files_rec(directory):
@@ -107,7 +107,8 @@ class PyTest(TestCommand):
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
-        self.pytest_args = []
+        self.pytest_args = ['--cov-report', 'html', '--cov-report', 'term',
+                            '--cov=pyads']
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -151,5 +152,6 @@ setup(
         'Operating System :: Microsoft :: Windows :: Windows 7'
     ],
     cmdclass=cmdclass,
-    data_files=data_files
+    data_files=data_files,
+    tests_require=['pytest', 'pytest-cov'],
 )
