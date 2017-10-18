@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.2.6
+
+Fix error with older TwinCAT2 versions and notifications.
+
 ## Version 2.2.5
 
 Extended Testserver supports multiple device notifications

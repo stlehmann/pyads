@@ -44,7 +44,7 @@ the *pyads* package. To start it up simply run the following command from
 a separate console window.
 
 ```bash
-$ python -m pyads.testerver
+$ python -m pyads.testserver
 
 ```
 
