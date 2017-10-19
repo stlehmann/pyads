@@ -139,9 +139,9 @@ Read and write *UDINT* variables by address.
 >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
 >>> plc.open()
 >>> # write 65536 to memory byte MDW0
->>> plc.write(INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
+>>> plc.write(pyads.INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
 >>> # write memory byte MDW0
->>> plc.read(INDEXGROUP_MEMORYBYTE, 0, pyads.PLCTYPE_UDINT)
+>>> plc.read(pyads.INDEXGROUP_MEMORYBYTE, 0, pyads.PLCTYPE_UDINT)
 65536
 >>> plc.close()
 ```
@@ -150,9 +150,9 @@ Toggle bitsize variables by address.
 
 ```python
 >>> # read memory bit MX100.0
->>> data = plc.read(INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
+>>> data = plc.read(pyads.INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
 >>> # write inverted value to memory bit MX100.0
->>> plc.write(INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
+>>> plc.write(pyads.INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 ```
 
 ### Simple handling of notification callbacks
