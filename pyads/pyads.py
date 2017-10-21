@@ -27,6 +27,14 @@ from .utils import platform_is_windows
 if platform_is_windows():
     _adsDLL = ctypes.windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
 
+    if not hasattr(_adsDLL, 'AdsPortOpenEx'):
+        from warnings import warn
+        warn(
+            "Compatibility with this version of TcAdsDll.dll will be removed in the next pyads release (v2.3.0). "
+            "Update to TwinCAT 2.10 1243 or greater to ensure continued compatibility.",
+            DeprecationWarning
+        )
+
 
 class ADSError(Exception):
     def __init__(self, err_code):
