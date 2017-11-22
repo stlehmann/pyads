@@ -10,6 +10,7 @@ MANIFEST
 
 build/
 *.egg-info/
+.eggs/
 venv/
 
 *.tox
@@ -31,3 +32,5 @@ doc/_build/
 .coverage
 htmlcov/
 deploy
+
+coverage
