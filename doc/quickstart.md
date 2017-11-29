@@ -137,7 +137,7 @@ can be seen here:
 
 ```python
 >>> import pyads
->>> from ctypes import size_of
+>>> from ctypes import sizeof
 >>>
 >>> # define the callback which extracts the value of the variable
 >>> def callback(addr, notification, user_handle):
