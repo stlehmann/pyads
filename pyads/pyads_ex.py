@@ -485,7 +485,7 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
     :summary: Send data synchronous to an ADS-device from data name
 
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
-    :param string data_name: PLC storage address
+    :param string data_name: PLC storage name
     :param value: value to write to the storage address of the PLC
     :param int data_type: type of the data given to the PLC,
         according to PLCTYPE constants
@@ -525,18 +525,20 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
     elif isinstance(data_name, tuple):
         nIndexGroup  = data_name[0]
         nIndexOffset = data_name[1]
-        hnl          = 0
+        hnl          = None
     elif isinstance(data_name, dict):
         nIndexGroup  = data_name["index_group"]
         nIndexOffset = data_name["index_offset"]
-        hnl          = 0
+        hnl          = None
     else:
         raise TypeError("Object data_name has the wrong type %s"%(type(data_name)))
         
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
 
-    nHUser = ctypes.c_ulong(hnl)
+    nHUser = ctypes.c_ulong(0)
+    if hnl is not None:
+        nHUser = ctypes.c_ulong(hnl)
     if user_handle is not None:
         nHUser = ctypes.c_ulong(user_handle)
 
@@ -565,7 +567,7 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
 
 
 def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
-                                      user_handle):
+                                      user_handle = None):
 
     adsSyncDelDeviceNotificationReqFct = \
         _adsDLL.AdsSyncDelDeviceNotificationReqEx
@@ -578,8 +580,9 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
     if err_code:
         raise ADSError(err_code)
 
-    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle,
-                      PLCTYPE_UDINT)
+    if user_handle != None:
+        adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle,
+                          PLCTYPE_UDINT)
 
 
 def adsSyncSetTimeoutEx(port, nMs):
