@@ -516,11 +516,23 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
         _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    hnl = adsSyncReadWriteReqEx2(port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0,
-                                 PLCTYPE_UDINT, data_name, PLCTYPE_STRING)
+    if isinstance(data_name, str):
+        hnl = adsSyncReadWriteReqEx2(port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0,
+                                     PLCTYPE_UDINT, data_name, PLCTYPE_STRING)
 
-    nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
-    nIndexOffset = ctypes.c_ulong(hnl)
+        nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
+        nIndexOffset = ctypes.c_ulong(hnl)
+    elif isinstance(data_name, tuple):
+        nIndexGroup  = data_name[0]
+        nIndexOffset = data_name[1]
+        hnl          = 0
+    elif isinstance(data_name, dict):
+        nIndexGroup  = data_name["index_group"]
+        nIndexOffset = data_name["index_offset"]
+        hnl          = 0
+    else:
+        raise TypeError("Object data_name has the wrong type %s"%(type(data_name)))
+        
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
 
