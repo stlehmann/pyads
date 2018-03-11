@@ -10,7 +10,7 @@
 
 """
 from ctypes import c_bool, c_byte, c_int8, c_uint8, c_int16, c_uint16, \
-    c_int32, c_uint32, c_float, c_double, c_char, c_short
+    c_int32, c_uint32, c_float, c_double, c_char, c_short, c_int64, c_uint64
 
 STRING_BUFFER = 1024
 
@@ -32,6 +32,8 @@ PLCTYPE_UDINT = c_uint32
 PLCTYPE_UINT = c_uint16
 PLCTYPE_USINT = c_uint8
 PLCTYPE_WORD = c_uint16
+PLCTYPE_LINT = c_int64
+PLCTYPE_ULINT = c_uint64
 
 
 def PLCTYPE_ARR_REAL(n):
