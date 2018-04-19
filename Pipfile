@@ -1,7 +1,9 @@
 [[source]]
+
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
+
 
 [packages]
 
@@ -18,6 +20,7 @@ pytest = "*"
 coverage = "*"
 ptpython = "*"
 recommonmark = "*"
-"sphinx-rtd-theme" = "*"
+sphinx-rtd-theme = "*"
 twine = "*"
-"pytest-cov" = "*"
+pytest-cov = "*"
+click = "*"
