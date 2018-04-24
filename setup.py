@@ -130,7 +130,7 @@ cmdclass = {
 }
 
 
-long_description = read('READMDE.md')
+long_description = read('README.md')
 
 
 setup(
