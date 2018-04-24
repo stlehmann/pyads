@@ -1,3 +1,15 @@
+"""
+Extended Testserver for pyads.
+
+:author: Stefan Lehmann <stefan.st.lehmann@gmail.com
+:license: MIT license, see license.txt for details
+
+:created on 2017-09-29 10:34:28
+:last modified by:   Stefan Lehmann
+:last modified time: 2017-11-10 11:52:25
+
+"""
+import click
 import logging
 import threading
 import socket
@@ -6,6 +18,7 @@ import atexit
 from .client import AdsClientConnection
 from .handler import AdvancedHandler
 from ..structs import AmsAddr
+
 
 AMS_NET_ID = '127.0.0.1.1.1'
 ADS_PORT = 48898
@@ -79,6 +92,14 @@ class Testserver(threading.Thread):
                 self.clients.append(client_connection)
 
 
-if __name__ == '__main__':
-    testserver = Testserver()
+@click.command()
+@click.argument('port', type=int)
+@click.option('--netid', help='Change the netid that the server uses.',
+              default=AMS_NET_ID)
+def main(port, netid):
+    testserver = Testserver(ams_net_id=netid, port=port)
     testserver.run()
+
+
+if __name__ == '__main__':
+    main()

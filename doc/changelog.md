@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.2.7
+
+Long Description for PyPi
+
 ## Version 2.2.6
 
 Fix error with older TwinCAT2 versions and notifications.

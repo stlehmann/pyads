@@ -1,7 +1,7 @@
 pyads - Python package
 ======================
 
-[![Build Status](https://travis-ci.org/MrLeeh/pyads.svg?branch=master)](https://travis-ci.org/MrLeeh/pyads)
+[![Build Status](https://travis-ci.org/stlehmann/pyads.svg?branch=master)](https://travis-ci.org/stlehmann/pyads)
 [![Coverage Status](https://coveralls.io/repos/github/MrLeeh/pyads/badge.svg?branch=master)](https://coveralls.io/github/MrLeeh/pyads?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/pyads/badge/?version=latest)](http://pyads.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pyads.svg)](https://badge.fury.io/py/pyads)

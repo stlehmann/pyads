@@ -130,10 +130,16 @@ cmdclass = {
 }
 
 
+with open('README.md', 'r') as f:
+    long_description = f.read()
+
+
 setup(
     name="pyads",
     version=find_version('pyads', '__init__.py'),
     description="Python wrapper for TwinCAT ADS library",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author="Stefan Lehmann",
     author_email="Stefan.St.Lehmann@gmail.com",
     packages=["pyads", "pyads.testserver_ex"],
