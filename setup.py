@@ -15,11 +15,14 @@ from distutils.command.sdist import sdist as _sdist
 
 
 def read(*names, **kwargs):
-    with io.open(
-        os.path.join(os.path.dirname(__file__), *names),
-        encoding=kwargs.get("encoding", "utf8")
-    ) as fp:
-        return fp.read()
+    try:
+        with io.open(
+            os.path.join(os.path.dirname(__file__), *names),
+            encoding=kwargs.get("encoding", "utf8")
+        ) as fp:
+            return fp.read()
+    except FileNotFoundError:
+        return ''
 
 
 def find_version(*file_paths):
