@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-    pyads.pyads_ex
-    ~~~~~~~~~~~~~~
+pyads.pyads_ex
+~~~~~~~~~~~~~~
 
-    Contains cross platform ADS extension functions.
+Contains cross platform ADS extension functions.
 
-    :Author: David Browne <davidabrowne@gmail.com>
-    :license: MIT, see LICENSE for details
+:Author: David Browne <davidabrowne@gmail.com>
+:license: MIT, see LICENSE for details
 
 """
 import ctypes
@@ -56,6 +56,8 @@ callback_store = dict()
 
 def router_function(fn):
     """
+    Decorator.
+
     Decorator for functions that interact with the router for the Linux
     implementation of the ADS library.
 
@@ -79,13 +81,12 @@ def router_function(fn):
 @router_function
 def adsAddRoute(net_id, ip_address):
     """
-    :summary:  Establish a new route in the AMS Router.
+    :summary: Establish a new route in the AMS Router.
 
     :param pyads.structs.SAmsNetId net_id: net id of routing endpoint
     :param str ip_address: ip address of the routing endpoint
 
     """
-
     add_route = _adsDLL.AdsAddRoute
     add_route.restype = ctypes.c_long
 
@@ -107,7 +108,6 @@ def adsDelRoute(net_id):
         entry which is to be removed from the router.
 
     """
-
     delete_route = _adsDLL.AdsDelRoute
     delete_route(net_id)
 
@@ -131,10 +131,7 @@ def adsPortOpenEx():
 
 
 def adsPortCloseEx(port):
-    """
-    :summary: Close the connection to the TwinCAT message router.
-
-    """
+    """:summary: Close the connection to the TwinCAT message router."""
     port_close_ex = _adsDLL.AdsPortCloseEx
     port_close_ex.restype = ctypes.c_long
     error_code = port_close_ex(port)
@@ -178,8 +175,10 @@ def adsSetLocalAddress(ams_netid):
 
 def adsSyncReadStateReqEx(port, address):
     """
-    :summary: Read the current ADS-state and the machine-state from the
-        ADS-server
+    :summary: Read the current ADS-state and the machine-state.
+
+    Read the current ADS-state and the machine-state from the
+    ADS-server.
 
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :rtype: (int, int)
@@ -211,7 +210,7 @@ def adsSyncReadStateReqEx(port, address):
 
 def adsSyncReadDeviceInfoReqEx(port, address):
     """
-    :summary: Read the name and the version number of the ADS-server
+    :summary: Read the name and the version number of the ADS-server.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -245,7 +244,7 @@ def adsSyncReadDeviceInfoReqEx(port, address):
 def adsSyncWriteControlReqEx(port, address, ads_state, device_state,
                              data, plc_data_type):
     """
-    :summary: Change the ADS state and the machine-state of the ADS-server
+    :summary: Change the ADS state and the machine-state of the ADS-server.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
@@ -282,7 +281,7 @@ def adsSyncWriteControlReqEx(port, address, ads_state, device_state,
 def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
                       plc_data_type):
     """
-    :summary: Send data synchronous to an ADS-device
+    :summary: Send data synchronous to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -294,7 +293,6 @@ def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
         according to PLCTYPE constants
 
     """
-
     sync_write_request = _adsDLL.AdsSyncWriteReqEx
 
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
@@ -327,7 +325,7 @@ def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
 def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
                            read_data_type, value, write_data_type):
     """
-    :summary: Read and write data synchronous from/to an ADS-device
+    :summary: Read and write data synchronous from/to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -401,7 +399,7 @@ def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
 
 def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     """
-    :summary: Read data synchronous from an ADS-device
+    :summary: Read data synchronous from an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -414,7 +412,6 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     :return: value: **value**
 
     """
-
     sync_read_request = _adsDLL.AdsSyncReadReqEx2
 
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
@@ -462,7 +459,7 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
 
 def adsSyncReadByNameEx(port, address, data_name, data_type):
     """
-    :summary: Read data synchronous from an ADS-device from data name
+    :summary: Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -494,8 +491,9 @@ def adsSyncReadByNameEx(port, address, data_name, data_type):
 
 def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
     """
-    :summary: Send data synchronous to an ADS-device from data name
+    :summary: Send data synchronous to an ADS-device from data name.
 
+    :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param string data_name: PLC storage address
     :param value: value to write to the storage address of the PLC
@@ -522,6 +520,19 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
 
 def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
                                       callback, user_handle=None):
+    """
+    :summary: Add a device notification.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param pyads.structs.AmsAddr adr: local or remote AmsAddr
+    :param string data_name: PLC storage address
+    :param pNoteAttrib: notification attributes
+    :param callback: Callback function to handle notification
+    :param user_handle: User Handle
+    :rtype: (int, int)
+    :returns: notification handle, user handle
+
+    """
     global callback_store
 
     adsSyncAddDeviceNotificationReqFct = \
@@ -566,7 +577,15 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
 
 def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
                                       user_handle):
+    """
+    :summary: Remove a device notification.
 
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param pyads.structs.AmsAddr adr: local or remote AmsAddr
+    :param int notification_handle: Notification Handle
+    :param int user_handle: User Handle
+
+    """
     adsSyncDelDeviceNotificationReqFct = \
         _adsDLL.AdsSyncDelDeviceNotificationReqEx
 
@@ -583,6 +602,13 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
 
 
 def adsSyncSetTimeoutEx(port, nMs):
+    """
+    :summary: Set Timeout.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param int nMs: timeout in ms
+
+    """
     adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeoutEx
     cms = ctypes.c_long(nMs)
     err_code = adsSyncSetTimeoutFct(port, cms)
