@@ -17,7 +17,7 @@ from .pyads import (
     adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq,
     adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress,
     adsSyncAddDeviceNotificationReq, adsSyncDelDeviceNotificationReq,
-    adsSyncSetTimeout
+    adsSyncSetTimeout, ADSError
 )
 
 from .pyads_ex import (
@@ -26,7 +26,7 @@ from .pyads_ex import (
     adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
     adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx,
     adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx,
-    adsSyncSetTimeoutEx
+    adsSyncSetTimeoutEx, adsSetLocalAddress
 )
 
 from .constants import (
@@ -82,6 +82,19 @@ def get_local_address():
         return adsGetLocalAddressEx(port)
 
     return adsGetLocalAddress()
+
+
+def set_local_address(ams_netid):
+    """
+    :summary: Set the local NetID (**Linux only**).
+
+    :param pyads.structs.SAmsNetID: new AmsNetID
+    :rtype: None
+
+    """
+    if linux:
+        return adsSetLocalAddress(ams_netid)
+    raise ADSError('SetLocalAddress is not supported for Windows clients.')
 
 
 def read_state(adr):

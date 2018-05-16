@@ -164,6 +164,18 @@ def adsGetLocalAddressEx(port):
     return local_ams_address
 
 
+def adsSetLocalAddress(ams_netid):
+    """
+    :summary: Change the local NetId.
+
+    :param pyads.structs.SAmsNetId ams_netid: new AmsNetID
+    :rtype: None
+
+    """
+    set_local_address = _adsDLL.AdsSetLocalAddress
+    set_local_address(ams_netid)
+
+
 def adsSyncReadStateReqEx(port, address):
     """
     :summary: Read the current ADS-state and the machine-state from the
