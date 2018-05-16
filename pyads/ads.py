@@ -91,6 +91,12 @@ def set_local_address(ams_netid):
     :param str: new AmsNetID
     :rtype: None
 
+    **Usage:**
+
+        >>> import pyads
+        >>> pyads.open_port()
+        >>> pyads.set_local_address('0.0.0.0.1.1')
+
     """
     if isinstance(ams_netid, str):
         ams_netid_st = parse_ams_netid(ams_netid)

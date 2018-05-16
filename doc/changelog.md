@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 2.2.13
+
+* Apply to new PyPi
+* Add `set_local_address` function to change local address on Linuxjk:w
+
 ## Version 2.2.7
 
 Long Description for PyPi
