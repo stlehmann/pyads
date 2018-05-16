@@ -1,8 +1,8 @@
 """
-    Pythonic ADS functions.
+Pythonic ADS functions.
 
-    :copyright: (c) 2016 by Stefan Lehmann
-    :license: MIT, see LICENSE for details
+:copyright: (c) 2016 by Stefan Lehmann
+:license: MIT, see LICENSE for details
 
 """
 import struct
@@ -45,6 +45,7 @@ port = None
 def open_port():
     """
     :summary:  Connect to the TwinCAT message router.
+
     :rtype: int
     :return: port number
 
@@ -59,10 +60,7 @@ def open_port():
 
 
 def close_port():
-    """
-    :summary: Close the connection to the TwinCAT message router.
-
-    """
+    """:summary: Close the connection to the TwinCAT message router."""
     global port
 
     if linux:
@@ -76,6 +74,7 @@ def close_port():
 def get_local_address():
     """
     :summary: Return the local AMS-address and the port number.
+
     :rtype: AmsAddr
 
     """
@@ -87,8 +86,11 @@ def get_local_address():
 
 def read_state(adr):
     """
-    :summary: Read the current ADS-state and the machine-state from the
-        ADS-server
+    :summary: Read the current ADS-state and the machine-state.
+
+    Read the current ADS-state and the machine-state from the
+    ADS-server.
+
     :param AmsAddr adr: local or remote AmsAddr
     :rtype: (int, int)
     :return: adsState, deviceState
@@ -102,7 +104,7 @@ def read_state(adr):
 
 def write_control(adr, ads_state, device_state, data, plc_datatype):
     """
-    :summary: Change the ADS state and the machine-state of the ADS-server
+    :summary: Change the ADS state and the machine-state of the ADS-server.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int ads_state: new ADS-state, according to ADSTATE constants
@@ -132,7 +134,8 @@ def write_control(adr, ads_state, device_state, data, plc_datatype):
 
 def read_device_info(adr):
     """
-    :summary: Read the name and the version number of the ADS-server
+    :summary: Read the name and the version number of the ADS-server.
+
     :param AmsAddr adr: local or remote AmsAddr
     :rtype: string, AdsVersion
     :return: device name, version
@@ -146,7 +149,7 @@ def read_device_info(adr):
 
 def write(adr, index_group, index_offset, value, plc_datatype):
     """
-    :summary: Send data synchronous to an ADS-device
+    :summary: Send data synchronous to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -168,7 +171,8 @@ def write(adr, index_group, index_offset, value, plc_datatype):
 def read_write(adr, index_group, index_offset, plc_read_datatype,
                value, plc_write_datatype):
     """
-    :summary: Read and write data synchronous from/to an ADS-device
+    :summary: Read and write data synchronous from/to an ADS-device.
+
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
@@ -196,7 +200,8 @@ def read_write(adr, index_group, index_offset, plc_read_datatype,
 
 def read(adr, index_group, index_offset, plc_datatype):
     """
-    :summary: Read data synchronous from an ADS-device
+    :summary: Read data synchronous from an ADS-device.
+
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
@@ -216,7 +221,8 @@ def read(adr, index_group, index_offset, plc_datatype):
 
 def read_by_name(adr, data_name, plc_datatype):
     """
-    :summary: Read data synchronous from an ADS-device from data name
+    :summary: Read data synchronous from an ADS-device from data name.
+
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: data name
     :param int plc_datatype: type of the data given to the PLC, according to
@@ -232,7 +238,7 @@ def read_by_name(adr, data_name, plc_datatype):
 
 def write_by_name(adr, data_name, value, plc_datatype):
     """
-    :summary: Send data synchronous to an ADS-device from data name
+    :summary: Send data synchronous to an ADS-device from data name.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: PLC storage address
@@ -269,7 +275,7 @@ def delete_route(adr):
 
 def add_device_notification(adr, data_name, attr, callback, user_handle=None):
     """
-    :summary: Add a device notification
+    :summary: Add a device notification.
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
@@ -297,7 +303,7 @@ def add_device_notification(adr, data_name, attr, callback, user_handle=None):
 
 def del_device_notification(adr, notification_handle, user_handle):
     """
-    :summary: Remove a device notification
+    :summary: Remove a device notification.
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
@@ -315,6 +321,7 @@ def del_device_notification(adr, notification_handle, user_handle):
 
 
 def set_timeout(ms):
+    """Set timout."""
     if linux:
         adsSyncSetTimeoutEx(port, ms)
     else:
@@ -345,17 +352,16 @@ class Connection(object):
         self._notifications = {}
 
     def __enter__(self):
+        """Open on entering with-block."""
         self.open()
         return self
 
     def __exit__(self, _type, _val, _traceback):
+        """Close on leaving with-block."""
         self.close()
 
     def open(self):
-        """
-        :summary:  Connect to the TwinCAT message router.
-
-        """
+        """:summary:  Connect to the TwinCAT message router."""
         if self._open:
             return
         if linux:
@@ -366,10 +372,7 @@ class Connection(object):
         self._open = True
 
     def close(self):
-        """
-        :summary: Close the connection to the TwinCAT message router.
-
-        """
+        """:summary: Close the connection to the TwinCAT message router."""
         if not self._open:
             return
         if linux:
@@ -383,6 +386,7 @@ class Connection(object):
     def get_local_address(self):
         """
         :summary: Return the local AMS-address and the port number.
+
         :rtype: AmsAddr
 
         """
@@ -393,8 +397,10 @@ class Connection(object):
 
     def read_state(self):
         """
-        :summary: Read the current ADS-state and the machine-state from the
-            ADS-server
+        :summary: Read the current ADS-state and the machine-state.
+
+        Read the current ADS-state and the machine-state from the ADS-server.
+
         :rtype: (int, int)
         :return: adsState, deviceState
 
@@ -406,7 +412,7 @@ class Connection(object):
 
     def write_control(self, ads_state, device_state, data, plc_datatype):
         """
-        :summary: Change the ADS state and the machine-state of the ADS-server
+        :summary: Change the ADS state and the machine-state of the ADS-server.
 
         :param int ads_state: new ADS-state, according to ADSTATE constants
         :param int device_state: new machine-state
@@ -431,7 +437,8 @@ class Connection(object):
 
     def read_device_info(self):
         """
-        :summary: Read the name and the version number of the ADS-server
+        :summary: Read the name and the version number of the ADS-server.
+
         :rtype: string, AdsVersion
         :return: device name, version
 
@@ -443,7 +450,7 @@ class Connection(object):
 
     def write(self, index_group, index_offset, value, plc_datatype):
         """
-        :summary: Send data synchronous to an ADS-device
+        :summary: Send data synchronous to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
@@ -463,7 +470,8 @@ class Connection(object):
     def read_write(self, index_group, index_offset, plc_read_datatype,
                    value, plc_write_datatype):
         """
-        :summary: Read and write data synchronous from/to an ADS-device
+        :summary: Read and write data synchronous from/to an ADS-device.
+
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
@@ -487,7 +495,8 @@ class Connection(object):
 
     def read(self, index_group, index_offset, plc_datatype):
         """
-        :summary: Read data synchronous from an ADS-device
+        :summary: Read data synchronous from an ADS-device.
+
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
@@ -505,7 +514,8 @@ class Connection(object):
 
     def read_by_name(self, data_name, plc_datatype):
         """
-        :summary: Read data synchronous from an ADS-device from data name
+        :summary: Read data synchronous from an ADS-device from data name.
+
         :param string data_name: data name
         :param int plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
@@ -520,7 +530,7 @@ class Connection(object):
 
     def write_by_name(self, data_name, value, plc_datatype):
         """
-        :summary: Send data synchronous to an ADS-device from data name
+        :summary: Send data synchronous to an ADS-device from data name.
 
         :param string data_name: PLC storage address
         :param value: value to write to the storage address of the PLC
@@ -538,7 +548,7 @@ class Connection(object):
     def add_device_notification(self, data_name, attr, callback,
                                 user_handle=None):
         """
-        :summary: Add a device notification
+        :summary: Add a device notification.
 
         :param str data_name: PLC storage address
         :param pyads.structs.NotificationAttrib attr: object that contains
@@ -598,7 +608,7 @@ class Connection(object):
 
     def del_device_notification(self, notification_handle, user_handle):
         """
-        :summary: Remove a device notification
+        :summary: Remove a device notification.
 
         :param notification_handle: address of the variable that contains
             the handle of the notification
@@ -615,13 +625,14 @@ class Connection(object):
     @property
     def is_open(self):
         """
-        Shows the current connection state.
+        Show the current connection state.
 
         :return: True if connection is open
         """
         return self._open
 
     def set_timeout(self, ms):
+        """Set Timeout."""
         if linux:
             adsSyncSetTimeoutEx(self._port, ms)
         else:
@@ -629,7 +640,7 @@ class Connection(object):
 
     def notification(self, plc_datatype=None):
         """
-        **Decorator**
+        **Decorator**.
 
         A decorator that can be used for callback functions in order to
         convert the data of the NotificationHeader into the fitting
@@ -667,7 +678,6 @@ class Connection(object):
             >>>        pass
 
         """
-
         def notification_decorator(func):
 
             def func_wrapper(addr, notification, user):
