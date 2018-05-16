@@ -8,7 +8,7 @@ Pythonic ADS functions.
 import struct
 from ctypes import memmove, addressof, c_ubyte
 
-from .utils import platform_is_linux
+from .utils import platform_is_linux, parse_ams_netid
 from .filetimes import filetime_to_dt
 
 from .pyads import (
@@ -36,7 +36,7 @@ from .constants import (
     PLCTYPE_USINT, PLCTYPE_WORD
 )
 
-from .structs import AmsAddr
+from .structs import AmsAddr, SAmsNetId
 
 linux = platform_is_linux()
 port = None
@@ -88,12 +88,19 @@ def set_local_address(ams_netid):
     """
     :summary: Set the local NetID (**Linux only**).
 
-    :param pyads.structs.SAmsNetID: new AmsNetID
+    :param str: new AmsNetID
     :rtype: None
 
     """
+    if isinstance(ams_netid, str):
+        ams_netid_st = parse_ams_netid(ams_netid)
+    else:
+        ams_netid_st = ams_netid
+
+    assert isinstance(ams_netid, SAmsNetId)
+
     if linux:
-        return adsSetLocalAddress(ams_netid)
+        return adsSetLocalAddress(ams_netid_st)
     raise ADSError('SetLocalAddress is not supported for Windows clients.')
 
 
