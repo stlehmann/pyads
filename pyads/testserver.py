@@ -478,7 +478,7 @@ class AdvancedHandler(AbstractHandler):
             return response_content
 
         def handle_read():
-            data = request.ads_data
+            data = request.ams_header.data
 
             index_group = struct.unpack('<I', data[:4])[0]
             index_offset = struct.unpack('<I', data[4:8])[0]
