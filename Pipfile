@@ -1,18 +1,14 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 pyads = "*"
 sphinx = "*"
-
+prompt-toolkit = "*"
 
 [dev-packages]
-
 sphinx = "*"
 pdbpp = "*"
 tox = "*"
