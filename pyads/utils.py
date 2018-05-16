@@ -29,3 +29,5 @@ def parse_ams_netid(ams_netid):
     # Fill the netId struct with data
     ams_netid_st = SAmsNetId()
     ams_netid_st.b = (c_ubyte * 6)(*id_numbers)
+    return ams_netid_st
+

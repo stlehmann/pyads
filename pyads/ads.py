@@ -97,7 +97,7 @@ def set_local_address(ams_netid):
     else:
         ams_netid_st = ams_netid
 
-    assert isinstance(ams_netid, SAmsNetId)
+    assert isinstance(ams_netid_st, SAmsNetId)
 
     if linux:
         return adsSetLocalAddress(ams_netid_st)
