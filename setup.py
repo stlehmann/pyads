@@ -21,7 +21,7 @@ def read(*names, **kwargs):
             encoding=kwargs.get("encoding", "utf8")
         ) as fp:
             return fp.read()
-    except FileNotFoundError:
+    except IOError:
         return ''
 
 

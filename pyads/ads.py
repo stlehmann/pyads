@@ -8,7 +8,7 @@ Pythonic ADS functions.
 import struct
 from ctypes import memmove, addressof, c_ubyte
 
-from .utils import platform_is_linux, parse_ams_netid
+from .utils import platform_is_linux
 from .filetimes import filetime_to_dt
 
 from .pyads import (
@@ -40,6 +40,19 @@ from .structs import AmsAddr, SAmsNetId
 
 linux = platform_is_linux()
 port = None
+
+
+def _parse_ams_netid(ams_netid):
+    """Parse an AmsNetId from *str* to *SAmsNetId*."""
+    id_numbers = list(map(int, ams_netid.split('.')))
+
+    if len(id_numbers) != 6:
+        raise ValueError('no valid netid')
+
+    # Fill the netId struct with data
+    ams_netid_st = SAmsNetId()
+    ams_netid_st.b = (c_ubyte * 6)(*id_numbers)
+    return ams_netid_st
 
 
 def open_port():
@@ -99,7 +112,7 @@ def set_local_address(ams_netid):
 
     """
     if isinstance(ams_netid, str):
-        ams_netid_st = parse_ams_netid(ams_netid)
+        ams_netid_st = _parse_ams_netid(ams_netid)
     else:
         ams_netid_st = ams_netid
 
