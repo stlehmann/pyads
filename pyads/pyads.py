@@ -1,24 +1,46 @@
 # -*- coding: utf-8 -*-
-"""
-    pyads.pyads
-    ~~~~~~~~~~~
+"""Module contains ADS functions.
 
-    Contains ADS functions.
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
 
-    :copyright: (c) 2013 by Stefan Lehmann
-    :license: MIT, see LICENSE for details
+:created on: 2018-06-11 18:15:53
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-12 14:39:25
 
 """
 import ctypes
-from ctypes import c_long, sizeof, pointer, c_int, \
-    c_ulong, c_char_p, create_string_buffer, memmove, addressof, c_void_p, \
-    POINTER
+from ctypes import (
+    c_long,
+    sizeof,
+    pointer,
+    c_int,
+    c_ulong,
+    c_char_p,
+    create_string_buffer,
+    memmove,
+    addressof,
+    c_void_p,
+    POINTER,
+)
 from functools import wraps
 
-from .constants import PLCTYPE_STRING, PLCTYPE_UDINT, ADSIGRP_SYM_HNDBYNAME, \
-    ADSIGRP_SYM_VALBYHND, ADSIGRP_SYM_RELEASEHND, STRING_BUFFER
-from .structs import AdsVersion, SAdsVersion, SAmsAddr, AmsAddr, \
-    SAdsNotificationAttrib, SAdsNotificationHeader
+from .constants import (
+    PLCTYPE_STRING,
+    PLCTYPE_UDINT,
+    ADSIGRP_SYM_HNDBYNAME,
+    ADSIGRP_SYM_VALBYHND,
+    ADSIGRP_SYM_RELEASEHND,
+    STRING_BUFFER,
+)
+from .structs import (
+    AdsVersion,
+    SAdsVersion,
+    SAmsAddr,
+    AmsAddr,
+    SAdsNotificationAttrib,
+    SAdsNotificationHeader,
+)
 from .errorcodes import ERROR_CODES
 from .utils import platform_is_windows
 
@@ -27,12 +49,13 @@ from .utils import platform_is_windows
 if platform_is_windows():
     _adsDLL = ctypes.windll.TcAdsDll  #: ADS-DLL (Beckhoff TwinCAT)
 
-    if not hasattr(_adsDLL, 'AdsPortOpenEx'):
+    if not hasattr(_adsDLL, "AdsPortOpenEx"):
         from warnings import warn
+
         warn(
             "Compatibility with this version of TcAdsDll.dll will be removed in the next pyads release (v2.3.0). "
             "Update to TwinCAT 2.10 1243 or greater to ensure continued compatibility.",
-            DeprecationWarning
+            DeprecationWarning,
         )
 
 
@@ -40,10 +63,9 @@ class ADSError(Exception):
     def __init__(self, err_code):
         self.err_code = err_code
         try:
-            self.msg = "{} ({})".format(ERROR_CODES[self.err_code],
-                                        self.err_code)
+            self.msg = "{} ({})".format(ERROR_CODES[self.err_code], self.err_code)
         except KeyError:
-            self.msg = 'Unknown Error ({0})'.format(self.err_code)
+            self.msg = "Unknown Error ({0})".format(self.err_code)
 
     def __str__(self):
         return "ADSError: " + self.msg
@@ -54,8 +76,9 @@ def win32_only(fn):
     def wrapper(*args, **kwargs):
         if not platform_is_windows():
             raise RuntimeError(
-                '{0} is only supported when using the TcAdsDll (win32).'
-                .format(fn.__name__)
+                "{0} is only supported when using the TcAdsDll (win32).".format(
+                    fn.__name__
+                )
             )
         return fn(*args, **kwargs)
 
@@ -208,8 +231,7 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
         pData = pointer(nData)
         nLength = sizeof(nData)
 
-    errCode = adsSyncWriteControlReqFct(pAddr, nAdsState, nDeviceState,
-                                        nLength, pData)
+    errCode = adsSyncWriteControlReqFct(pAddr, nAdsState, nDeviceState, nLength, pData)
     if errCode:
         raise ADSError(errCode)
 
@@ -240,22 +262,22 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
         pData = nData
         nLength = len(pData.value) + 1
     else:
-        if type(plcDataType).__name__ == 'PyCArrayType':
+        if type(plcDataType).__name__ == "PyCArrayType":
             nData = plcDataType(*value)
         else:
             nData = plcDataType(value)
         pData = pointer(nData)
         nLength = sizeof(nData)
 
-    errCode = adsSyncWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset,
-                                 nLength, pData)
+    errCode = adsSyncWriteReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
     if errCode:
         raise ADSError(errCode)
 
 
 @win32_only
-def adsSyncReadWriteReq(adr, indexGroup, indexOffset, plcReadDataType,
-                        value, plcWriteDataType):
+def adsSyncReadWriteReq(
+    adr, indexGroup, indexOffset, plcReadDataType, value, plcWriteDataType
+):
     """
     :summary: Read and write data synchronous from/to an ADS-device
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
@@ -292,19 +314,25 @@ def adsSyncReadWriteReq(adr, indexGroup, indexOffset, plcReadDataType,
         data_length = sizeof(nData)
 
     err_code = adsSyncReadWriteReqFct(
-        pAmsAddr, nIndexGroup, nIndexOffset, nReadLength, pointer(readData),
-        data_length, data)
+        pAmsAddr,
+        nIndexGroup,
+        nIndexOffset,
+        nReadLength,
+        pointer(readData),
+        data_length,
+        data,
+    )
 
     if err_code:
         raise ADSError(err_code)
 
     if plcReadDataType == PLCTYPE_STRING:
-        return readData.value.decode('utf-8')
+        return readData.value.decode("utf-8")
 
-    if type(plcReadDataType).__name__ == 'PyCArrayType':
+    if type(plcReadDataType).__name__ == "PyCArrayType":
         return [i for i in readData]
 
-    if hasattr(readData, 'value'):
+    if hasattr(readData, "value"):
         return readData.value
 
     return readData
@@ -338,19 +366,18 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
 
     pData = pointer(data)
     nLength = c_ulong(sizeof(data))
-    errCode = adsSyncReadReqFct(
-        pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
+    errCode = adsSyncReadReqFct(pAmsAddr, nIndexGroup, nIndexOffset, nLength, pData)
 
     if errCode:
         raise ADSError(errCode)
 
     if plcDataType == PLCTYPE_STRING:
-        return data.value.decode('utf-8')
+        return data.value.decode("utf-8")
 
-    if type(plcDataType).__name__ == 'PyCArrayType':
+    if type(plcDataType).__name__ == "PyCArrayType":
         return [i for i in data]
 
-    if hasattr(data, 'value'):
+    if hasattr(data, "value"):
         return data.value
 
     return data
@@ -370,8 +397,7 @@ def adsSyncReadByName(adr, dataName, plcDataType):
     """
     # Get the handle of the PLC-variable
     hnl = adsSyncReadWriteReq(
-        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
-        dataName, PLCTYPE_STRING
+        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName, PLCTYPE_STRING
     )
 
     # Read the value of a PLC-variable, via handle
@@ -396,8 +422,9 @@ def adsSyncWriteByName(adr, dataName, value, plcDataType):
 
     """
     # Get the handle of the PLC-variable
-    hnl = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
-                              dataName, PLCTYPE_STRING)
+    hnl = adsSyncReadWriteReq(
+        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, dataName, PLCTYPE_STRING
+    )
 
     # Write the value of a PLC-variable, via handle
     adsSyncWriteReq(adr, ADSIGRP_SYM_VALBYHND, hnl, value, plcDataType)
@@ -408,22 +435,24 @@ def adsSyncWriteByName(adr, dataName, value, plcDataType):
 
 NOTEFUNC = None
 if platform_is_windows():
-    NOTEFUNC = ctypes.WINFUNCTYPE(c_void_p, POINTER(SAmsAddr),
-                                  POINTER(SAdsNotificationHeader), c_ulong)
+    NOTEFUNC = ctypes.WINFUNCTYPE(
+        c_void_p, POINTER(SAmsAddr), POINTER(SAdsNotificationHeader), c_ulong
+    )
 
 callback_store = dict()
 
 
 @win32_only
-def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback,
-                                    user_handle=None):
-    global callback_store   # use global variable to prevent garbage collection
-    adsSyncAddDeviceNotificationReqFct = \
-        _adsDLL.AdsSyncAddDeviceNotificationReq
+def adsSyncAddDeviceNotificationReq(
+    adr, data_name, pNoteAttrib, callback, user_handle=None
+):
+    global callback_store  # use global variable to prevent garbage collection
+    adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReq
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    hnl = adsSyncReadWriteReq(adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT,
-                              data_name, PLCTYPE_STRING)
+    hnl = adsSyncReadWriteReq(
+        adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data_name, PLCTYPE_STRING
+    )
 
     nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
     nIndexOffset = ctypes.c_ulong(hnl)
@@ -438,18 +467,24 @@ def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback,
         raise TypeError("Callback function type can't be None")
     adsSyncAddDeviceNotificationReqFct.argtypes = [
         ctypes.POINTER(SAmsAddr),
-        ctypes.c_ulong, ctypes.c_ulong,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
         ctypes.POINTER(SAdsNotificationAttrib),
-        NOTEFUNC, ctypes.c_ulong,
-        ctypes.POINTER(ctypes.c_ulong)
+        NOTEFUNC,
+        ctypes.c_ulong,
+        ctypes.POINTER(ctypes.c_ulong),
     ]
     adsSyncAddDeviceNotificationReqFct.restype = c_ulong
     c_callback = NOTEFUNC(callback)
-    err_code = adsSyncAddDeviceNotificationReqFct(pAmsAddr, nIndexGroup,
-                                                  nIndexOffset,
-                                                  pointer(attrib),
-                                                  c_callback, nHUser,
-                                                  pointer(pNotification))
+    err_code = adsSyncAddDeviceNotificationReqFct(
+        pAmsAddr,
+        nIndexGroup,
+        nIndexOffset,
+        pointer(attrib),
+        c_callback,
+        nHUser,
+        pointer(pNotification),
+    )
 
     if err_code:
         raise ADSError(err_code)
@@ -459,8 +494,7 @@ def adsSyncAddDeviceNotificationReq(adr, data_name, pNoteAttrib, callback,
 
 @win32_only
 def adsSyncDelDeviceNotificationReq(adr, notification_handle, user_handle):
-    adsSyncDelDeviceNotificationReqFct = \
-        _adsDLL.AdsSyncDelDeviceNotificationReq
+    adsSyncDelDeviceNotificationReqFct = _adsDLL.AdsSyncDelDeviceNotificationReq
 
     pAmsAddr = pointer(adr.amsAddrStruct())
     nHNotification = c_ulong(notification_handle)
@@ -474,8 +508,7 @@ def adsSyncDelDeviceNotificationReq(adr, notification_handle, user_handle):
 
 @win32_only
 def adsSyncSetTimeout(nMs):
-    adsSyncSetTimeoutFct = \
-        _adsDLL.AdsSyncSetTimeout
+    adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeout
     cms = c_long(nMs)
     err_code = adsSyncSetTimeoutFct(cms)
     if err_code:
