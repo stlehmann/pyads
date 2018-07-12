@@ -6,12 +6,28 @@
 
 :created on 2018-06-11 18:15:53
 :last modified by:   Stefan Lehmann
-:last modified time: 2018-07-12 13:38:49
+:last modified time: 2018-07-12 13:42:02
 
 """
 from typing import Type
-from ctypes import Array, c_bool, c_byte, c_int8, c_uint8, c_int16, c_uint16, \
-    c_int32, c_uint32, c_float, c_double, c_char, c_short, c_int64, c_uint64
+from ctypes import (
+    Array,
+    c_bool,
+    c_byte,
+    c_int8,
+    c_uint8,
+    c_int16,
+    c_uint16,
+    c_int32,
+    c_uint32,
+    c_float,
+    c_double,
+    c_char,
+    c_short,
+    c_int64,
+    c_uint64,
+)
+
 STRING_BUFFER = 1024
 
 # plc data types:
@@ -70,7 +86,9 @@ def PLCTYPE_ARR_SHORT(n):
 # READ_M - WRITE_M
 INDEXGROUP_MEMORYBYTE = 0x4020  #: plc memory area (%M), offset means byte-offset
 # READ_MX - WRITE_MX
-INDEXGROUP_MEMORYBIT = 0x4021  #: plc memory area (%MX), offset means the bit adress, calculatedb by bytenumber * 8 + bitnumber
+INDEXGROUP_MEMORYBIT = (
+    0x4021
+)  #: plc memory area (%MX), offset means the bit adress, calculatedb by bytenumber * 8 + bitnumber
 # PLCADS_IGR_RMSIZE
 INDEXGROUP_MEMORYSIZE = 0x4025  #: size of the memory area in bytes
 # PLCADS_IGR_RWRB
@@ -99,17 +117,17 @@ ADSIGRP_SYM_DOWNLOAD = 0xF00A
 ADSIGRP_SYM_UPLOAD = 0xF00B
 ADSIGRP_SYM_UPLOADINFO = 0xF00C
 
-ADSIGRP_SYMNOTE = 0xF010  # notification of named handle
-ADSIGRP_IOIMAGE_RWIB = 0xF020  # read/write input byte(s)
-ADSIGRP_IOIMAGE_RWIX = 0xF021  # read/write input bit
-ADSIGRP_IOIMAGE_RWOB = 0xF030  # read/write output byte(s)
-ADSIGRP_IOIMAGE_RWOX = 0xF031  # read/write output bit
-ADSIGRP_IOIMAGE_CLEARI = 0xF040  # write inputs to null
-ADSIGRP_IOIMAGE_CLEARO = 0xF050  # write outputs to null
+ADSIGRP_SYMNOTE = 0xF010  #: notification of named handle
+ADSIGRP_IOIMAGE_RWIB = 0xF020  #: read/write input byte(s)
+ADSIGRP_IOIMAGE_RWIX = 0xF021  #: read/write input bit
+ADSIGRP_IOIMAGE_RWOB = 0xF030  #: read/write output byte(s)
+ADSIGRP_IOIMAGE_RWOX = 0xF031  #: read/write output bit
+ADSIGRP_IOIMAGE_CLEARI = 0xF040  #: write inputs to null
+ADSIGRP_IOIMAGE_CLEARO = 0xF050  #: write outputs to null
 
-ADSIGRP_DEVICE_DATA = 0xF100  # state, name, etc...
-ADSIOFFS_DEVDATA_ADSSTATE = 0x0000  # ads state of device
-ADSIOFFS_DEVDATA_DEVSTATE = 0x0002  # device state
+ADSIGRP_DEVICE_DATA = 0xF100  #: state, name, etc...
+ADSIOFFS_DEVDATA_ADSSTATE = 0x0000  #: ads state of device
+ADSIOFFS_DEVDATA_DEVSTATE = 0x0002  #: device state
 
 
 # PORTS
