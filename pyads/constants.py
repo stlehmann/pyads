@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
+"""Constants for the work with the ADS API.
+
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+
+:created on 2018-06-11 18:15:53
+:last modified by:   Stefan Lehmann
+:last modified time: 2018-07-12 13:38:49
+
 """
-    pyads.constants
-    ~~~~~~~~~~~~~~~
-
-    Constants for the work with the ADS API.
-
-    :copyright: © 2013 by Stefan Lehmann
-    :license: MIT, see LICENSE for details
-
-"""
-from ctypes import c_bool, c_byte, c_int8, c_uint8, c_int16, c_uint16, \
+from typing import Type
+from ctypes import Array, c_bool, c_byte, c_int8, c_uint8, c_int16, c_uint16, \
     c_int32, c_uint32, c_float, c_double, c_char, c_short, c_int64, c_uint64
-
 STRING_BUFFER = 1024
 
 # plc data types:
@@ -37,22 +37,32 @@ PLCTYPE_ULINT = c_uint64
 
 
 def PLCTYPE_ARR_REAL(n):
+    # type: (int) -> Type[Array[c_float]]
+    """Return an array with n float values."""
     return c_float * n
 
 
 def PLCTYPE_ARR_LREAL(n):
+    # type: (int) -> Type[Array[c_double]]
+    """Return an array with n double values."""
     return c_double * n
 
 
 def PLCTYPE_ARR_INT(n):
+    # type: (int) -> Type[Array[c_int16]]
+    """Return an array with n int16 values."""
     return c_int16 * n
 
 
 def PLCTYPE_ARR_DINT(n):
+    # type: (int) -> Type[Array[c_int32]]
+    """Return an array with n int32 values."""
     return c_int32 * n
 
 
 def PLCTYPE_ARR_SHORT(n):
+    # type: (int) -> Type[Array[c_short]]
+    """Return an array with n short values."""
     return c_short * n
 
 

@@ -34,3 +34,4 @@ htmlcov/
 deploy
 
 coverage
+.mypy_cache/
