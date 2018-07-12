@@ -6,9 +6,10 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-12 14:39:25
+:last modified time: 2018-07-12 15:44:39
 
 """
+from typing import Callable, Any, Tuple, Type, Union, Dict, Optional
 import ctypes
 from ctypes import (
     c_long,
@@ -38,6 +39,7 @@ from .structs import (
     SAdsVersion,
     SAmsAddr,
     AmsAddr,
+    NotificationAttrib,
     SAdsNotificationAttrib,
     SAdsNotificationHeader,
 )
@@ -53,14 +55,19 @@ if platform_is_windows():
         from warnings import warn
 
         warn(
-            "Compatibility with this version of TcAdsDll.dll will be removed in the next pyads release (v2.3.0). "
+            "Compatibility with this version of TcAdsDll.dll will be removed in the "
+            "next pyads release (v2.3.0). "
             "Update to TwinCAT 2.10 1243 or greater to ensure continued compatibility.",
             DeprecationWarning,
         )
 
 
 class ADSError(Exception):
+    """Error class for errors related to ADS communication."""
+
     def __init__(self, err_code):
+        # type: (int) -> None
+
         self.err_code = err_code
         try:
             self.msg = "{} ({})".format(ERROR_CODES[self.err_code], self.err_code)
@@ -68,12 +75,21 @@ class ADSError(Exception):
             self.msg = "Unknown Error ({0})".format(self.err_code)
 
     def __str__(self):
+        # type: () -> str
+        """Return text representation of the object."""
         return "ADSError: " + self.msg
 
 
 def win32_only(fn):
+    # type: (Callable) -> Callable
+    """Run function only on win32 systems.
+
+    Decorator.
+
+    """
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        # type: (Any, Any) -> Callable
         if not platform_is_windows():
             raise RuntimeError(
                 "{0} is only supported when using the TcAdsDll (win32).".format(
@@ -87,8 +103,9 @@ def win32_only(fn):
 
 @win32_only
 def adsGetDllVersion():
-    """
-    :summary: Return version, revision and build of the ADS library.
+    # type: () -> AdsVersion
+    """Return version, revision and build of the ADS library.
+
     :rtype: pyads.structs.AdsVersion
     :return: version, revision and build of the ads-dll
 
@@ -102,8 +119,9 @@ def adsGetDllVersion():
 
 @win32_only
 def adsPortOpen():
-    """
-    :summary:  Connect to the TwinCAT message router.
+    # type: () -> int
+    """Connect to the TwinCAT message router.
+
     :rtype: int
     :return: port number
 
@@ -116,10 +134,8 @@ def adsPortOpen():
 
 @win32_only
 def adsPortClose():
-    """
-    :summary: Close the connection to the TwinCAT message router.
-
-    """
+    # type: () -> None
+    """Close the connection to the TwinCAT message router."""
     adsPortCloseFct = _adsDLL.AdsPortClose
     adsPortCloseFct.restype = c_long
     errCode = adsPortCloseFct()
@@ -129,8 +145,9 @@ def adsPortClose():
 
 @win32_only
 def adsGetLocalAddress():
-    """
-    :summary: Return the local AMS-address and the port number.
+    # type: () -> AmsAddr
+    """Return the local AMS-address and the port number.
+
     :rtype: pyads.structs.AmsAddr
     :return: AMS-address
 
@@ -149,9 +166,9 @@ def adsGetLocalAddress():
 
 @win32_only
 def adsSyncReadStateReq(adr):
-    """
-    :summary: Read the current ADS-state and the machine-state from the
-        ADS-server
+    # type: (AmsAddr) -> Tuple[int, int]
+    """Read the current ADS-state and the machine-state.
+
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :rtype: (int, int)
     :return: adsState, deviceState
@@ -174,8 +191,9 @@ def adsSyncReadStateReq(adr):
 
 @win32_only
 def adsSyncReadDeviceInfoReq(adr):
-    """
-    :summary: Read the name and the version number of the ADS-server
+    # type: (AmsAddr) -> Tuple[str, AdsVersion]
+    """Read the name and the version number of the ADS-server.
+
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :rtype: string, AdsVersion
     :return: device name, version
@@ -197,14 +215,14 @@ def adsSyncReadDeviceInfoReq(adr):
 
 @win32_only
 def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
-    """
-    :summary: Change the ADS state and the machine-state of the ADS-server
+    # type: (AmsAddr, int, int, Any, Type) -> None
+    """Change the ADS state and the machine-state of the ADS-server.
 
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param int adsState: new ADS-state, according to ADSTATE constants
     :param int deviceState: new machine-state
     :param data: additional data
-    :param int plcDataType: plc datatype, according to PLCTYPE constants
+    :param type plcDataType: plc datatype, according to PLCTYPE constants
 
     :note: Despite changing the ADS-state and the machine-state it is possible
 
@@ -224,8 +242,8 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
 
     if plcDataType == PLCTYPE_STRING:
         nData = c_char_p(data.encode())
-        pData = nData
-        nLength = len(pData.value) + 1
+        pData = nData  # type: Union[c_char_p, pointer[Any]]
+        nLength = len(pData.value) + 1  # type: ignore
     else:
         nData = plcDataType(data)
         pData = pointer(nData)
@@ -238,8 +256,8 @@ def adsSyncWriteControlReq(adr, adsState, deviceState, data, plcDataType):
 
 @win32_only
 def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
-    """
-    :summary: Send data synchronous to an ADS-device
+    # type: (AmsAddr, int, int, Any, Type) -> None
+    """Send data synchronous to an ADS-device.
 
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param int indexGroup: PLC storage area, according to the INDEXGROUP
@@ -250,7 +268,6 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
         according to PLCTYPE constants
 
     """
-
     adsSyncWriteReqFct = _adsDLL.AdsSyncWriteReq
 
     pAmsAddr = pointer(adr.amsAddrStruct())
@@ -259,8 +276,8 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
 
     if plcDataType == PLCTYPE_STRING:
         nData = c_char_p(value.encode())
-        pData = nData
-        nLength = len(pData.value) + 1
+        pData = nData  # type: Union[c_char_p, pointer[Any]]
+        nLength = len(pData.value) + 1  # type: ignore
     else:
         if type(plcDataType).__name__ == "PyCArrayType":
             nData = plcDataType(*value)
@@ -278,8 +295,9 @@ def adsSyncWriteReq(adr, indexGroup, indexOffset, value, plcDataType):
 def adsSyncReadWriteReq(
     adr, indexGroup, indexOffset, plcReadDataType, value, plcWriteDataType
 ):
-    """
-    :summary: Read and write data synchronous from/to an ADS-device
+    # type: (AmsAddr, int, int, Type, Any, Type) -> Any
+    """Read and write data synchronous from/to an ADS-device.
+
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param int indexGroup: PLC storage area, according to the INDEXGROUP
         constants
@@ -306,7 +324,7 @@ def adsSyncReadWriteReq(
         # as we got the value as unicode string (python 3)
         # we have to convert it to ascii
         ascii_string = value.encode()
-        data = c_char_p(ascii_string)
+        data = c_char_p(ascii_string)  # type: Union[c_char_p, pointer[Any]]
         data_length = len(value) + 1
     else:
         nData = plcWriteDataType(value)
@@ -340,8 +358,9 @@ def adsSyncReadWriteReq(
 
 @win32_only
 def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
-    """
-    :summary: Read data synchronous from an ADS-device
+    # type: (AmsAddr, int, int, Type) -> Any
+    """Read data synchronous from an ADS-device.
+
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param int indexGroup: PLC storage area, according to the INDEXGROUP
         constants
@@ -352,7 +371,6 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
     :return: value: **value**
 
     """
-
     adsSyncReadReqFct = _adsDLL.AdsSyncReadReq
 
     pAmsAddr = pointer(adr.amsAddrStruct())
@@ -385,8 +403,9 @@ def adsSyncReadReq(adr, indexGroup, indexOffset, plcDataType):
 
 @win32_only
 def adsSyncReadByName(adr, dataName, plcDataType):
-    """
-    :summary: Read data synchronous from an ADS-device from data name
+    # type: (AmsAddr, str, Type) -> Any
+    """Read data synchronous from an ADS-device from data name.
+
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param string dataName: data name
     :param int plcDataType: type of the data given to the PLC, according to
@@ -411,8 +430,8 @@ def adsSyncReadByName(adr, dataName, plcDataType):
 
 @win32_only
 def adsSyncWriteByName(adr, dataName, value, plcDataType):
-    """
-    :summary: Send data synchronous to an ADS-device from data name
+    # type: (AmsAddr, str, Any, Type) -> None
+    """Send data synchronous to an ADS-device from data name.
 
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param string dataName: PLC storage address
@@ -439,13 +458,25 @@ if platform_is_windows():
         c_void_p, POINTER(SAmsAddr), POINTER(SAdsNotificationHeader), c_ulong
     )
 
-callback_store = dict()
+callback_store = dict()  # type: Dict[int, Optional[Any]]
 
 
 @win32_only
 def adsSyncAddDeviceNotificationReq(
     adr, data_name, pNoteAttrib, callback, user_handle=None
 ):
+    # type: (AmsAddr, str, NotificationAttrib, Callable[[AmsAddr, Any, int], None], int) -> Tuple[int, int]  # noqa: E501
+    """Add an ADS device notification.
+
+    :param AmsAddr adr: local or remote AmsAddr
+    :param str data_name: name of the plc variable
+    :param NotificationAttrib pNoteAttrib: notification settings
+    :param Callable callback: callback function
+    :param int user_handle: user handle
+
+    :rtype: Tuple[int, int]
+    :return: notification handle, user handle
+    """
     global callback_store  # use global variable to prevent garbage collection
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReq
 
@@ -494,6 +525,14 @@ def adsSyncAddDeviceNotificationReq(
 
 @win32_only
 def adsSyncDelDeviceNotificationReq(adr, notification_handle, user_handle):
+    # type: (AmsAddr, int, int) -> None
+    """Delete ADS notification.
+
+    :param AmsAddr adr: local or remote AmsAddr
+    :param int notification_handle: notification handle
+    :param int user_handle: user handle
+
+    """
     adsSyncDelDeviceNotificationReqFct = _adsDLL.AdsSyncDelDeviceNotificationReq
 
     pAmsAddr = pointer(adr.amsAddrStruct())
@@ -508,6 +547,12 @@ def adsSyncDelDeviceNotificationReq(adr, notification_handle, user_handle):
 
 @win32_only
 def adsSyncSetTimeout(nMs):
+    # type: (int) -> None
+    """Set timeout.
+
+    :param int nMs: Timeout in milliseconds
+
+    """
     adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeout
     cms = c_long(nMs)
     err_code = adsSyncSetTimeoutFct(cms)
