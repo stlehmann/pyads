@@ -1,10 +1,14 @@
-"""
-Pythonic ADS functions.
+"""Pythonic ADS functions.
 
-:copyright: (c) 2016 by Stefan Lehmann
-:license: MIT, see LICENSE for details
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+
+:created on: 2018-06-11 18:15:53
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-12 18:03:10
 
 """
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
 import struct
 from ctypes import memmove, addressof, c_ubyte
 
@@ -36,14 +40,21 @@ from .constants import (
     PLCTYPE_USINT, PLCTYPE_WORD
 )
 
-from .structs import AmsAddr, SAmsNetId
+from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib
 
 linux = platform_is_linux()
 port = None
 
 
 def _parse_ams_netid(ams_netid):
-    """Parse an AmsNetId from *str* to *SAmsNetId*."""
+    # type: (str) -> SAmsNetId
+    """Parse an AmsNetId from *str* to *SAmsNetId*.
+
+    :param str ams_netid: NetId as a string
+    :rtype: SAmsNetId
+    :return: NetId as a struct
+
+    """
     id_numbers = list(map(int, ams_netid.split('.')))
 
     if len(id_numbers) != 6:
@@ -56,8 +67,8 @@ def _parse_ams_netid(ams_netid):
 
 
 def open_port():
-    """
-    :summary:  Connect to the TwinCAT message router.
+    # type: () -> int
+    """Connect to the TwinCAT message router.
 
     :rtype: int
     :return: port number
@@ -65,41 +76,36 @@ def open_port():
     """
     global port
 
-    if linux:
-        port = port or adsPortOpenEx()
-        return port
-
-    return adsPortOpen()
+    port = port or adsPortOpenEx()
+    return port
 
 
 def close_port():
-    """:summary: Close the connection to the TwinCAT message router."""
+    # type: () -> None
+    """Close the connection to the TwinCAT message router."""
     global port
 
-    if linux:
+    if port is not None:
         adsPortCloseEx(port)
         port = None
-        return
-
-    adsPortClose()
 
 
 def get_local_address():
-    """
-    :summary: Return the local AMS-address and the port number.
+    # type: () -> Optional[AmsAddr]
+    """Return the local AMS-address and the port number.
 
     :rtype: AmsAddr
 
     """
-    if linux:
+    if port is not None:
         return adsGetLocalAddressEx(port)
 
-    return adsGetLocalAddress()
+    return None
 
 
 def set_local_address(ams_netid):
-    """
-    :summary: Set the local NetID (**Linux only**).
+    # type: (Union[str, SAmsNetId]) -> None
+    """Set the local NetID (**Linux only**).
 
     :param str: new AmsNetID
     :rtype: None
@@ -120,12 +126,15 @@ def set_local_address(ams_netid):
 
     if linux:
         return adsSetLocalAddress(ams_netid_st)
-    raise ADSError('SetLocalAddress is not supported for Windows clients.')
+    else:
+        raise ADSError(text='SetLocalAddress is not supported for Windows clients.')
+
+    return None
 
 
 def read_state(adr):
-    """
-    :summary: Read the current ADS-state and the machine-state.
+    # type: (AmsAddr) -> Optional[Tuple[int, int]]
+    """Read the current ADS-state and the machine-state.
 
     Read the current ADS-state and the machine-state from the
     ADS-server.
@@ -135,15 +144,15 @@ def read_state(adr):
     :return: adsState, deviceState
 
     """
-    if linux:
+    if port is not None:
         return adsSyncReadStateReqEx(port, adr)
 
-    return adsSyncReadStateReq(adr)
+    return None
 
 
 def write_control(adr, ads_state, device_state, data, plc_datatype):
-    """
-    :summary: Change the ADS state and the machine-state of the ADS-server.
+    # type: (AmsAddr, int, int, Any, Type) -> None
+    """Change the ADS state and the machine-state of the ADS-server.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int ads_state: new ADS-state, according to ADSTATE constants
@@ -161,85 +170,76 @@ def write_control(adr, ads_state, device_state, data, plc_datatype):
            are defined in the ADS-specification.
 
     """
-    if linux:
+    if port is not None:
         return adsSyncWriteControlReqEx(
             port, adr, ads_state, device_state, data, plc_datatype
         )
 
-    return adsSyncWriteControlReq(
-        adr, ads_state, device_state, data, plc_datatype
-    )
-
 
 def read_device_info(adr):
-    """
-    :summary: Read the name and the version number of the ADS-server.
+    # type: (AmsAddr) -> Optional[Tuple[str, AdsVersion]]
+    """Read the name and the version number of the ADS-server.
 
     :param AmsAddr adr: local or remote AmsAddr
     :rtype: string, AdsVersion
     :return: device name, version
 
     """
-    if linux:
+    if port is not None:
         return adsSyncReadDeviceInfoReqEx(port, adr)
 
-    return adsSyncReadDeviceInfoReq(adr)
+    return None
 
 
 def write(adr, index_group, index_offset, value, plc_datatype):
-    """
-    :summary: Send data synchronous to an ADS-device.
+    # type: (AmsAddr, int, int, Any, Type) -> None
+    """Send data synchronous to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
     :param value: value to write to the storage address of the PLC
-    :param int plc_datatype: type of the data given to the PLC,
+    :param Type plc_datatype: type of the data given to the PLC,
         according to PLCTYPE constants
 
     """
-    if linux:
+    if port is not None:
         return adsSyncWriteReqEx(
             port, adr, index_group, index_offset, value, plc_datatype
         )
 
-    adsSyncWriteReq(adr, index_group, index_offset, value, plc_datatype)
-
 
 def read_write(adr, index_group, index_offset, plc_read_datatype,
                value, plc_write_datatype):
-    """
-    :summary: Read and write data synchronous from/to an ADS-device.
+    # type: (AmsAddr, int, int, Type, Any, Type) -> Any
+    """Read and write data synchronous from/to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
-    :param int plc_read_datatype: type of the data given to the PLC to respond
+    :param Type plc_read_datatype: type of the data given to the PLC to respond
         to, according to PLCTYPE constants
     :param value: value to write to the storage address of the PLC
-    :param plc_write_datatype: type of the data given to the PLC, according to
+    :param Type plc_write_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
     :rtype: PLCTYPE
     :return: value: **value**
 
     """
-    if linux:
+    if port is not None:
         return adsSyncReadWriteReqEx2(
             port, adr, index_group, index_offset, plc_read_datatype,
             value, plc_write_datatype
         )
 
-    return adsSyncReadWriteReq(
-        adr, index_group, index_offset, plc_read_datatype,
-        value, plc_write_datatype
-    )
+    return None
 
 
 def read(adr, index_group, index_offset, plc_datatype):
-    """
-    :summary: Read data synchronous from an ADS-device.
+    # type: (AmsAddr, int, int, Type) -> Any
+    """Read data synchronous from an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -250,17 +250,17 @@ def read(adr, index_group, index_offset, plc_datatype):
     :return: value: **value**
 
     """
-    if linux:
+    if port is not None:
         return adsSyncReadReqEx2(
             port, adr, index_group, index_offset, plc_datatype
         )
 
-    return adsSyncReadReq(adr, index_group, index_offset, plc_datatype)
+    return None
 
 
 def read_by_name(adr, data_name, plc_datatype):
-    """
-    :summary: Read data synchronous from an ADS-device from data name.
+    # type: (AmsAddr, str, Type) -> Any
+    """Read data synchronous from an ADS-device from data name.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: data name
@@ -269,15 +269,15 @@ def read_by_name(adr, data_name, plc_datatype):
     :return: value: **value**
 
     """
-    if linux:
+    if port is not None:
         return adsSyncReadByNameEx(port, adr, data_name, plc_datatype)
 
-    return adsSyncReadByName(adr, data_name, plc_datatype)
+    return None
 
 
 def write_by_name(adr, data_name, value, plc_datatype):
-    """
-    :summary: Send data synchronous to an ADS-device from data name.
+    # type: (AmsAddr, str, Any, Type) -> None
+    """Send data synchronous to an ADS-device from data name.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: PLC storage address
@@ -286,15 +286,15 @@ def write_by_name(adr, data_name, value, plc_datatype):
         according to PLCTYPE constants
 
     """
-    if linux:
+    if port is not None:
         return adsSyncWriteByNameEx(port, adr, data_name, value, plc_datatype)
 
-    return adsSyncWriteByName(adr, data_name, value, plc_datatype)
+    return None
 
 
 def add_route(adr, ip_address):
-    """
-    :summary:  Establish a new route in the AMS Router (linux Only).
+    # type: (AmsAddr, str) -> None
+    """Establish a new route in the AMS Router (linux Only).
 
     :param pyads.structs.AmsAddr adr: AMS Address of routing endpoint
     :param str ip_address: ip address of the routing endpoint
@@ -303,8 +303,8 @@ def add_route(adr, ip_address):
 
 
 def delete_route(adr):
-    """
-    :summary:  Remove existing route from the AMS Router (Linux Only).
+    # type: (AmsAddr) -> None
+    """Remove existing route from the AMS Router (Linux Only).
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
@@ -313,8 +313,8 @@ def delete_route(adr):
 
 
 def add_device_notification(adr, data_name, attr, callback, user_handle=None):
-    """
-    :summary: Add a device notification.
+    # type: (AmsAddr, str, NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]  # noqa: E501
+    """Add a device notification.
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
@@ -332,17 +332,16 @@ def add_device_notification(adr, data_name, attr, callback, user_handle=None):
     later in your code.
 
     """
-    if linux:
+    if port is not None:
         return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr,
                                                  callback, user_handle)
-    else:
-        return adsSyncAddDeviceNotificationReq(adr, data_name, attr,
-                                               callback, user_handle)
+
+    return None
 
 
 def del_device_notification(adr, notification_handle, user_handle):
-    """
-    :summary: Remove a device notification.
+    # type: (AmsAddr, int, int) -> None
+    """Remove a device notification.
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
@@ -351,25 +350,20 @@ def del_device_notification(adr, notification_handle, user_handle):
     :param user_handle: user handle
 
     """
-    if linux:
-        adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
-                                          user_handle)
-    else:
-        adsSyncDelDeviceNotificationReq(adr, notification_handle,
-                                        user_handle)
+    if port is not None:
+        return adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
+                                                 user_handle)
 
 
 def set_timeout(ms):
-    """Set timout."""
-    if linux:
-        adsSyncSetTimeoutEx(port, ms)
-    else:
-        adsSyncSetTimeout(ms)
+    # type: (int) -> None
+    """Set timeout."""
+    if port is not None:
+        return adsSyncSetTimeoutEx(port, ms)
 
 
 class Connection(object):
-    """
-    Class for managing the connection to an ADS device.
+    """Class for managing the connection to an ADS device.
 
     :ivar str ams_net_id: AMS net id of the remote device
     :ivar int ams_net_port: port of the remote device
@@ -381,62 +375,69 @@ class Connection(object):
     """
 
     def __init__(self, ams_net_id, ams_net_port, ip_address=None):
-        self._port = None
+        # type: (str, int, str) -> None
+        self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
         if ip_address is None:
             self.ip_address = '.'.join(ams_net_id.split('.')[:4])
         else:
             self.ip_address = ip_address
         self._open = False
-        self._notifications = {}
+        self._notifications = {}  # type: Dict[int, str]
 
     def __enter__(self):
+        # type: () -> Connection
         """Open on entering with-block."""
         self.open()
         return self
 
     def __exit__(self, _type, _val, _traceback):
+        # type: (Type, Any, Any) -> None
         """Close on leaving with-block."""
         self.close()
 
     def open(self):
-        """:summary:  Connect to the TwinCAT message router."""
+        # type: () -> None
+        """Connect to the TwinCAT message router."""
         if self._open:
             return
-        if linux:
-            self._port = adsPortOpenEx()
-            adsAddRoute(self._adr.netIdStruct(), self.ip_address)
-        else:
-            self._port = adsPortOpen()
+
+        self._port = adsPortOpenEx()
+        adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+
         self._open = True
 
     def close(self):
+        # type: () -> None
         """:summary: Close the connection to the TwinCAT message router."""
         if not self._open:
             return
         if linux:
             adsDelRoute(self._adr.netIdStruct())
-            adsPortCloseEx(self._port)
+            if self._port is not None:
+                adsPortCloseEx(self._port)
             self._port = None
         else:
-            adsPortClose()
+            if self._port is not None:
+                adsPortCloseEx(self._port)
+            self._port = None
         self._open = False
 
     def get_local_address(self):
-        """
-        :summary: Return the local AMS-address and the port number.
+        # type: () -> Optional[AmsAddr]
+        """Return the local AMS-address and the port number.
 
         :rtype: AmsAddr
 
         """
-        if linux:
+        if self._port is not None:
             return adsGetLocalAddressEx(self._port)
-        else:
-            return adsGetLocalAddress()
+
+        return None
 
     def read_state(self):
-        """
-        :summary: Read the current ADS-state and the machine-state.
+        # type: () -> Optional[Tuple[int, int]]
+        """Read the current ADS-state and the machine-state.
 
         Read the current ADS-state and the machine-state from the ADS-server.
 
@@ -444,14 +445,14 @@ class Connection(object):
         :return: adsState, deviceState
 
         """
-        if linux:
+        if self._port is not None:
             return adsSyncReadStateReqEx(self._port, self._adr)
-        else:
-            return adsSyncReadStateReq(self._adr)
+
+        return None
 
     def write_control(self, ads_state, device_state, data, plc_datatype):
-        """
-        :summary: Change the ADS state and the machine-state of the ADS-server.
+        # type: (int, int, Any, Type) -> None
+        """Change the ADS state and the machine-state of the ADS-server.
 
         :param int ads_state: new ADS-state, according to ADSTATE constants
         :param int device_state: new machine-state
@@ -467,29 +468,28 @@ class Connection(object):
             ADS-interface are defined in the ADS-specification.
 
         """
-        if linux:
+        if self._port is not None:
             return adsSyncWriteControlReqEx(self._port, self._adr, ads_state,
                                             device_state, data, plc_datatype)
-        else:
-            return adsSyncWriteControlReq(self._adr, ads_state, device_state,
-                                          data, plc_datatype)
+
+        return None
 
     def read_device_info(self):
-        """
-        :summary: Read the name and the version number of the ADS-server.
+        # type: () -> Optional[Tuple[str, AdsVersion]]
+        """Read the name and the version number of the ADS-server.
 
         :rtype: string, AdsVersion
         :return: device name, version
 
         """
-        if linux:
+        if self._port is not None:
             return adsSyncReadDeviceInfoReqEx(self._port, self._adr)
-        else:
-            return adsSyncReadDeviceInfoReq(self._adr)
+
+        return None
 
     def write(self, index_group, index_offset, value, plc_datatype):
-        """
-        :summary: Send data synchronous to an ADS-device.
+        # type: (int, int, Any, Type) -> None
+        """Send data synchronous to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
@@ -499,17 +499,16 @@ class Connection(object):
             according to PLCTYPE constants
 
         """
-        if linux:
+        if self._port is not None:
             return adsSyncWriteReqEx(self._port, self._adr, index_group,
                                      index_offset, value, plc_datatype)
-        else:
-            adsSyncWriteReq(self._adr, index_group, index_offset, value,
-                            plc_datatype)
+
+        return None
 
     def read_write(self, index_group, index_offset, plc_read_datatype,
                    value, plc_write_datatype):
-        """
-        :summary: Read and write data synchronous from/to an ADS-device.
+        # type: (int, int, Type, Any, Type) -> Any
+        """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
@@ -523,18 +522,16 @@ class Connection(object):
         :return: value: **value**
 
         """
-        if linux:
+        if self._port is not None:
             return adsSyncReadWriteReqEx2(self._port, self._adr, index_group,
                                           index_offset, plc_read_datatype,
                                           value, plc_write_datatype)
-        else:
-            return adsSyncReadWriteReq(self._adr, index_group, index_offset,
-                                       plc_read_datatype, value,
-                                       plc_write_datatype)
+
+        return None
 
     def read(self, index_group, index_offset, plc_datatype):
-        """
-        :summary: Read data synchronous from an ADS-device.
+        # type: (int, int, Type) -> Any
+        """Read data synchronous from an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
@@ -544,16 +541,15 @@ class Connection(object):
         :return: value: **value**
 
         """
-        if linux:
+        if self._port is not None:
             return adsSyncReadReqEx2(self._port, self._adr, index_group,
                                      index_offset, plc_datatype)
-        else:
-            return adsSyncReadReq(self._adr, index_group, index_offset,
-                                  plc_datatype)
+
+        return None
 
     def read_by_name(self, data_name, plc_datatype):
-        """
-        :summary: Read data synchronous from an ADS-device from data name.
+        # type: (str, Type) -> Any
+        """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name
         :param int plc_datatype: type of the data given to the PLC, according
@@ -561,15 +557,15 @@ class Connection(object):
         :return: value: **value**
 
         """
-        if linux:
+        if self._port:
             return adsSyncReadByNameEx(self._port, self._adr, data_name,
                                        plc_datatype)
-        else:
-            return adsSyncReadByName(self._adr, data_name, plc_datatype)
+
+        return None
 
     def write_by_name(self, data_name, value, plc_datatype):
-        """
-        :summary: Send data synchronous to an ADS-device from data name.
+        # type: (str, Any, Type) -> None
+        """Send data synchronous to an ADS-device from data name.
 
         :param string data_name: PLC storage address
         :param value: value to write to the storage address of the PLC
@@ -577,17 +573,14 @@ class Connection(object):
             according to PLCTYPE constants
 
         """
-        if linux:
+        if self._port:
             return adsSyncWriteByNameEx(self._port, self._adr, data_name,
                                         value, plc_datatype)
-        else:
-            return adsSyncWriteByName(self._adr, data_name, value,
-                                      plc_datatype)
 
     def add_device_notification(self, data_name, attr, callback,
                                 user_handle=None):
-        """
-        :summary: Add a device notification.
+        # type: (str, NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]
+        """Add a device notification.
 
         :param str data_name: PLC storage address
         :param pyads.structs.NotificationAttrib attr: object that contains
@@ -630,55 +623,54 @@ class Connection(object):
             >>>     plc.del_device_notification(hnotification, huser)
 
         """
-        if linux:
+        if self._port is not None:
             notification_handle, user_handle = (
                 adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
                                                   data_name, attr, callback,
                                                   user_handle)
             )
-        else:
-            notification_handle, user_handle = (
-                adsSyncAddDeviceNotificationReq(self._adr, data_name,
-                                                attr, callback, user_handle)
-            )
+            self._notifications[notification_handle] = data_name
+            return notification_handle, user_handle
 
-        self._notifications[notification_handle] = data_name
-        return notification_handle, user_handle
+        return None
 
     def del_device_notification(self, notification_handle, user_handle):
-        """
-        :summary: Remove a device notification.
+        # type: (int, int) -> None
+        """Remove a device notification.
 
         :param notification_handle: address of the variable that contains
             the handle of the notification
         :param user_handle: user handle
 
         """
-        if linux:
+        if self._port is not None:
             adsSyncDelDeviceNotificationReqEx(self._port, self._adr,
                                               notification_handle, user_handle)
-        else:
-            adsSyncDelDeviceNotificationReq(self._adr, notification_handle,
-                                            user_handle)
+
+        return None
 
     @property
     def is_open(self):
-        """
-        Show the current connection state.
+        # type: () -> bool
+        """Show the current connection state.
 
         :return: True if connection is open
+
         """
         return self._open
 
     def set_timeout(self, ms):
+        # type: (int) -> None
         """Set Timeout."""
-        if linux:
+        if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
-        else:
-            adsSyncSetTimeout(ms)
+
+        return None
 
     def notification(self, plc_datatype=None):
-        """
+        # type: (Type) -> Callable
+        """Decorate a callback function.
+
         **Decorator**.
 
         A decorator that can be used for callback functions in order to
