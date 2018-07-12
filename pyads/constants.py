@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-07-12 13:42:02
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-12 14:33:30
 
 """
 from typing import Type
@@ -88,7 +88,7 @@ INDEXGROUP_MEMORYBYTE = 0x4020  #: plc memory area (%M), offset means byte-offse
 # READ_MX - WRITE_MX
 INDEXGROUP_MEMORYBIT = (
     0x4021
-)  #: plc memory area (%MX), offset means the bit adress, calculatedb by bytenumber * 8 + bitnumber
+)  #: plc memory area (%MX), offset means the bit adress, calculatedb by bytenumber * 8 + bitnumber  # noqa: E501
 # PLCADS_IGR_RMSIZE
 INDEXGROUP_MEMORYSIZE = 0x4025  #: size of the memory area in bytes
 # PLCADS_IGR_RWRB

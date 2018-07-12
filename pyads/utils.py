@@ -4,9 +4,9 @@
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
-:created on 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-07-12 13:31:21
+:created on: 2018-06-11 18:15:53
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-12 14:11:12
 
 """
 import sys
