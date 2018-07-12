@@ -1,12 +1,11 @@
 language: python
-sudo: required
 dist: trusty
 
 addons:
   apt:
     packages:
     - git
-   
+
 python:
   - "2.7"
   - "3.5"
@@ -17,7 +16,7 @@ install:
   - cd ADS
   - sudo make install
   - cd ..
-  - sudo pip install .
+  - pip install .
   - pip install coverage
   - pip install coveralls
   - pip install pytest-cov
