@@ -1,5 +1,6 @@
 import pyads
 from pyads import AmsAddr
+from pyads.utils import platform_is_linux
 import unittest
 
 
@@ -26,32 +27,35 @@ class AdsTest(unittest.TestCase):
         self.assertEqual(adr.port, adr._ams_addr.port)
 
     def test_set_local_address(self):
-        pyads.open_port()
-        org_adr = pyads.get_local_address()
-        org_netid = org_adr.netid
 
-        # Set netid to specific value
-        pyads.set_local_address('0.0.0.0.1.5')
-        netid = pyads.get_local_address().netid
-        self.assertEqual(netid, '0.0.0.0.1.5')
+        # Skip test on Windows as set_local_address is not supported for Windows
+        if platform_is_linux():
+            pyads.open_port()
+            org_adr = pyads.get_local_address()
+            org_netid = org_adr.netid
 
-        # Change netid by String
-        pyads.set_local_address('0.0.0.0.1.6')
-        netid = pyads.get_local_address().netid
-        self.assertEqual(netid, '0.0.0.0.1.6')
+            # Set netid to specific value
+            pyads.set_local_address('0.0.0.0.1.5')
+            netid = pyads.get_local_address().netid
+            self.assertEqual(netid, '0.0.0.0.1.5')
 
-        # Change netid by Struct
-        pyads.set_local_address(org_adr.netIdStruct())
-        netid = pyads.get_local_address().netid
-        self.assertEqual(netid, org_netid)
+            # Change netid by String
+            pyads.set_local_address('0.0.0.0.1.6')
+            netid = pyads.get_local_address().netid
+            self.assertEqual(netid, '0.0.0.0.1.6')
 
-        # Check inadequate netid
-        with self.assertRaises(ValueError):
-            pyads.set_local_address('1.2.3.a')
+            # Change netid by Struct
+            pyads.set_local_address(org_adr.netIdStruct())
+            netid = pyads.get_local_address().netid
+            self.assertEqual(netid, org_netid)
 
-        # Check wrong netid datatype
-        with self.assertRaises(AssertionError):
-            pyads.set_local_address(123)
+            # Check inadequate netid
+            with self.assertRaises(ValueError):
+                pyads.set_local_address('1.2.3.a')
+
+            # Check wrong netid datatype
+            with self.assertRaises(AssertionError):
+                pyads.set_local_address(123)
 
 
 if __name__ == '__main__':
