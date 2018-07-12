@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+"""Contains cross platform ADS extension functions.
+
+:author: David Browne <davidabrowne@gmail.com>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+
+:created on: 2018-06-11 18:15:53
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-12 16:49:58
+
 """
-pyads.pyads_ex
-~~~~~~~~~~~~~~
-
-Contains cross platform ADS extension functions.
-
-:Author: David Browne <davidabrowne@gmail.com>
-:license: MIT, see LICENSE for details
-
-"""
+from typing import Union, Callable, Any, Tuple, Type
 import ctypes
 import os
 import sys
@@ -17,7 +18,7 @@ from functools import wraps
 
 from .utils import platform_is_linux, platform_is_windows
 from .structs import AmsAddr, SAmsAddr, AdsVersion, SAdsVersion, \
-    SAdsNotificationAttrib, SAdsNotificationHeader
+    SAdsNotificationAttrib, SAdsNotificationHeader, SAmsNetId, NotificationAttrib
 from .pyads import ADSError
 from .constants import (
     PLCTYPE_STRING, STRING_BUFFER, ADSIGRP_SYM_HNDBYNAME, PLCTYPE_UDINT,
@@ -33,7 +34,7 @@ LNOTEFUNC = None
 
 # load dynamic ADS library
 if platform_is_windows():
-    _adsDLL = ctypes.windll.TcAdsDll
+    _adsDLL = ctypes.windll.TcAdsDll  # type: Union[ctypes.CDLL, ctypes.WinDLL]
 
 elif platform_is_linux:
     # try to load local adslib.so in favor to global one
@@ -55,7 +56,9 @@ callback_store = dict()
 
 
 def router_function(fn):
-    """
+    # type: (Callable) -> Callable
+    """Raise a runtime error if on Win32 systems.
+
     Decorator.
 
     Decorator for functions that interact with the router for the Linux
@@ -65,9 +68,11 @@ def router_function(fn):
     the Linux library manages AMS routing in-process. As such, routing must be
     configured programatically via. the provided API. These endpoints are
     invalid on Win32 systems, so an exception will be raised.
+
     """
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        # type: (Any, Any) -> Callable
         if platform_is_windows():
             raise RuntimeError(
                 'Router interface is not available on Win32 systems.\n'
@@ -80,8 +85,8 @@ def router_function(fn):
 
 @router_function
 def adsAddRoute(net_id, ip_address):
-    """
-    :summary: Establish a new route in the AMS Router.
+    # type: (SAmsNetId, str) -> None
+    """Establish a new route in the AMS Router.
 
     :param pyads.structs.SAmsNetId net_id: net id of routing endpoint
     :param str ip_address: ip address of the routing endpoint
@@ -91,9 +96,9 @@ def adsAddRoute(net_id, ip_address):
     add_route.restype = ctypes.c_long
 
     # Convert ip address to bytes (PY3) and get pointer.
-    ip_address = ctypes.c_char_p(ip_address.encode('utf-8'))
+    ip_address_p = ctypes.c_char_p(ip_address.encode('utf-8'))
 
-    error_code = add_route(net_id, ip_address)
+    error_code = add_route(net_id, ip_address_p)
 
     if error_code:
         raise ADSError(error_code)
@@ -101,8 +106,8 @@ def adsAddRoute(net_id, ip_address):
 
 @router_function
 def adsDelRoute(net_id):
-    """
-    :summary:  Remove existing route from the AMS Router.
+    # type: (SAmsNetId) -> None
+    """Remove existing route from the AMS Router.
 
     :param pyads.structs.SAmsNetId net_id: net id associated with the routing
         entry which is to be removed from the router.
@@ -113,8 +118,8 @@ def adsDelRoute(net_id):
 
 
 def adsPortOpenEx():
-    """
-    :summary:  Connect to the TwinCAT message router.
+    # type: () -> int
+    """Connect to the TwinCAT message router.
 
     :rtype: int
     :return: port number
@@ -131,7 +136,8 @@ def adsPortOpenEx():
 
 
 def adsPortCloseEx(port):
-    """:summary: Close the connection to the TwinCAT message router."""
+    # type: (int) -> None
+    """Close the connection to the TwinCAT message router."""
     port_close_ex = _adsDLL.AdsPortCloseEx
     port_close_ex.restype = ctypes.c_long
     error_code = port_close_ex(port)
@@ -141,8 +147,8 @@ def adsPortCloseEx(port):
 
 
 def adsGetLocalAddressEx(port):
-    """
-    :summary: Return the local AMS-address and the port number.
+    # type: (int) -> AmsAddr
+    """Return the local AMS-address and the port number.
 
     :rtype: pyads.structs.AmsAddr
     :return: AMS-address
@@ -162,8 +168,8 @@ def adsGetLocalAddressEx(port):
 
 
 def adsSetLocalAddress(ams_netid):
-    """
-    :summary: Change the local NetId.
+    # type: (SAmsNetId) -> None
+    """Change the local NetId.
 
     :param pyads.structs.SAmsNetId ams_netid: new AmsNetID
     :rtype: None
@@ -174,8 +180,8 @@ def adsSetLocalAddress(ams_netid):
 
 
 def adsSyncReadStateReqEx(port, address):
-    """
-    :summary: Read the current ADS-state and the machine-state.
+    # type: (int, AmsAddr) -> Tuple[int, int]
+    """Read the current ADS-state and the machine-state.
 
     Read the current ADS-state and the machine-state from the
     ADS-server.
@@ -209,8 +215,8 @@ def adsSyncReadStateReqEx(port, address):
 
 
 def adsSyncReadDeviceInfoReqEx(port, address):
-    """
-    :summary: Read the name and the version number of the ADS-server.
+    # type: (int, AmsAddr) -> Tuple[str, AdsVersion]
+    """Read the name and the version number of the ADS-server.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -243,8 +249,8 @@ def adsSyncReadDeviceInfoReqEx(port, address):
 
 def adsSyncWriteControlReqEx(port, address, ads_state, device_state,
                              data, plc_data_type):
-    """
-    :summary: Change the ADS state and the machine-state of the ADS-server.
+    # type: (int, AmsAddr, int, int, Any, Type) -> None
+    """Change the ADS state and the machine-state of the ADS-server.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
@@ -257,8 +263,8 @@ def adsSyncWriteControlReqEx(port, address, ads_state, device_state,
     sync_write_control_request = _adsDLL.AdsSyncWriteControlReqEx
 
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
-    ads_state = ctypes.c_ulong(ads_state)
-    device_state = ctypes.c_ulong(device_state)
+    ads_state_c = ctypes.c_ulong(ads_state)
+    device_state_c = ctypes.c_ulong(device_state)
 
     if plc_data_type == PLCTYPE_STRING:
         data = ctypes.c_char_p(data.encode('utf-8'))
@@ -270,8 +276,8 @@ def adsSyncWriteControlReqEx(port, address, ads_state, device_state,
         data_length = ctypes.sizeof(data)
 
     error_code = sync_write_control_request(
-        port, ams_address_pointer, ads_state,
-        device_state, data_length, data_pointer
+        port, ams_address_pointer, ads_state_c,
+        device_state_c, data_length, data_pointer
     )
 
     if error_code:
@@ -280,8 +286,8 @@ def adsSyncWriteControlReqEx(port, address, ads_state, device_state,
 
 def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
                       plc_data_type):
-    """
-    :summary: Send data synchronous to an ADS-device.
+    # type: (int, AmsAddr, int, int, Any, Type) -> None
+    """Send data synchronous to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -296,13 +302,13 @@ def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
     sync_write_request = _adsDLL.AdsSyncWriteReqEx
 
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
-    index_group = ctypes.c_ulong(index_group)
-    index_offset = ctypes.c_ulong(index_offset)
+    index_group_c = ctypes.c_ulong(index_group)
+    index_offset_c = ctypes.c_ulong(index_offset)
 
     if plc_data_type == PLCTYPE_STRING:
         data = ctypes.c_char_p(value.encode('utf-8'))
-        data_pointer = data
-        data_length = len(data_pointer.value) + 1
+        data_pointer = data  # type: Union[ctypes.c_char_p, ctypes.pointer]
+        data_length = len(data_pointer.value) + 1  # type: ignore
 
     else:
         if type(plc_data_type).__name__ == 'PyCArrayType':
@@ -314,8 +320,8 @@ def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
         data_length = ctypes.sizeof(data)
 
     error_code = sync_write_request(
-        port, ams_address_pointer, index_group,
-        index_offset, data_length, data_pointer
+        port, ams_address_pointer, index_group_c,
+        index_offset_c, data_length, data_pointer
     )
 
     if error_code:
@@ -324,18 +330,18 @@ def adsSyncWriteReqEx(port, address, index_group, index_offset, value,
 
 def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
                            read_data_type, value, write_data_type):
-    """
-    :summary: Read and write data synchronous from/to an ADS-device.
+    # type: (int, AmsAddr, int, int, Type, Any, Type) -> Any
+    """Read and write data synchronous from/to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
-    :param int read_data_type: type of the data given to the PLC to respond to,
+    :param Type read_data_type: type of the data given to the PLC to respond to,
         according to PLCTYPE constants
     :param value: value to write to the storage address of the PLC
-    :param write_data_type: type of the data given to the PLC, according to
+    :param Type write_data_type: type of the data given to the PLC, according to
         PLCTYPE constants
     :rtype: read_data_type
     :return: value: value read from PLC
@@ -344,8 +350,8 @@ def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
     sync_read_write_request = _adsDLL.AdsSyncReadWriteReqEx2
 
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
-    index_group = ctypes.c_ulong(index_group)
-    index_offset = ctypes.c_ulong(index_offset)
+    index_group_c = ctypes.c_ulong(index_group)
+    index_offset_c = ctypes.c_ulong(index_offset)
 
     if read_data_type == PLCTYPE_STRING:
         read_data = (STRING_BUFFER * PLCTYPE_STRING)()
@@ -360,7 +366,7 @@ def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
 
     if write_data_type == PLCTYPE_STRING:
         # Get pointer to string
-        write_data_pointer = ctypes.c_char_p(value.encode('utf-8'))
+        write_data_pointer = ctypes.c_char_p(value.encode('utf-8'))  # type: Union[ctypes.c_char_p, ctypes.pointer]  # noqa: E501
         # Add an extra byte to the data length for the null terminator
         write_length = len(value) + 1
     else:
@@ -369,7 +375,7 @@ def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
         write_length = ctypes.sizeof(write_data)
 
     err_code = sync_read_write_request(
-        port, ams_address_pointer, index_group, index_offset, read_length,
+        port, ams_address_pointer, index_group_c, index_offset_c, read_length,
         read_data_pointer, write_length, write_data_pointer, bytes_read_pointer
     )
 
@@ -398,15 +404,15 @@ def adsSyncReadWriteReqEx2(port, address, index_group, index_offset,
 
 
 def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
-    """
-    :summary: Read data synchronous from an ADS-device.
+    # type: (int, AmsAddr, int, int, Type) -> Any
+    """Read data synchronous from an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
-    :param int data_type: type of the data given to the PLC, according to
+    :param Type data_type: type of the data given to the PLC, according to
         PLCTYPE constants
     :rtype: data_type
     :return: value: **value**
@@ -415,8 +421,8 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     sync_read_request = _adsDLL.AdsSyncReadReqEx2
 
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
-    index_group = ctypes.c_ulong(index_group)
-    index_offset = ctypes.c_ulong(index_offset)
+    index_group_c = ctypes.c_ulong(index_group)
+    index_offset_c = ctypes.c_ulong(index_offset)
 
     if data_type == PLCTYPE_STRING:
         data = (STRING_BUFFER * PLCTYPE_STRING)()
@@ -430,7 +436,7 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     bytes_read_pointer = ctypes.pointer(bytes_read)
 
     error_code = sync_read_request(
-        port, ams_address_pointer, index_group, index_offset,
+        port, ams_address_pointer, index_group_c, index_offset_c,
         data_length, data_pointer, bytes_read_pointer
     )
 
@@ -458,13 +464,13 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
 
 
 def adsSyncReadByNameEx(port, address, data_name, data_type):
-    """
-    :summary: Read data synchronous from an ADS-device from data name.
+    # type: (int, AmsAddr, str, Type) -> Any
+    """Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param string data_name: data name
-    :param int data_type: type of the data given to the PLC, according to
+    :param Type data_type: type of the data given to the PLC, according to
         PLCTYPE constants
     :rtype: data_type
     :return: value: **value**
@@ -490,14 +496,14 @@ def adsSyncReadByNameEx(port, address, data_name, data_type):
 
 
 def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
-    """
-    :summary: Send data synchronous to an ADS-device from data name.
+    # type: (int, AmsAddr, str, Any, Type) -> None
+    """Send data synchronous to an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param string data_name: PLC storage address
     :param value: value to write to the storage address of the PLC
-    :param int data_type: type of the data given to the PLC,
+    :param Type data_type: type of the data given to the PLC,
         according to PLCTYPE constants
 
     """
@@ -520,13 +526,13 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
 
 def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
                                       callback, user_handle=None):
-    """
-    :summary: Add a device notification.
+    # type: (int, AmsAddr, str, NotificationAttrib, Callable, int) -> Tuple[int, int]
+    """Add a device notification.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param string data_name: PLC storage address
-    :param pNoteAttrib: notification attributes
+    :param pyads.struct.NotificationAttrib pNoteAttrib: notification attributes
     :param callback: Callback function to handle notification
     :param user_handle: User Handle
     :rtype: (int, int)
@@ -577,8 +583,8 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
 
 def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
                                       user_handle):
-    """
-    :summary: Remove a device notification.
+    # type: (int, AmsAddr, int, int) -> None
+    """Remove a device notification.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
@@ -593,7 +599,7 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
     nHNotification = ctypes.c_ulong(notification_handle)
     err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr,
                                                   nHNotification)
-    callback_store[notification_handle] = None
+    callback_store[notification_handle] = None  # type: ignore
     if err_code:
         raise ADSError(err_code)
 
@@ -602,8 +608,8 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
 
 
 def adsSyncSetTimeoutEx(port, nMs):
-    """
-    :summary: Set Timeout.
+    # type: (int, int) -> None
+    """Set Timeout.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param int nMs: timeout in ms
