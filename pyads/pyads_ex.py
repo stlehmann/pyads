@@ -6,10 +6,10 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-12 16:49:58
+:last modified time: 2018-07-13 08:00:22
 
 """
-from typing import Union, Callable, Any, Tuple, Type
+from typing import Union, Callable, Any, Tuple, Type, Optional
 import ctypes
 import os
 import sys
@@ -19,11 +19,12 @@ from functools import wraps
 from .utils import platform_is_linux, platform_is_windows
 from .structs import AmsAddr, SAmsAddr, AdsVersion, SAdsVersion, \
     SAdsNotificationAttrib, SAdsNotificationHeader, SAmsNetId, NotificationAttrib
-from .pyads import ADSError
 from .constants import (
     PLCTYPE_STRING, STRING_BUFFER, ADSIGRP_SYM_HNDBYNAME, PLCTYPE_UDINT,
     ADSIGRP_SYM_VALBYHND, ADSIGRP_SYM_RELEASEHND
 )
+from .errorcodes import ERROR_CODES
+
 
 # Python version checking
 PY2 = sys.version_info[0] == 2
@@ -53,6 +54,29 @@ else:
     raise RuntimeError('Unsupported platform {0}.'.format(sys.platform))
 
 callback_store = dict()
+
+
+class ADSError(Exception):
+    """Error class for errors related to ADS communication."""
+
+    def __init__(self, err_code=None, text=None):
+        # type: (Optional[int], Optional[str]) -> None
+        if err_code is not None:
+            self.err_code = err_code
+            try:
+                self.msg = "{} ({}). ".format(ERROR_CODES[self.err_code], self.err_code)
+            except KeyError:
+                self.msg = "Unknown Error ({0}). ".format(self.err_code)
+        else:
+            self.msg = ""
+
+        if text is not None:
+            self.msg += text
+
+    def __str__(self):
+        # type: () -> str
+        """Return text representation of the object."""
+        return "ADSError: " + self.msg
 
 
 def router_function(fn):

@@ -1,5 +1,14 @@
-#!-*- coding: utf-8 -*-
-# from .pyads import *
+# -*- coding: utf-8 -*-
+"""The pyads package.
+
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+
+:created on: 2018-06-11 18:15:53
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-13 09:02:23
+
+"""
 from .structs import AmsAddr, NotificationAttrib
 
 from .ads import open_port, close_port, get_local_address, read_state, \
@@ -8,7 +17,7 @@ from .ads import open_port, close_port, get_local_address, read_state, \
     add_device_notification, del_device_notification, Connection, \
     set_local_address
 
-from .pyads import ADSError
+from .pyads_ex import ADSError
 
 from .constants import PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_DATE, \
     PLCTYPE_DINT, PLCTYPE_DT, PLCTYPE_DWORD, PLCTYPE_INT, PLCTYPE_LREAL, \
@@ -34,4 +43,4 @@ from .constants import ADSSTATE_INVALID, ADSSTATE_IDLE, ADSSTATE_RESET, \
 from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, \
     ADSTRANS_CLIENT1REQ, ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
 
-__version__ = '2.2.13'
+__version__ = '3.0.1'

@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 07:56:30
+:last modified time: 2018-07-13 08:00:50
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -16,22 +16,13 @@ from ctypes import memmove, addressof, c_ubyte
 from .utils import platform_is_linux
 from .filetimes import filetime_to_dt
 
-from .pyads import (
-    adsPortOpen, adsPortClose,
-    adsSyncWriteReq, adsSyncReadWriteReq, adsSyncReadReq,
-    adsSyncReadByName, adsSyncWriteByName, adsSyncReadStateReq,
-    adsSyncWriteControlReq, adsSyncReadDeviceInfoReq, adsGetLocalAddress,
-    adsSyncAddDeviceNotificationReq, adsSyncDelDeviceNotificationReq,
-    adsSyncSetTimeout, ADSError
-)
-
 from .pyads_ex import (
     adsAddRoute, adsDelRoute, adsPortOpenEx, adsPortCloseEx,
     adsGetLocalAddressEx, adsSyncReadStateReqEx, adsSyncReadDeviceInfoReqEx,
     adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
     adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx,
     adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx,
-    adsSyncSetTimeoutEx, adsSetLocalAddress
+    adsSyncSetTimeoutEx, adsSetLocalAddress, ADSError
 )
 
 from .constants import (
