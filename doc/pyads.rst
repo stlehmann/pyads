@@ -28,14 +28,6 @@ pyads\.errorcodes module
     :undoc-members:
     :show-inheritance:
 
-pyads\.pyads module
--------------------
-
-.. automodule:: pyads.pyads
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pyads\.pyads\_ex module
 -----------------------
 

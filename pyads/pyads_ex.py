@@ -6,7 +6,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 08:00:22
+:last modified time: 2018-07-13 10:45:46
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -556,7 +556,7 @@ def adsSyncAddDeviceNotificationReqEx(port, adr, data_name, pNoteAttrib,
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
     :param string data_name: PLC storage address
-    :param pyads.struct.NotificationAttrib pNoteAttrib: notification attributes
+    :param pyads.structs.NotificationAttrib pNoteAttrib: notification attributes
     :param callback: Callback function to handle notification
     :param user_handle: User Handle
     :rtype: (int, int)

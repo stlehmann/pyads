@@ -11,12 +11,12 @@ to connect at once.
 Each client connection thread listens for incoming data, and delegates parsing
 and response construction to the handler. A handler function is injectable at
 server level by specifying the `handler` kwarg in the server constructor.
+
 :author: David Browne <davidabrowne@gmail.com>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 10:25:46
+:last modified time: 2018-07-13 10:44:15
 
 """
 from __future__ import absolute_import
