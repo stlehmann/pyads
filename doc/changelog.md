@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 3.0.1
+
+With version **3.0.1** only the extended ADS functions will be used. This allows to use
+the same library functions for Linux and Windows. As a result the *pyads.py* module has
+been removed from the package. Certain older versions of TcAdsDll don't support the 'Ex'
+set of functions. If you experience trouble please update your TwinCAT version.
+
+The new version also comes with completely covered PEP484 compliant type-annotations. So
+you can conveniently apply static type-checking with mypy or others.
+
 ## Version 2.2.13
 
 * Apply to new PyPi
