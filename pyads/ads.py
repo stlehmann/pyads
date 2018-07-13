@@ -5,10 +5,11 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-12 18:03:10
+:last modified time: 2018-07-13 07:56:30
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
+from datetime import datetime
 import struct
 from ctypes import memmove, addressof, c_ubyte
 
@@ -710,8 +711,10 @@ class Connection(object):
 
         """
         def notification_decorator(func):
+            # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[AmsAddr, Any, int], None] # noqa: E501
 
             def func_wrapper(addr, notification, user):
+                # type: (AmsAddr, Any, int) -> None
                 contents = notification.contents
                 data = contents.data
                 data_size = contents.cbSampleSize
@@ -729,7 +732,7 @@ class Connection(object):
                     PLCTYPE_UINT: '<H',
                     PLCTYPE_USINT: '<B',
                     PLCTYPE_WORD: '<H',
-                }
+                }  # type: Dict[Type, str]
 
                 if plc_datatype == PLCTYPE_STRING:
                     dest = (c_ubyte * data_size)()
@@ -747,7 +750,7 @@ class Connection(object):
                     )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
-                data_name = self._notifications.get(contents.hNotification)
+                data_name = self._notifications.get(contents.hNotification, "")
 
                 return func(contents.hNotification, data_name, dt, value)
 
