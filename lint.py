@@ -4,8 +4,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on 2018-06-28 15:10:47
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-07-12 13:45:36
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-13 10:27:58
 
 """
 import click
@@ -21,7 +21,7 @@ if res == 0:
     click.echo(click.style('OK', fg='green'))
 
 click.echo('\n--- Running Flake8 ---')
-res = subprocess.call(['flake8'])
+res = subprocess.call(['flake8', PACKAGE_NAME])
 if res == 0:
     click.echo(click.style('OK', fg='green'))
 

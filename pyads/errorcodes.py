@@ -1,3 +1,13 @@
+"""Error codes.
+
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+
+:created on: 2018-06-11 18:15:53
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-13 10:30:15
+
+"""
 ERROR_CODES = {
     0: "no error",
     1: "Internal error",
@@ -62,7 +72,7 @@ ERROR_CODES = {
     1809: "symbol version invalid. Onlinechange. Release handle and get a new one",
     1810: "server is in invalid state",
     1811: "AdsTransMode not supported",
-    1812: "Notification handle is invalid. Onlinechange. Release handle and get a new one",
+    1812: "Notification handle is invalid. Onlinechange. Release handle and get a new one",  # noqa: E501
     1813: "Notification client not registered",
     1814: "no more notification handles",
     1815: "size for watch too big",
@@ -117,6 +127,6 @@ ERROR_CODES = {
     4121: "RTERR_VMXCONTROLSMISSING",
     4122: "RTERR_VMXENABLEFAILS",
     10060: "A socket operation was attempted to an unreachable host",
-    10061: "A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.",
-    10065: "No connection could be made because the target machine actively refused it"
+    10061: "A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.",  # noqa: E501
+    10065: "No connection could be made because the target machine actively refused it",
 }
