@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 3.0.2
+
+* bugfix: do not call add_route or delete_rout on Windows platform in Connection class
+* increased coverage
+
+
 ## Version 3.0.1
 
 With version **3.0.1** only the extended ADS functions will be used. This allows to use
