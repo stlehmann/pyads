@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 08:00:50
+:last modified time: 2018-07-18 13:56:47
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -395,7 +395,9 @@ class Connection(object):
             return
 
         self._port = adsPortOpenEx()
-        adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+
+        if linux:
+            adsAddRoute(self._adr.netIdStruct(), self.ip_address)
 
         self._open = True
 
@@ -404,15 +406,14 @@ class Connection(object):
         """:summary: Close the connection to the TwinCAT message router."""
         if not self._open:
             return
+
         if linux:
             adsDelRoute(self._adr.netIdStruct())
-            if self._port is not None:
-                adsPortCloseEx(self._port)
+
+        if self._port is not None:
+            adsPortCloseEx(self._port)
             self._port = None
-        else:
-            if self._port is not None:
-                adsPortCloseEx(self._port)
-            self._port = None
+
         self._open = False
 
     def get_local_address(self):
