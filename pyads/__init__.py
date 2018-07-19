@@ -6,7 +6,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-18 14:42:32
+:last modified time: 2018-07-19 09:07:10
 
 """
 from .structs import AmsAddr, NotificationAttrib
@@ -15,7 +15,7 @@ from .ads import open_port, close_port, get_local_address, read_state, \
     write_control, read_device_info, write, read_write, read, \
     read_by_name, write_by_name, add_route, delete_route, \
     add_device_notification, del_device_notification, Connection, \
-    set_local_address
+    set_local_address, set_timeout
 
 from .pyads_ex import ADSError
 

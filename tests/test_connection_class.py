@@ -1,8 +1,18 @@
+"""Test AdsConnection class.
+
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+
+:created on: 2018-06-11 18:15:58
+:last modified by: Stefan Lehmann
+:last modified time: 2018-07-19 10:46:49
+
+"""
 import time
 import unittest
 import pyads
 import struct
-from pyads.testserver import AdsTestServer
+from pyads.testserver import AdsTestServer, AmsPacket
 from pyads import constants
 
 
@@ -13,9 +23,12 @@ TEST_SERVER_AMS_PORT = pyads.PORT_SPS1
 
 
 class AdsConnectionClassTestCase(unittest.TestCase):
+    """Testcase for ADS connection class."""
 
     @classmethod
     def setUpClass(cls):
+        # type: () -> None
+        """Setup the ADS testserver."""
         cls.test_server = AdsTestServer(logging=True)
         cls.test_server.start()
 
@@ -24,25 +37,32 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        # type: () -> None
+        """Tear down the testserver."""
         cls.test_server.stop()
 
         # wait a bit for server to shutdown
         time.sleep(1)
 
     def setUp(self):
+        # type: () -> None
+        """Establish connection to the testserver."""
         self.test_server.request_history = []
         self.plc = pyads.Connection(TEST_SERVER_AMS_NET_ID,
                                     TEST_SERVER_AMS_PORT,
                                     TEST_SERVER_IP_ADDRESS)
 
     def assert_command_id(self, request, target_id):
+        # type: (AmsPacket, int) -> None
+        """Assert command_id and target_id."""
         # Check the request code received by the server
         command_id = request.ams_header.command_id
         command_id = struct.unpack('<H', command_id)[0]
         self.assertEqual(command_id, target_id)
 
     def test_initialization(self):
-
+        # type: () -> None
+        """Test init process."""
         with self.assertRaises(TypeError):
             pyads.Connection()
 
@@ -50,8 +70,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             pyads.Connection(None, None)
 
     def test_no_ip_address(self):
-        """
-        Autogenerate IP-address from AMS net id if no ip address is given 
+        # type: () -> None
+        """Autogenerate IP-address from AMS net id.
+
+        Autogenerate IP-address from AMS net id if no ip address is given
         on initialization.
 
         """
@@ -59,7 +81,8 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assertEqual(TEST_SERVER_IP_ADDRESS, plc.ip_address)
 
     def test_open_twice(self):
-        # try to close connection before open 
+        # type: () -> None
+        """Open plc connection twice."""
         self.plc.close()
 
         with self.plc:
@@ -339,7 +362,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         with self.plc:
             notification, user = self.plc.add_device_notification(
-                handle_name, attr, callback 
+                handle_name, attr, callback
             )
 
             # Assert that Read/Write command was used to get the handle by name
@@ -354,7 +377,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
     def test_multiple_connect(self):
         """
-        Using context manager multiple times after each other for 
+        Using context manager multiple times after each other for
         disconnecting and connecting to/from server should work without any
         errors.
 
@@ -375,6 +398,39 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             )
         self.assertFalse(self.plc.is_open)
 
+    def test_get_local_address(self):
+        # type: () -> None
+        """Test get_local_address method."""
+        with self.plc:
+            self.plc.get_local_address()
+
+    def test_methods_with_closed_port(self):
+        # type: () -> None
+        """Test pyads.Connection methods with no open port."""
+        with self.plc:
+            adr = self.plc.get_local_address()
+            self.assertIsNotNone(adr)
+
+        plc = pyads.Connection('127.0.0.1.1.1', 851)
+        self.assertIsNone(plc.get_local_address())
+        self.assertIsNone(plc.read_state())
+        self.assertIsNone(plc.read_device_info())
+        self.assertIsNone(
+            plc.read_write(1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT)
+        )
+        self.assertIsNone(plc.read(1, 2, pyads.PLCTYPE_INT))
+        self.assertIsNone(plc.read_by_name("hello", pyads.PLCTYPE_INT))
+        self.assertIsNone(
+            plc.add_device_notification(
+                "test", pyads.NotificationAttrib(4), lambda x: x
+            )
+        )
+
+    def test_set_timeout(self):
+        # type: () -> None
+        """Test timeout function."""
+        with self.plc:
+            self.assertIsNone(self.plc.set_timeout(100))
 
 
 if __name__ == '__main__':

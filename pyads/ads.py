@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-07-18 13:56:47
+:last modified time: 2018-07-19 10:38:17
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -47,7 +47,10 @@ def _parse_ams_netid(ams_netid):
     :return: NetId as a struct
 
     """
-    id_numbers = list(map(int, ams_netid.split('.')))
+    try:
+        id_numbers = list(map(int, ams_netid.split('.')))
+    except ValueError as e:
+        raise ValueError('no valid netid')
 
     if len(id_numbers) != 6:
         raise ValueError('no valid netid')
@@ -119,9 +122,7 @@ def set_local_address(ams_netid):
     if linux:
         return adsSetLocalAddress(ams_netid_st)
     else:
-        raise ADSError(text='SetLocalAddress is not supported for Windows clients.')
-
-    return None
+        raise ADSError(text='SetLocalAddress is not supported for Windows clients.')  # pragma: no cover
 
 
 def read_state(adr):
@@ -280,8 +281,6 @@ def write_by_name(adr, data_name, value, plc_datatype):
     """
     if port is not None:
         return adsSyncWriteByNameEx(port, adr, data_name, value, plc_datatype)
-
-    return None
 
 
 def add_route(adr, ip_address):
@@ -465,8 +464,6 @@ class Connection(object):
             return adsSyncWriteControlReqEx(self._port, self._adr, ads_state,
                                             device_state, data, plc_datatype)
 
-        return None
-
     def read_device_info(self):
         # type: () -> Optional[Tuple[str, AdsVersion]]
         """Read the name and the version number of the ADS-server.
@@ -495,8 +492,6 @@ class Connection(object):
         if self._port is not None:
             return adsSyncWriteReqEx(self._port, self._adr, index_group,
                                      index_offset, value, plc_datatype)
-
-        return None
 
     def read_write(self, index_group, index_offset, plc_read_datatype,
                    value, plc_write_datatype):
@@ -640,8 +635,6 @@ class Connection(object):
             adsSyncDelDeviceNotificationReqEx(self._port, self._adr,
                                               notification_handle, user_handle)
 
-        return None
-
     @property
     def is_open(self):
         # type: () -> bool
@@ -657,8 +650,6 @@ class Connection(object):
         """Set Timeout."""
         if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
-
-        return None
 
     def notification(self, plc_datatype=None):
         # type: (Type) -> Callable
@@ -688,7 +679,7 @@ class Connection(object):
             >>> plc = pyads.Connection('172.18.3.25.1.1', 851)
             >>>
             >>>
-            >>> @plc.notification(pyads.PLCTYPE_STR)
+            >>> @plc.notification(pyads.PLCTYPE_STRING)
             >>> def callback(handle, name, timestamp, value):
             >>>     print(handle, name, timestamp, value)
             >>>

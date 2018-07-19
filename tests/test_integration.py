@@ -10,6 +10,7 @@ from unittest import TestCase
 
 import struct
 
+import pyads
 from pyads import ads, constants
 from pyads.utils import platform_is_linux
 from pyads.structs import AmsAddr, NotificationAttrib
@@ -348,6 +349,18 @@ class AdsApiTestCase(TestCase):
 
         # Assert that ADDDEVICENOTIFICATION was used to add device notification
         self.assert_command_id(requests[2], constants.ADSCOMMAND_DELDEVICENOTE)
+
+    def test_decorated_device_notification(self):
+
+        plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+
+        @plc.notification(pyads.PLCTYPE_INT)
+        def callback(handle, name, timestamp, value):
+            print(handle, name, timestamp, value)
+
+        with plc:
+            plc.add_device_notification('a', pyads.NotificationAttrib(20), callback)
+            plc.write_by_name('a', 1, pyads.PLCTYPE_INT)
 
 
 if __name__ == '__main__':
