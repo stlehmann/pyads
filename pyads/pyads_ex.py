@@ -6,7 +6,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-08-16 09:51:32
+:last modified time: 2018-08-16 09:56:38
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
