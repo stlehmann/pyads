@@ -36,6 +36,8 @@ LNOTEFUNC = None
 # load dynamic ADS library
 if platform_is_windows():
     _adsDLL = ctypes.windll.TcAdsDll  # type: Union[ctypes.CDLL, ctypes.WinDLL]
+    NOTEFUNC = ctypes.WINFUNCTYPE(c_void_p, POINTER(SAmsAddr),
+                                  POINTER(SAdsNotificationHeader), c_ulong)
 
 elif platform_is_linux:
     # try to load local adslib.so in favor to global one
