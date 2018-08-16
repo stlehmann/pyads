@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-08-16 09:56:38
+:last modified by: lehmann
+:last modified time: 2018-08-16 10:05:32
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
