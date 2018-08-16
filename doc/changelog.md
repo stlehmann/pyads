@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 3.0.3
+
+* bugfix: notifications on Windows didn't work
+
 ## Version 3.0.2
 
 * bugfix: do not call add_route or delete_rout on Windows platform in Connection class
