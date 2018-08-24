@@ -164,14 +164,14 @@ class NotificationAttrib(object):
     """Notification Attribute."""
 
     def __init__(self, length, trans_mode=ADSTRANS_SERVERONCHA,
-                 max_delay=100, cycle_time=100):
-        # type: (int, int, int, int) -> None
+                 max_delay=1e-4, cycle_time=1e-4):
+        # type: (int, int, float, float) -> None
         """Create a new NotificationAttrib object.
 
         :param int length: length of the data
         :param int trans_mode: transmission mode
-        :param max_delay: maximum delay in ms
-        :param cycle_time: cycle time in ms
+        :param float max_delay: maximum delay in ms
+        :param float cycle_time: cycle time in ms
 
         """
         self._attrib = SAdsNotificationAttrib()
@@ -180,9 +180,9 @@ class NotificationAttrib(object):
         if trans_mode:
             self._attrib.nTransMode = trans_mode
         if max_delay:
-            self._attrib.nMaxDelay = max_delay
+            self._attrib.nMaxDelay = int(max_delay * 1e4)
         if cycle_time:
-            self._attrib.nCycleTime = cycle_time
+            self._attrib.nCycleTime = int(cycle_time * 1e4)
 
     def notificationAttribStruct(self):
         # type: () -> SAdsNotificationAttrib

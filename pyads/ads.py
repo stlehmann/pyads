@@ -617,7 +617,6 @@ class Connection(object):
                                                   data_name, attr, callback,
                                                   user_handle)
             )
-            self._notifications[notification_handle] = data_name
             return notification_handle, user_handle
 
         return None
@@ -696,12 +695,12 @@ class Connection(object):
         def notification_decorator(func):
             # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[AmsAddr, Any, int], None] # noqa: E501
 
-            def func_wrapper(addr, notification, user):
+            def func_wrapper(notification, data_name):
                 # type: (AmsAddr, Any, int) -> None
                 contents = notification.contents
                 data = contents.data
                 data_size = contents.cbSampleSize
-
+ 
                 datatype_map = {
                     PLCTYPE_BOOL: '<?',
                     PLCTYPE_BYTE: '<c',
@@ -721,7 +720,7 @@ class Connection(object):
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
                     # I had some NULL bytes in my string...
-                    value = bytearray(dest).split(b'\x00')[0].decode('utf-8')
+                    value = bytearray(dest).split('\0',1)[0].decode('utf-8')
 
                 elif plc_datatype not in datatype_map:
                     value = data
@@ -733,7 +732,6 @@ class Connection(object):
                     )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
-                data_name = self._notifications.get(contents.hNotification, "")
 
                 return func(contents.hNotification, data_name, dt, value)
 

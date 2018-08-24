@@ -634,6 +634,9 @@ def adsSyncAddDeviceNotificationReqEx(
     """
     global callback_store
 
+    if NOTEFUNC is None:
+        raise TypeError("Callback function type can't be None")
+
     adsSyncAddDeviceNotificationReqFct = (
         _adsDLL.AdsSyncAddDeviceNotificationReqEx
     )
@@ -658,8 +661,6 @@ def adsSyncAddDeviceNotificationReqEx(
     if user_handle is not None:
         nHUser = ctypes.c_ulong(user_handle)
 
-    if NOTEFUNC is None:
-        raise TypeError("Callback function type can't be None")
     adsSyncAddDeviceNotificationReqFct.argtypes = [
         ctypes.c_ulong,
         ctypes.POINTER(SAmsAddr),
@@ -672,7 +673,10 @@ def adsSyncAddDeviceNotificationReqEx(
     ]
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
-    c_callback = NOTEFUNC(callback)
+    def wrapper(addr, notification, user):
+        return callback(notification, data_name)
+
+    c_callback = NOTEFUNC(wrapper)
     err_code = adsSyncAddDeviceNotificationReqFct(
         port,
         pAmsAddr,
@@ -711,7 +715,7 @@ def adsSyncDelDeviceNotificationReqEx(
     err_code = adsSyncDelDeviceNotificationReqFct(
         port, pAmsAddr, nHNotification
     )
-    callback_store[notification_handle] = None  # type: ignore
+    callback_store.pop(notification_handle, None)
     if err_code:
         raise ADSError(err_code)
 
