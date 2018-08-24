@@ -4,8 +4,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-19 10:38:17
+:last modified by:   Stefan Lehmann
+:last modified time: 2018-08-24 19:32:16
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -696,11 +696,11 @@ class Connection(object):
             # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[AmsAddr, Any, int], None] # noqa: E501
 
             def func_wrapper(notification, data_name):
-                # type: (AmsAddr, Any, int) -> None
+                # type: (Any, str) -> None
                 contents = notification.contents
                 data = contents.data
                 data_size = contents.cbSampleSize
- 
+
                 datatype_map = {
                     PLCTYPE_BOOL: '<?',
                     PLCTYPE_BYTE: '<c',
