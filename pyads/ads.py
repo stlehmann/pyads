@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by:   Stefan Lehmann
-:last modified time: 2018-08-24 19:32:16
+:last modified time: 2018-08-24 19:37:38
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -693,7 +693,7 @@ class Connection(object):
 
         """
         def notification_decorator(func):
-            # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[AmsAddr, Any, int], None] # noqa: E501
+            # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[Any, str], None] # noqa: E501
 
             def func_wrapper(notification, data_name):
                 # type: (Any, str) -> None
