@@ -637,7 +637,7 @@ def adsSyncAddDeviceNotificationReqEx(
     if NOTEFUNC is None:
         raise TypeError("Callback function type can't be None")
 
-	adsSyncAddDeviceNotificationReqFct = (
+    adsSyncAddDeviceNotificationReqFct = (
         _adsDLL.AdsSyncAddDeviceNotificationReqEx
     )
 
