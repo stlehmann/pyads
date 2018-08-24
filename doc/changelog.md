@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.4
+
+* remove race-condition related to the notification decorator, thanks to Luka
+Belingar for the bugfix
+
 ## Version 3.0.3
 
 * bugfix: notifications on Windows didn't work
