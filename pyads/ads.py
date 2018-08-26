@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by:   Stefan Lehmann
-:last modified time: 2018-08-24 19:37:38
+:last modified time: 2018-08-26 22:35:22
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -719,8 +719,7 @@ class Connection(object):
                 if plc_datatype == PLCTYPE_STRING:
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
-                    # I had some NULL bytes in my string...
-                    value = bytearray(dest).split('\0',1)[0].decode('utf-8')
+                    value = bytearray(dest).split(b'\x00', 1)[0].decode('utf-8')
 
                 elif plc_datatype not in datatype_map:
                     value = data

@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: lehmann
-:last modified time: 2018-08-16 10:05:32
+:last modified by:   Stefan Lehmann
+:last modified time: 2018-08-26 22:32:49
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -47,8 +47,8 @@ NOTEFUNC = None
 
 # load dynamic ADS library
 if platform_is_windows():
-    _adsDLL = ctypes.windll.TcAdsDll  # type: Union[ctypes.CDLL, ctypes.WinDLL]
-    NOTEFUNC = ctypes.WINFUNCTYPE(
+    _adsDLL = ctypes.windll.TcAdsDll  # type: ignore
+    NOTEFUNC = ctypes.WINFUNCTYPE(  # type: ignore
         ctypes.c_void_p,
         ctypes.POINTER(SAmsAddr),
         ctypes.POINTER(SAdsNotificationHeader),
@@ -674,6 +674,7 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
     def wrapper(addr, notification, user):
+        # type: (AmsAddr, SAdsNotificationHeader, int) -> Callable[[SAdsNotificationHeader, str], None]
         return callback(notification, data_name)
 
     c_callback = NOTEFUNC(wrapper)

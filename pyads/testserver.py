@@ -15,8 +15,8 @@ server level by specifying the `handler` kwarg in the server constructor.
 :author: David Browne <davidabrowne@gmail.com>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 10:44:15
+:last modified by:   Stefan Lehmann
+:last modified time: 2018-08-26 22:38:06
 
 """
 from __future__ import absolute_import
@@ -366,7 +366,7 @@ class AbstractHandler:
         :return: Data needed to construct the AMS response packet
 
         """
-        raise not NotImplementedError()
+        raise not NotImplementedError()  # type: ignore
 
 
 class BasicHandler(AbstractHandler):
