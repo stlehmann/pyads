@@ -720,7 +720,7 @@ class Connection(object):
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
                     # I had some NULL bytes in my string...
-                    value = bytearray(dest).split('\0',1)[0].decode('utf-8')
+                    value = bytearray(dest).split(b'\0',1)[0].decode('utf-8')
 
                 elif plc_datatype not in datatype_map:
                     value = data
