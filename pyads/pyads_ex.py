@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: lehmann
-:last modified time: 2018-08-16 10:05:32
+:last modified by:   Stefan Lehmann
+:last modified time: 2018-08-26 23:06:37
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -46,9 +46,9 @@ PY3 = sys.version_info[0] == 3
 NOTEFUNC = None
 
 # load dynamic ADS library
-if platform_is_windows():
-    _adsDLL = ctypes.windll.TcAdsDll  # type: Union[ctypes.CDLL, ctypes.WinDLL]
-    NOTEFUNC = ctypes.WINFUNCTYPE(
+if platform_is_windows():  # pragma: no cover, skip Windows test
+    _adsDLL = ctypes.windll.TcAdsDll  # type: ignore
+    NOTEFUNC = ctypes.WINFUNCTYPE(  # type: ignore
         ctypes.c_void_p,
         ctypes.POINTER(SAmsAddr),
         ctypes.POINTER(SAdsNotificationHeader),
@@ -71,7 +71,7 @@ elif platform_is_linux:
         ctypes.POINTER(SAdsNotificationHeader),
         ctypes.c_ulong,
     )
-else:
+else:  # pragma: no cover, can not test unsupported platform
     raise RuntimeError("Unsupported platform {0}.".format(sys.platform))
 
 callback_store = dict()
@@ -120,7 +120,7 @@ def router_function(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         # type: (Any, Any) -> Callable
-        if platform_is_windows():
+        if platform_is_windows():  # pragma: no cover, skipt Windows test
             raise RuntimeError(
                 "Router interface is not available on Win32 systems.\n"
                 "Configure AMS routes using the TwinCAT router service."
@@ -674,6 +674,7 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
     def wrapper(addr, notification, user):
+        # type: (AmsAddr, SAdsNotificationHeader, int) -> Callable[[SAdsNotificationHeader, str], None]
         return callback(notification, data_name)
 
     c_callback = NOTEFUNC(wrapper)

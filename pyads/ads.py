@@ -4,8 +4,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-19 10:38:17
+:last modified by:   Stefan Lehmann
+:last modified time: 2018-08-26 22:35:22
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -693,14 +693,14 @@ class Connection(object):
 
         """
         def notification_decorator(func):
-            # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[AmsAddr, Any, int], None] # noqa: E501
+            # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[Any, str], None] # noqa: E501
 
             def func_wrapper(notification, data_name):
-                # type: (AmsAddr, Any, int) -> None
+                # type: (Any, str) -> None
                 contents = notification.contents
                 data = contents.data
                 data_size = contents.cbSampleSize
- 
+
                 datatype_map = {
                     PLCTYPE_BOOL: '<?',
                     PLCTYPE_BYTE: '<c',
@@ -719,8 +719,9 @@ class Connection(object):
                 if plc_datatype == PLCTYPE_STRING:
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
-                    # read only until null-termination
+                    # read only until null-termination character
                     value = bytearray(dest).split(b'\0', 1)[0].decode('utf-8')
+
 
                 elif plc_datatype not in datatype_map:
                     value = data
