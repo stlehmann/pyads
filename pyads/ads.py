@@ -719,8 +719,8 @@ class Connection(object):
                 if plc_datatype == PLCTYPE_STRING:
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
-                    # I had some NULL bytes in my string...
-                    value = bytearray(dest).split(b'\0',1)[0].decode('utf-8')
+                    # read only until null-termination
+                    value = bytearray(dest).split(b'\0', 1)[0].decode('utf-8')
 
                 elif plc_datatype not in datatype_map:
                     value = data
