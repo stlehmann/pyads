@@ -11,7 +11,7 @@
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
 from datetime import datetime
 import struct
-from ctypes import memmove, addressof, c_ubyte
+from ctypes import memmove, addressof, c_ubyte, Structure
 
 from .utils import platform_is_linux
 from .filetimes import filetime_to_dt
@@ -722,6 +722,10 @@ class Connection(object):
                     # read only until null-termination character
                     value = bytearray(dest).split(b'\0', 1)[0].decode('utf-8')
 
+                elif isinstance(plc_datatype, Structure):
+                    dest = plc_datatype
+                    memmove(addressof(dest), addressof(data), data_size)
+                    value = dest
 
                 elif plc_datatype not in datatype_map:
                     value = data
