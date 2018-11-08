@@ -1,25 +1,6 @@
 -i https://pypi.python.org/simple
 -e .
-alabaster==0.7.11
-babel==2.6.0
-certifi==2018.4.16
-chardet==3.0.4
-colorama==0.3.9; sys_platform == 'win32'
-docutils==0.14
-idna==2.7
-imagesize==1.0.0
-jinja2==2.10
-markupsafe==1.0
-packaging==17.1
-prompt-toolkit==2.0.3
-pygments==2.2.0
-pyparsing==2.2.0
-pytz==2018.5
-requests==2.19.1; python_version != '3.3.*'
+prompt-toolkit==2.0.7
 six==1.11.0
-snowballstemmer==1.2.1
-sphinx==1.7.5
-sphinxcontrib-websupport==1.1.0; python_version != '3.3.*'
-typing==3.6.4
-urllib3==1.23; python_version != '3.3.*'
+typing==3.6.6
 wcwidth==0.1.7

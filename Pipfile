@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sphinx = "*"
 prompt-toolkit = "*"
 pyads = {editable = true, path = "."}
 typing = "*"
