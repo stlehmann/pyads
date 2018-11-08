@@ -196,7 +196,7 @@ def callbackString(adr, notification, user):
 
 #### Device Notification callback
 
-To make the handling of notifications more Pythonic a notification decorator has
+To make the handling of notifications more pythonic a notification decorator has
 been introduced in version 2.2.4. This decorator takes care of converting the
 ctype values transfered via ADS to python datatypes.
 
@@ -221,8 +221,23 @@ ctype values transfered via ADS to python datatypes.
 
 ```
 
-The notification callback works for all basic plc datatypes but not for arrays
-or structures.
+The notification callback works for all basic plc datatypes but not for
+arrays. Since version 3.0.5 the `ctypes.Structure` datatype is supported. Find
+an example below:
+
+```python
+>>> class TowerEvent(Structure):
+>>>     _fields_ = [
+>>>         ("Category", c_char * 21),
+>>>         ("Name", c_char * 81),
+>>>         ("Message", c_char * 81)
+>>>     ]
+>>>
+>>> @plc.notification(TowerEvent)
+>>> def callback(handle, name, timestamp, value):
+>>>     print(f'Received new event notification for {name}.Message = {value.Message}')
+
+```
 
 [0]: https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=
 [1]: https://infosys.beckhoff.de/content/1033/tcadsdll2/html/tcadsdll_strucadsnotificationattrib.htm

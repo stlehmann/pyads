@@ -6,7 +6,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-08-16 10:44:31
+:last modified time: 2018-11-08 07:59:47
 
 """
 from .structs import AmsAddr, NotificationAttrib

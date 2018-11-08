@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.5
+
+* add support for ctypes.Structure in notification callback decorators
+
 ## 3.0.4
 
 * remove race-condition related to the notification decorator, thanks to Luka

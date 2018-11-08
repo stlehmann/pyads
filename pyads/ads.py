@@ -4,8 +4,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-08-26 22:35:22
+:last modified by: Stefan Lehmann
+:last modified time: 2018-11-08 07:58:38
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -660,7 +660,8 @@ class Connection(object):
         convert the data of the NotificationHeader into the fitting
         Python type.
 
-        :param plc_datatype: The PLC datatype that needs to be converted.
+        :param plc_datatype: The PLC datatype that needs to be converted. This can
+        be any basic PLC datatype or a `ctypes.Structure`.
 
         The callback functions need to be of the following type:
 
