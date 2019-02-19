@@ -1,11 +1,14 @@
 #! /usr/bin/env python
 # -*-coding: utf-8 -*-
 import io
+import glob
 import os
 import re
 import sys
 import shutil
 import subprocess
+import functools
+import operator
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 from setuptools.command.install import install as _install
@@ -55,7 +58,17 @@ def create_binaries():
 
 
 def remove_binaries():
-    subprocess.call(['make', 'clean', '-C', 'src'])
+    """Remove all binary files in the src directory."""
+    patterns = (
+        "src/*.a",
+        "src/*.o",
+        "src/obj/*.o",
+        "src/*.bin",
+        "src/*.so",
+    )
+
+    for f in functools.reduce(operator.iconcat, [glob.glob(p) for p in patterns]):
+        os.remove(f)
 
 
 def copy_sharedlib():
