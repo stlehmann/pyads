@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.6
+
+*  AdsLib: allow UNIX flavors to build more easily
+
 ## 3.0.5
 
 * add support for ctypes.Structure in notification callback decorators
