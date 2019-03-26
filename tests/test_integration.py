@@ -270,6 +270,22 @@ class AdsApiTestCase(TestCase):
         expected_result = struct.unpack('<I', '\x0F\x0F\x0F\x00'.encode('utf-8'))[0]
         self.assertEqual(read_value, expected_result)
 
+    def test_read_write_array(self):
+        write_value = tuple(range(5))
+
+        ads.read_write(
+            self.endpoint, index_group=constants.INDEXGROUP_DATA,
+            index_offset=1, plc_read_datatype=constants.PLCTYPE_UDINT,
+            value=write_value, plc_write_datatype=constants.PLCTYPE_UDINT * 5
+        )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Check the value received by the server
+        received_value = struct.unpack('<IIIII', requests[0].ams_header.data[16:])
+        self.assertEqual(write_value, received_value)
+
     def test_read_by_name(self):
         handle_name = "TestHandle"
 
