@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.8
+
+* add array datatype support for read_write function
+* add test with array datatype for read and read/write function
+* add section for usage of array datatypes in Readme
+
 ## 3.0.6
 
 *  AdsLib: allow UNIX flavors to build more easily
