@@ -436,7 +436,10 @@ def adsSyncReadWriteReqEx2(
         # Add an extra byte to the data length for the null terminator
         write_length = len(value) + 1
     else:
-        write_data = write_data_type(value)
+        if type(write_data_type).__name__ == "PyCArrayType":
+            write_data = write_data_type(*value)
+        else:
+            write_data = write_data_type(value)
         write_data_pointer = ctypes.pointer(write_data)
         write_length = ctypes.sizeof(write_data)
 
