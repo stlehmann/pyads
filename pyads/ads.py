@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2019-03-26 11:30:25
+:last modified time: 2019-03-26 13:57:52
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -17,19 +17,44 @@ from .utils import platform_is_linux
 from .filetimes import filetime_to_dt
 
 from .pyads_ex import (
-    adsAddRoute, adsDelRoute, adsPortOpenEx, adsPortCloseEx,
-    adsGetLocalAddressEx, adsSyncReadStateReqEx, adsSyncReadDeviceInfoReqEx,
-    adsSyncWriteControlReqEx, adsSyncWriteReqEx, adsSyncReadWriteReqEx2,
-    adsSyncReadReqEx2, adsSyncReadByNameEx, adsSyncWriteByNameEx,
-    adsSyncAddDeviceNotificationReqEx, adsSyncDelDeviceNotificationReqEx,
-    adsSyncSetTimeoutEx, adsSetLocalAddress, ADSError
+    adsAddRoute,
+    adsDelRoute,
+    adsPortOpenEx,
+    adsPortCloseEx,
+    adsGetLocalAddressEx,
+    adsSyncReadStateReqEx,
+    adsSyncReadDeviceInfoReqEx,
+    adsSyncWriteControlReqEx,
+    adsSyncWriteReqEx,
+    adsSyncReadWriteReqEx2,
+    adsSyncReadReqEx2,
+    adsSyncReadByNameEx,
+    adsSyncWriteByNameEx,
+    adsSyncAddDeviceNotificationReqEx,
+    adsSyncDelDeviceNotificationReqEx,
+    adsSyncSetTimeoutEx,
+    adsSetLocalAddress,
+    ADSError,
 )
 
 from .constants import (
-    PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_DATE, PLCTYPE_DINT, PLCTYPE_DT,
-    PLCTYPE_DWORD, PLCTYPE_INT, PLCTYPE_LREAL, PLCTYPE_REAL, PLCTYPE_SINT,
-    PLCTYPE_STRING, PLCTYPE_TIME, PLCTYPE_TOD, PLCTYPE_UDINT, PLCTYPE_UINT,
-    PLCTYPE_USINT, PLCTYPE_WORD
+    PLCTYPE_BOOL,
+    PLCTYPE_BYTE,
+    PLCTYPE_DATE,
+    PLCTYPE_DINT,
+    PLCTYPE_DT,
+    PLCTYPE_DWORD,
+    PLCTYPE_INT,
+    PLCTYPE_LREAL,
+    PLCTYPE_REAL,
+    PLCTYPE_SINT,
+    PLCTYPE_STRING,
+    PLCTYPE_TIME,
+    PLCTYPE_TOD,
+    PLCTYPE_UDINT,
+    PLCTYPE_UINT,
+    PLCTYPE_USINT,
+    PLCTYPE_WORD,
 )
 
 from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib
@@ -48,12 +73,12 @@ def _parse_ams_netid(ams_netid):
 
     """
     try:
-        id_numbers = list(map(int, ams_netid.split('.')))
-    except ValueError as e:
-        raise ValueError('no valid netid')
+        id_numbers = list(map(int, ams_netid.split(".")))
+    except ValueError:
+        raise ValueError("no valid netid")
 
     if len(id_numbers) != 6:
-        raise ValueError('no valid netid')
+        raise ValueError("no valid netid")
 
     # Fill the netId struct with data
     ams_netid_st = SAmsNetId()
@@ -122,7 +147,9 @@ def set_local_address(ams_netid):
     if linux:
         return adsSetLocalAddress(ams_netid_st)
     else:
-        raise ADSError(text='SetLocalAddress is not supported for Windows clients.')  # pragma: no cover
+        raise ADSError(
+            text="SetLocalAddress is not supported for Windows clients."
+        )  # pragma: no cover
 
 
 def read_state(adr):
@@ -203,9 +230,16 @@ def write(adr, index_group, index_offset, value, plc_datatype):
         )
 
 
-def read_write(adr, index_group, index_offset, plc_read_datatype,
-               value, plc_write_datatype, raw=False):
-    # type: (AmsAddr, int, int, Type, Any, Type) -> Any
+def read_write(
+    adr,
+    index_group,
+    index_offset,
+    plc_read_datatype,
+    value,
+    plc_write_datatype,
+    return_ctypes=False,
+):
+    # type: (AmsAddr, int, int, Type, Any, Type, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
@@ -213,60 +247,69 @@ def read_write(adr, index_group, index_offset, plc_read_datatype,
         constants
     :param int index_offset: PLC storage address
     :param Type plc_read_datatype: type of the data given to the PLC to respond
-        to, according to PLCTYPE constants
-    :param value: value to write to the storage address of the PLC
+            to, according to PLCTYPE constants
+        :param value: value to write to the storage address of the PLC
     :param Type plc_write_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
-    :param bool raw: do not convert to Python datatypes if True (default: False)
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
     :rtype: PLCTYPE
     :return: value: **value**
 
     """
     if port is not None:
         return adsSyncReadWriteReqEx2(
-            port, adr, index_group, index_offset, plc_read_datatype,
-            value, plc_write_datatype, raw
+            port,
+            adr,
+            index_group,
+            index_offset,
+            plc_read_datatype,
+            value,
+            plc_write_datatype,
+            return_ctypes,
         )
 
     return None
 
 
-def read(adr, index_group, index_offset, plc_datatype, raw=False):
-    # type: (AmsAddr, int, int, Type) -> Any
+def read(adr, index_group, index_offset, plc_datatype, return_ctypes=False):
+    # type: (AmsAddr, int, int, Type, bool) -> Any
     """Read data synchronous from an ADS-device.
 
-    :param AmsAddr adr: local or remote AmsAddr
+        :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
     :param int plc_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
-    :param bool raw: do not convert to Python datatypes if True (default: False)
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
     :return: value: **value**
 
     """
     if port is not None:
         return adsSyncReadReqEx2(
-            port, adr, index_group, index_offset, plc_datatype, raw
+            port, adr, index_group, index_offset, plc_datatype, return_ctypes
         )
 
     return None
 
 
-def read_by_name(adr, data_name, plc_datatype, raw=False):
-    # type: (AmsAddr, str, Type) -> Any
+def read_by_name(adr, data_name, plc_datatype, return_ctypes=False):
+    # type: (AmsAddr, str, Type, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: data name
     :param int plc_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
-    :param bool raw: do not convert to Python datatypes if True (default: False)
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
     :return: value: **value**
 
     """
     if port is not None:
-        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype, raw)
+        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype, return_ctypes)
 
     return None
 
@@ -327,8 +370,9 @@ def add_device_notification(adr, data_name, attr, callback, user_handle=None):
 
     """
     if port is not None:
-        return adsSyncAddDeviceNotificationReqEx(port, adr, data_name, attr,
-                                                 callback, user_handle)
+        return adsSyncAddDeviceNotificationReqEx(
+            port, adr, data_name, attr, callback, user_handle
+        )
 
     return None
 
@@ -345,8 +389,9 @@ def del_device_notification(adr, notification_handle, user_handle):
 
     """
     if port is not None:
-        return adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle,
-                                                 user_handle)
+        return adsSyncDelDeviceNotificationReqEx(
+            port, adr, notification_handle, user_handle
+        )
 
 
 def set_timeout(ms):
@@ -373,7 +418,7 @@ class Connection(object):
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
         if ip_address is None:
-            self.ip_address = '.'.join(ams_net_id.split('.')[:4])
+            self.ip_address = ".".join(ams_net_id.split(".")[:4])
         else:
             self.ip_address = ip_address
         self._open = False
@@ -464,8 +509,9 @@ class Connection(object):
 
         """
         if self._port is not None:
-            return adsSyncWriteControlReqEx(self._port, self._adr, ads_state,
-                                            device_state, data, plc_datatype)
+            return adsSyncWriteControlReqEx(
+                self._port, self._adr, ads_state, device_state, data, plc_datatype
+            )
 
     def read_device_info(self):
         # type: () -> Optional[Tuple[str, AdsVersion]]
@@ -493,12 +539,20 @@ class Connection(object):
 
         """
         if self._port is not None:
-            return adsSyncWriteReqEx(self._port, self._adr, index_group,
-                                     index_offset, value, plc_datatype)
+            return adsSyncWriteReqEx(
+                self._port, self._adr, index_group, index_offset, value, plc_datatype
+            )
 
-    def read_write(self, index_group, index_offset, plc_read_datatype,
-                   value, plc_write_datatype, raw=False):
-        # type: (int, int, Type, Any, Type) -> Any
+    def read_write(
+        self,
+        index_group,
+        index_offset,
+        plc_read_datatype,
+        value,
+        plc_write_datatype,
+        return_ctypes=False,
+    ):
+        # type: (int, int, Type, Any, Type, bool) -> Any
         """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -509,20 +563,28 @@ class Connection(object):
         :param value: value to write to the storage address of the PLC
         :param plc_write_datatype: type of the data given to the PLC,
             according to PLCTYPE constants
-        :param bool raw: do not convert to Python datatypes if True (default: False)
-        :rtype: PLCTYPE
+            :rtype: PLCTYPE
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
         :return: value: **value**
 
         """
         if self._port is not None:
-            return adsSyncReadWriteReqEx2(self._port, self._adr, index_group,
-                                          index_offset, plc_read_datatype,
-                                          value, plc_write_datatype, raw)
+            return adsSyncReadWriteReqEx2(
+                self._port,
+                self._adr,
+                index_group,
+                index_offset,
+                plc_read_datatype,
+                value,
+                plc_write_datatype,
+                return_ctypes,
+            )
 
         return None
 
-    def read(self, index_group, index_offset, plc_datatype, raw=False):
-        # type: (int, int, Type) -> Any
+    def read(self, index_group, index_offset, plc_datatype, return_ctypes=False):
+        # type: (int, int, Type, bool) -> Any
         """Read data synchronous from an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -530,30 +592,32 @@ class Connection(object):
         :param int index_offset: PLC storage address
         :param int plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
-        :param bool raw: do not convert to Python datatypes if True (default: False)
-        :return: value: **value**
+            :return: value: **value**
+        :param bool return_ctypes: return ctypes instead of python types if True
+            (default: False)
 
         """
         if self._port is not None:
-            return adsSyncReadReqEx2(self._port, self._adr, index_group,
-                                     index_offset, plc_datatype)
+            return adsSyncReadReqEx2(
+                self._port, self._adr, index_group, index_offset, plc_datatype
+            )
 
         return None
 
-    def read_by_name(self, data_name, plc_datatype, raw=False):
-        # type: (str, Type) -> Any
+    def read_by_name(self, data_name, plc_datatype, return_ctypes=False):
+        # type: (str, Type, bool) -> Any
         """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name
         :param int plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
-        :param bool raw: do not convert to Python datatypes if True (default: False)
-        :return: value: **value**
+            :return: value: **value**
+        :param bool return_ctypes: return ctypes instead of python types if True
+            (default: False)
 
         """
         if self._port:
-            return adsSyncReadByNameEx(self._port, self._adr, data_name,
-                                       plc_datatype)
+            return adsSyncReadByNameEx(self._port, self._adr, data_name, plc_datatype)
 
         return None
 
@@ -568,11 +632,11 @@ class Connection(object):
 
         """
         if self._port:
-            return adsSyncWriteByNameEx(self._port, self._adr, data_name,
-                                        value, plc_datatype)
+            return adsSyncWriteByNameEx(
+                self._port, self._adr, data_name, value, plc_datatype
+            )
 
-    def add_device_notification(self, data_name, attr, callback,
-                                user_handle=None):
+    def add_device_notification(self, data_name, attr, callback, user_handle=None):
         # type: (str, NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]
         """Add a device notification.
 
@@ -618,10 +682,8 @@ class Connection(object):
 
         """
         if self._port is not None:
-            notification_handle, user_handle = (
-                adsSyncAddDeviceNotificationReqEx(self._port, self._adr,
-                                                  data_name, attr, callback,
-                                                  user_handle)
+            notification_handle, user_handle = adsSyncAddDeviceNotificationReqEx(
+                self._port, self._adr, data_name, attr, callback, user_handle
             )
             return notification_handle, user_handle
 
@@ -637,8 +699,9 @@ class Connection(object):
 
         """
         if self._port is not None:
-            adsSyncDelDeviceNotificationReqEx(self._port, self._adr,
-                                              notification_handle, user_handle)
+            adsSyncDelDeviceNotificationReqEx(
+                self._port, self._adr, notification_handle, user_handle
+            )
 
     @property
     def is_open(self):
@@ -657,7 +720,7 @@ class Connection(object):
             adsSyncSetTimeoutEx(self._port, ms)
 
     def notification(self, plc_datatype=None):
-        # type: (Type) -> Callable
+        # type: (Optional[Type[Any]]) -> Callable
         """Decorate a callback function.
 
         **Decorator**.
@@ -699,6 +762,7 @@ class Connection(object):
             >>>        pass
 
         """
+
         def notification_decorator(func):
             # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[Any, str], None] # noqa: E501
 
@@ -709,25 +773,25 @@ class Connection(object):
                 data_size = contents.cbSampleSize
 
                 datatype_map = {
-                    PLCTYPE_BOOL: '<?',
-                    PLCTYPE_BYTE: '<c',
-                    PLCTYPE_DINT: '<i',
-                    PLCTYPE_DWORD: '<I',
-                    PLCTYPE_INT: '<h',
-                    PLCTYPE_LREAL: '<d',
-                    PLCTYPE_REAL: '<f',
-                    PLCTYPE_SINT: '<b',
-                    PLCTYPE_UDINT: '<L',
-                    PLCTYPE_UINT: '<H',
-                    PLCTYPE_USINT: '<B',
-                    PLCTYPE_WORD: '<H',
+                    PLCTYPE_BOOL: "<?",
+                    PLCTYPE_BYTE: "<c",
+                    PLCTYPE_DINT: "<i",
+                    PLCTYPE_DWORD: "<I",
+                    PLCTYPE_INT: "<h",
+                    PLCTYPE_LREAL: "<d",
+                    PLCTYPE_REAL: "<f",
+                    PLCTYPE_SINT: "<b",
+                    PLCTYPE_UDINT: "<L",
+                    PLCTYPE_UINT: "<H",
+                    PLCTYPE_USINT: "<B",
+                    PLCTYPE_WORD: "<H",
                 }  # type: Dict[Type, str]
 
                 if plc_datatype == PLCTYPE_STRING:
                     dest = (c_ubyte * data_size)()
                     memmove(addressof(dest), addressof(data), data_size)
                     # read only until null-termination character
-                    value = bytearray(dest).split(b'\0', 1)[0].decode('utf-8')
+                    value = bytearray(dest).split(b"\0", 1)[0].decode("utf-8")
 
                 elif issubclass(plc_datatype, Structure):
                     value = plc_datatype()
@@ -739,8 +803,7 @@ class Connection(object):
 
                 else:
                     value = struct.unpack(
-                        datatype_map[plc_datatype],
-                        bytearray(data)[:data_size]
+                        datatype_map[plc_datatype], bytearray(data)[:data_size]
                     )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
