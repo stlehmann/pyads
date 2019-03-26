@@ -101,6 +101,15 @@ For reading strings the maximum buffer length is 1024.
 'abc'
 ```
 
+You can also read/write arrays. For this you simply need to multiply the datatype by
+the number of array elements you want to read/write.
+
+```python
+>>> plc.write_by_name('global.sample_array', [1, 2, 3], pyads.PLCTYPE_INT * 3)
+>>> plc.read_by_name('global.sample_array', pyads.PLCTYPE_INT * 3)
+(1, 2, 3)
+```
+
 ### Read and write values by address
 
 Read and write *UDINT* variables by address.

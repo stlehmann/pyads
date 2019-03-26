@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.9
+
+* Add return_ctypes parameter for read functions to omit time-costy time conversion
+
 ## 3.0.8
 
 * add array datatype support for read_write function
