@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-08-26 23:06:37
+:last modified by: Stefan Lehmann
+:last modified time: 2019-03-26 11:26:36
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -393,6 +393,7 @@ def adsSyncReadWriteReqEx2(
     read_data_type,
     value,
     write_data_type,
+    raw=False,
 ):
     # type: (int, AmsAddr, int, int, Type, Any, Type) -> Any
     """Read and write data synchronous from/to an ADS-device.
@@ -407,6 +408,7 @@ def adsSyncReadWriteReqEx2(
     :param value: value to write to the storage address of the PLC
     :param Type write_data_type: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool raw: do not convert to Python datatypes if True (default: False)
     :rtype: read_data_type
     :return: value: value read from PLC
 
@@ -470,6 +472,9 @@ def adsSyncReadWriteReqEx2(
             )
         )
 
+    if raw:
+        return read_data.value
+
     if read_data_type == PLCTYPE_STRING:
         return read_data.value.decode("utf-8")
 
@@ -482,7 +487,7 @@ def adsSyncReadWriteReqEx2(
     return read_data
 
 
-def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
+def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type, raw=False):
     # type: (int, AmsAddr, int, int, Type) -> Any
     """Read data synchronous from an ADS-device.
 
@@ -493,6 +498,7 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     :param int index_offset: PLC storage address
     :param Type data_type: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool raw: do not convert to Python datatypes if True (default: False)
     :rtype: data_type
     :return: value: **value**
 
@@ -536,6 +542,9 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
             )
         )
 
+    if raw:
+        return data.value
+
     if data_type == PLCTYPE_STRING:
         return data.value.decode("utf-8")
 
@@ -548,7 +557,7 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     return data
 
 
-def adsSyncReadByNameEx(port, address, data_name, data_type):
+def adsSyncReadByNameEx(port, address, data_name, data_type, raw=False):
     # type: (int, AmsAddr, str, Type) -> Any
     """Read data synchronous from an ADS-device from data name.
 
@@ -557,6 +566,7 @@ def adsSyncReadByNameEx(port, address, data_name, data_type):
     :param string data_name: data name
     :param Type data_type: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool raw: do not convert to Python datatypes if True (default: False)
     :rtype: data_type
     :return: value: **value**
 
@@ -574,7 +584,7 @@ def adsSyncReadByNameEx(port, address, data_name, data_type):
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
-        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type
+        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type, raw
     )
 
     # Release the handle of the PLC-variable

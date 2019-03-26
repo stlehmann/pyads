@@ -5,7 +5,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2018-11-08 07:58:38
+:last modified time: 2019-03-26 11:30:25
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -204,7 +204,7 @@ def write(adr, index_group, index_offset, value, plc_datatype):
 
 
 def read_write(adr, index_group, index_offset, plc_read_datatype,
-               value, plc_write_datatype):
+               value, plc_write_datatype, raw=False):
     # type: (AmsAddr, int, int, Type, Any, Type) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
@@ -217,6 +217,7 @@ def read_write(adr, index_group, index_offset, plc_read_datatype,
     :param value: value to write to the storage address of the PLC
     :param Type plc_write_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool raw: do not convert to Python datatypes if True (default: False)
     :rtype: PLCTYPE
     :return: value: **value**
 
@@ -224,13 +225,13 @@ def read_write(adr, index_group, index_offset, plc_read_datatype,
     if port is not None:
         return adsSyncReadWriteReqEx2(
             port, adr, index_group, index_offset, plc_read_datatype,
-            value, plc_write_datatype
+            value, plc_write_datatype, raw
         )
 
     return None
 
 
-def read(adr, index_group, index_offset, plc_datatype):
+def read(adr, index_group, index_offset, plc_datatype, raw=False):
     # type: (AmsAddr, int, int, Type) -> Any
     """Read data synchronous from an ADS-device.
 
@@ -240,18 +241,19 @@ def read(adr, index_group, index_offset, plc_datatype):
     :param int index_offset: PLC storage address
     :param int plc_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool raw: do not convert to Python datatypes if True (default: False)
     :return: value: **value**
 
     """
     if port is not None:
         return adsSyncReadReqEx2(
-            port, adr, index_group, index_offset, plc_datatype
+            port, adr, index_group, index_offset, plc_datatype, raw
         )
 
     return None
 
 
-def read_by_name(adr, data_name, plc_datatype):
+def read_by_name(adr, data_name, plc_datatype, raw=False):
     # type: (AmsAddr, str, Type) -> Any
     """Read data synchronous from an ADS-device from data name.
 
@@ -259,11 +261,12 @@ def read_by_name(adr, data_name, plc_datatype):
     :param string data_name: data name
     :param int plc_datatype: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool raw: do not convert to Python datatypes if True (default: False)
     :return: value: **value**
 
     """
     if port is not None:
-        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype)
+        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype, raw)
 
     return None
 
@@ -494,7 +497,7 @@ class Connection(object):
                                      index_offset, value, plc_datatype)
 
     def read_write(self, index_group, index_offset, plc_read_datatype,
-                   value, plc_write_datatype):
+                   value, plc_write_datatype, raw=False):
         # type: (int, int, Type, Any, Type) -> Any
         """Read and write data synchronous from/to an ADS-device.
 
@@ -506,6 +509,7 @@ class Connection(object):
         :param value: value to write to the storage address of the PLC
         :param plc_write_datatype: type of the data given to the PLC,
             according to PLCTYPE constants
+        :param bool raw: do not convert to Python datatypes if True (default: False)
         :rtype: PLCTYPE
         :return: value: **value**
 
@@ -513,11 +517,11 @@ class Connection(object):
         if self._port is not None:
             return adsSyncReadWriteReqEx2(self._port, self._adr, index_group,
                                           index_offset, plc_read_datatype,
-                                          value, plc_write_datatype)
+                                          value, plc_write_datatype, raw)
 
         return None
 
-    def read(self, index_group, index_offset, plc_datatype):
+    def read(self, index_group, index_offset, plc_datatype, raw=False):
         # type: (int, int, Type) -> Any
         """Read data synchronous from an ADS-device.
 
@@ -526,6 +530,7 @@ class Connection(object):
         :param int index_offset: PLC storage address
         :param int plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
+        :param bool raw: do not convert to Python datatypes if True (default: False)
         :return: value: **value**
 
         """
@@ -535,13 +540,14 @@ class Connection(object):
 
         return None
 
-    def read_by_name(self, data_name, plc_datatype):
+    def read_by_name(self, data_name, plc_datatype, raw=False):
         # type: (str, Type) -> Any
         """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name
         :param int plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
+        :param bool raw: do not convert to Python datatypes if True (default: False)
         :return: value: **value**
 
         """
