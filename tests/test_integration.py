@@ -207,6 +207,21 @@ class AdsApiTestCase(TestCase):
 
         self.assertEqual(sent_value, received_value)
 
+    def test_write_array(self):
+        write_value = tuple(range(5))
+
+        ads.write(
+            self.endpoint, index_group=constants.INDEXGROUP_DATA, index_offset=1,
+            value=write_value, plc_datatype=constants.PLCTYPE_UDINT * 5
+        )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Check the value received by the server
+        received_value = struct.unpack('<IIIII', requests[0].ams_header.data[12:])
+        self.assertEqual(write_value, received_value)
+
     def test_read_state(self):
         ads_state, device_state = ads.read_state(self.endpoint)
 
