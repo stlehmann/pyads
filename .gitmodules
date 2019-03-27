@@ -1,3 +1,6 @@
 [submodule "src"]
 	path = src
 	url = https://github.com/MrLeeh/ADS.git
+[submodule "ADS"]
+	path = adslib
+	url = https://github.com/stlehmann/ADS.git

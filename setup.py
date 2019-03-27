@@ -50,21 +50,21 @@ def get_files_rec(directory):
     return res
 
 
-data_files = get_files_rec('src')
+data_files = get_files_rec('adslib')
 
 
 def create_binaries():
-    subprocess.call(['make', '-C', 'src'])
+    subprocess.call(['make', '-C', 'adslib'])
 
 
 def remove_binaries():
-    """Remove all binary files in the src directory."""
+    """Remove all binary files in the adslib directory."""
     patterns = (
-        "src/*.a",
-        "src/*.o",
-        "src/obj/*.o",
-        "src/*.bin",
-        "src/*.so",
+        "adslib/*.a",
+        "adslib/*.o",
+        "adslib/obj/*.o",
+        "adslib/*.bin",
+        "adslib/*.so",
     )
 
     for f in functools.reduce(operator.iconcat, [glob.glob(p) for p in patterns]):
@@ -73,7 +73,7 @@ def remove_binaries():
 
 def copy_sharedlib():
     try:
-        shutil.copy('src/adslib.so', 'pyads/adslib.so')
+        shutil.copy('adslib/adslib.so', 'pyads/adslib.so')
     except OSError:
         pass
 
