@@ -1,8 +1,12 @@
 # Changelog
 
+## 3.0.10
+
+* rename src directory to adslib to prevent naming conflicts
+
 ## 3.0.9
 
-* Add return_ctypes parameter for read functions to omit time-costy time conversion
+* add return_ctypes parameter for read functions to omit time-costy time conversion
 
 ## 3.0.8
 
