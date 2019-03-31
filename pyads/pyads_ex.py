@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-08-26 23:06:37
+:last modified by: Stefan Lehmann
+:last modified time: 2019-03-26 13:53:58
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -85,9 +85,7 @@ class ADSError(Exception):
         if err_code is not None:
             self.err_code = err_code
             try:
-                self.msg = "{} ({}). ".format(
-                    ERROR_CODES[self.err_code], self.err_code
-                )
+                self.msg = "{} ({}). ".format(ERROR_CODES[self.err_code], self.err_code)
             except KeyError:
                 self.msg = "Unknown Error ({0}). ".format(self.err_code)
         else:
@@ -117,6 +115,7 @@ def router_function(fn):
     invalid on Win32 systems, so an exception will be raised.
 
     """
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
         # type: (Any, Any) -> Callable
@@ -336,9 +335,7 @@ def adsSyncWriteControlReqEx(
         raise ADSError(error_code)
 
 
-def adsSyncWriteReqEx(
-    port, address, index_group, index_offset, value, plc_data_type
-):
+def adsSyncWriteReqEx(port, address, index_group, index_offset, value, plc_data_type):
     # type: (int, AmsAddr, int, int, Any, Type) -> None
     """Send data synchronous to an ADS-device.
 
@@ -393,8 +390,9 @@ def adsSyncReadWriteReqEx2(
     read_data_type,
     value,
     write_data_type,
+    return_ctypes=False,
 ):
-    # type: (int, AmsAddr, int, int, Type, Any, Type) -> Any
+    # type: (int, AmsAddr, int, int, Type, Any, Type, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -407,6 +405,8 @@ def adsSyncReadWriteReqEx2(
     :param value: value to write to the storage address of the PLC
     :param Type write_data_type: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
     :rtype: read_data_type
     :return: value: value read from PLC
 
@@ -436,7 +436,10 @@ def adsSyncReadWriteReqEx2(
         # Add an extra byte to the data length for the null terminator
         write_length = len(value) + 1
     else:
-        write_data = write_data_type(value)
+        if type(write_data_type).__name__ == "PyCArrayType":
+            write_data = write_data_type(*value)
+        else:
+            write_data = write_data_type(value)
         write_data_pointer = ctypes.pointer(write_data)
         write_length = ctypes.sizeof(write_data)
 
@@ -457,15 +460,15 @@ def adsSyncReadWriteReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if (
-        read_data_type != PLCTYPE_STRING
-        and bytes_read.value != read_length.value
-    ):
+    if read_data_type != PLCTYPE_STRING and bytes_read.value != read_length.value:
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 read_length.value, bytes_read.value
             )
         )
+
+    if return_ctypes:
+        return read_data
 
     if read_data_type == PLCTYPE_STRING:
         return read_data.value.decode("utf-8")
@@ -479,8 +482,10 @@ def adsSyncReadWriteReqEx2(
     return read_data
 
 
-def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
-    # type: (int, AmsAddr, int, int, Type) -> Any
+def adsSyncReadReqEx2(
+    port, address, index_group, index_offset, data_type, return_ctypes=False
+):
+    # type: (int, AmsAddr, int, int, Type, bool) -> Any
     """Read data synchronous from an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -490,6 +495,8 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     :param int index_offset: PLC storage address
     :param Type data_type: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
     :rtype: data_type
     :return: value: **value**
 
@@ -533,6 +540,9 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
             )
         )
 
+    if return_ctypes:
+        return data
+
     if data_type == PLCTYPE_STRING:
         return data.value.decode("utf-8")
 
@@ -545,8 +555,8 @@ def adsSyncReadReqEx2(port, address, index_group, index_offset, data_type):
     return data
 
 
-def adsSyncReadByNameEx(port, address, data_name, data_type):
-    # type: (int, AmsAddr, str, Type) -> Any
+def adsSyncReadByNameEx(port, address, data_name, data_type, return_ctypes=False):
+    # type: (int, AmsAddr, str, Type, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -554,6 +564,8 @@ def adsSyncReadByNameEx(port, address, data_name, data_type):
     :param string data_name: data name
     :param Type data_type: type of the data given to the PLC, according to
         PLCTYPE constants
+    :param bool return_ctypes: return ctypes instead of python types if True
+        (default: False)
     :rtype: data_type
     :return: value: **value**
 
@@ -571,13 +583,11 @@ def adsSyncReadByNameEx(port, address, data_name, data_type):
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
-        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type
+        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type, return_ctypes
     )
 
     # Release the handle of the PLC-variable
-    adsSyncWriteReqEx(
-        port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT
-    )
+    adsSyncWriteReqEx(port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT)
 
     return value
 
@@ -606,14 +616,10 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
     )
 
     # Write the value of a PLC-variable, via handle
-    adsSyncWriteReqEx(
-        port, address, ADSIGRP_SYM_VALBYHND, handle, value, data_type
-    )
+    adsSyncWriteReqEx(port, address, ADSIGRP_SYM_VALBYHND, handle, value, data_type)
 
     # Release the handle of the PLC-variable
-    adsSyncWriteReqEx(
-        port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT
-    )
+    adsSyncWriteReqEx(port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT)
 
 
 def adsSyncAddDeviceNotificationReqEx(
@@ -637,19 +643,11 @@ def adsSyncAddDeviceNotificationReqEx(
     if NOTEFUNC is None:
         raise TypeError("Callback function type can't be None")
 
-    adsSyncAddDeviceNotificationReqFct = (
-        _adsDLL.AdsSyncAddDeviceNotificationReqEx
-    )
+    adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     hnl = adsSyncReadWriteReqEx2(
-        port,
-        adr,
-        ADSIGRP_SYM_HNDBYNAME,
-        0x0,
-        PLCTYPE_UDINT,
-        data_name,
-        PLCTYPE_STRING,
+        port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data_name, PLCTYPE_STRING
     )
 
     nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
@@ -695,9 +693,7 @@ def adsSyncAddDeviceNotificationReqEx(
     return (pNotification.value, hnl)
 
 
-def adsSyncDelDeviceNotificationReqEx(
-    port, adr, notification_handle, user_handle
-):
+def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle, user_handle):
     # type: (int, AmsAddr, int, int) -> None
     """Remove a device notification.
 
@@ -707,22 +703,16 @@ def adsSyncDelDeviceNotificationReqEx(
     :param int user_handle: User Handle
 
     """
-    adsSyncDelDeviceNotificationReqFct = (
-        _adsDLL.AdsSyncDelDeviceNotificationReqEx
-    )
+    adsSyncDelDeviceNotificationReqFct = _adsDLL.AdsSyncDelDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     nHNotification = ctypes.c_ulong(notification_handle)
-    err_code = adsSyncDelDeviceNotificationReqFct(
-        port, pAmsAddr, nHNotification
-    )
+    err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr, nHNotification)
     callback_store.pop(notification_handle, None)
     if err_code:
         raise ADSError(err_code)
 
-    adsSyncWriteReqEx(
-        port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT
-    )
+    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
 
 
 def adsSyncSetTimeoutEx(port, nMs):
