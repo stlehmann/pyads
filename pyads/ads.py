@@ -60,7 +60,7 @@ from .constants import (
 from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib
 
 linux = platform_is_linux()
-port = None
+port = None  # type: int
 
 
 def _parse_ams_netid(ams_netid):
@@ -599,7 +599,7 @@ class Connection(object):
         """
         if self._port is not None:
             return adsSyncReadReqEx2(
-                self._port, self._adr, index_group, index_offset, plc_datatype
+                self._port, self._adr, index_group, index_offset, plc_datatype, return_ctypes
             )
 
         return None
@@ -617,7 +617,7 @@ class Connection(object):
 
         """
         if self._port:
-            return adsSyncReadByNameEx(self._port, self._adr, data_name, plc_datatype)
+            return adsSyncReadByNameEx(self._port, self._adr, data_name, plc_datatype, return_ctypes)
 
         return None
 
