@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-03-27 12:00:51
+:last modified by:   Stefan Lehmann
+:last modified time: 2019-03-31 13:49:29
 
 """
 from .structs import AmsAddr, NotificationAttrib
@@ -44,4 +44,4 @@ from .constants import ADSSTATE_INVALID, ADSSTATE_IDLE, ADSSTATE_RESET, \
 from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, \
     ADSTRANS_CLIENT1REQ, ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
 
-__version__ = '3.0.10'
+__version__ = '3.0.11'

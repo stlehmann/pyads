@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.11
+
+* fixed bug where parameter return_ctypes has not been passed through call
+hierarchy of all calls, thanks to pyhannes
+
 ## 3.0.10
 
 * rename src directory to adslib to prevent naming conflicts
