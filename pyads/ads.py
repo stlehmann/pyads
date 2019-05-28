@@ -57,7 +57,7 @@ from .constants import (
     PLCTYPE_WORD,
 )
 
-from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib
+from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib, SAdsNotificationHeader
 
 linux = platform_is_linux()
 port = None  # type: int
@@ -769,8 +769,9 @@ class Connection(object):
             def func_wrapper(notification, data_name):
                 # type: (Any, str) -> None
                 contents = notification.contents
-                data = contents.data
                 data_size = contents.cbSampleSize
+                # Get dynamically sized data array
+                data = (c_ubyte * data_size).from_address(addressof(contents) + SAdsNotificationHeader.data.offset)
 
                 datatype_map = {
                     PLCTYPE_BOOL: "<?",
@@ -788,10 +789,8 @@ class Connection(object):
                 }  # type: Dict[Type, str]
 
                 if plc_datatype == PLCTYPE_STRING:
-                    dest = (c_ubyte * data_size)()
-                    memmove(addressof(dest), addressof(data), data_size)
                     # read only until null-termination character
-                    value = bytearray(dest).split(b"\0", 1)[0].decode("utf-8")
+                    value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
 
                 elif issubclass(plc_datatype, Structure):
                     value = plc_datatype()
@@ -799,11 +798,11 @@ class Connection(object):
                     memmove(addressof(value), addressof(data), fit_size)
 
                 elif plc_datatype not in datatype_map:
-                    value = data
+                    value = bytearray(data)
 
                 else:
                     value = struct.unpack(
-                        datatype_map[plc_datatype], bytearray(data)[:data_size]
+                        datatype_map[plc_datatype], bytearray(data)
                     )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
