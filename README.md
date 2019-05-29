@@ -178,7 +178,7 @@ ctype values transfered via ADS to python datatypes.
 >>> @plc.notification(pyads.PLCTYPE_INT)
 >>> def callback(handle, name, timestamp, value):
 >>>     print(
->>>         '{0}: received new notitifiction for variable "{1}", value: {2}'
+>>>         '{1}: received new notitifiction for variable "{0}", value: {2}'
 >>>         .format(name, timestamp, value)
 >>>     )
 >>>
