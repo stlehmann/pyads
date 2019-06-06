@@ -10,7 +10,7 @@
 """
 import typing
 from ctypes import c_byte, c_short, Structure, c_ubyte, c_ushort, c_ulong, \
-    c_ulonglong, POINTER, Union, c_uint32, c_uint64
+    c_ulonglong, Union, c_uint32, c_uint64
 from .constants import ADSTRANS_SERVERONCHA
 
 
@@ -268,13 +268,20 @@ class SAdsNotificationAttrib(Structure):
 
 
 class SAdsNotificationHeader(Structure):
-    """C structure representation of AdsNotificationHeader."""
+    """C structure representation of AdsNotificationHeader.
+
+    :ivar hNotification: notification handle
+    :ivar nTimeStamp: time stamp in FILETIME format
+    :ivar cbSampleSize: number of data bytes
+    :ivar data: variable-length data field, get via ctypes.addressof + offset
+
+    """
 
     _pack_ = 1
     _fields_ = [("hNotification", c_uint32),
                 ("nTimeStamp", c_uint64),
                 ("cbSampleSize", c_uint32),
-                ("data", POINTER(c_ubyte))]
+                ("data", c_ubyte)]
 
 
 class SAdsSymbolUploadInfo(Structure):
