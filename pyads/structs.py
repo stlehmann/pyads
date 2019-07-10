@@ -318,5 +318,24 @@ class SAdsSymbolEntry(Structure):
                 ("typeLength", c_uint16),
                 ("commentLength", c_uint16),
                 ("stringBuffer", c_ubyte * (256 * 3)),
-                # 3 strings contained, with max length 256
+                # 3 strings contained, with max length 256 each
                 ]
+
+    def _get_string(self, offset, length):
+        return bytes(self.stringBuffer[offset:offset + length]).decode('utf-8')
+
+    @property
+    def name(self):
+        'The symbol name'
+        return self._get_string(0, self.nameLength)
+
+    @property
+    def type_name(self):
+        'The qualified type name, including the namespace'
+        return self._get_string(self.nameLength + 1, self.typeLength)
+
+    @property
+    def comment(self):
+        'User-defined comment'
+        return self._get_string(self.nameLength + self.typeLength + 2,
+                                self.commentLength)

@@ -25,6 +25,7 @@ from .structs import (
     SAdsNotificationAttrib,
     SAdsNotificationHeader,
     SAmsNetId,
+    SAdsSymbolEntry,
     NotificationAttrib,
 )
 from .constants import (
@@ -32,8 +33,10 @@ from .constants import (
     STRING_BUFFER,
     ADSIGRP_SYM_HNDBYNAME,
     PLCTYPE_UDINT,
+    ADSIGRP_SYM_INFOBYNAMEEX,
     ADSIGRP_SYM_VALBYHND,
     ADSIGRP_SYM_RELEASEHND,
+    ads_type_to_ctype,
 )
 from .errorcodes import ERROR_CODES
 
@@ -458,12 +461,17 @@ def adsSyncReadWriteReqEx2(
     if err_code:
         raise ADSError(err_code)
 
+    expected_length = (read_data.entryLength
+                       if isinstance(read_data, SAdsSymbolEntry)
+                       else read_length.value
+                       )
+
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if read_data_type != PLCTYPE_STRING and bytes_read.value != read_length.value:
+    if read_data_type != PLCTYPE_STRING and bytes_read.value != expected_length:
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
-                read_length.value, bytes_read.value
+                expected_length, bytes_read.value
             )
         )
 
@@ -555,7 +563,7 @@ def adsSyncReadReqEx2(
     return data
 
 
-def adsSyncReadByNameEx(port, address, data_name, data_type, return_ctypes=False):
+def adsSyncReadByNameEx(port, address, data_name, data_type=None, return_ctypes=False):
     # type: (int, AmsAddr, str, Type, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
@@ -563,7 +571,8 @@ def adsSyncReadByNameEx(port, address, data_name, data_type, return_ctypes=False
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param string data_name: data name
     :param Type data_type: type of the data given to the PLC, according to
-        PLCTYPE constants
+        PLCTYPE constants. If unspecified, the ADS server will be queried for
+        the type information (default: None)
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
     :rtype: data_type
@@ -580,6 +589,38 @@ def adsSyncReadByNameEx(port, address, data_name, data_type, return_ctypes=False
         data_name,
         PLCTYPE_STRING,
     )
+
+    if data_type is None:
+        symbol_info = adsSyncReadWriteReqEx2(
+            port,
+            address,
+            ADSIGRP_SYM_INFOBYNAMEEX,
+            0x0,
+            SAdsSymbolEntry,
+            data_name,
+            PLCTYPE_STRING,
+        )
+
+        if symbol_info.dataType in ads_type_to_ctype:
+            data_type = ads_type_to_ctype[symbol_info.dataType]
+        elif symbol_info.type_name in ads_type_to_ctype:
+            # Potential feature: allow mapping of type names to structures by
+            # registering them in `ads_type_to_ctype`
+            data_type = ads_type_to_ctype[symbol_info.type_name]
+        else:
+            raise ValueError(
+                'Unsupported data type {!r} (number={} size={} comment={!r})'
+                ''.format(symbol_info.type_name, symbol_info.dataType,
+                          symbol_info.size, symbol_info.comment)
+            )
+
+        if data_type is not PLCTYPE_STRING:
+            # String types are handled directly by adsSyncReadReqEx2.
+            # Otherwise, if the reported size is larger than the data type
+            # size, it is an array of that type:
+            array_length = symbol_info.size // ctypes.sizeof(data_type)
+            if array_length > 1:
+                data_type = data_type * array_length
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
