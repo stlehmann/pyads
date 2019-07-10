@@ -308,12 +308,15 @@ class SAdsSymbolEntry(Structure):
     """
 
     _pack_ = 1
-    _fields_ = [("entryLength", c_ulong),
-                ("iGroup", c_ulong),
-                ("iOffs", c_ulong),
-                ("size", c_ulong),
-                ("dataType", c_ulong),
-                ("flags", c_ulong),
-                ("nameLength", c_ushort),
-                ("typeLength", c_ushort),
-                ("commentLength", c_ushort)]
+    _fields_ = [("entryLength", c_uint32),
+                ("iGroup", c_uint32),
+                ("iOffs", c_uint32),
+                ("size", c_uint32),
+                ("dataType", c_uint32),
+                ("flags", c_uint32),
+                ("nameLength", c_uint16),
+                ("typeLength", c_uint16),
+                ("commentLength", c_uint16),
+                ("stringBuffer", c_ubyte * (256 * 3)),
+                # 3 strings contained, with max length 256
+                ]
