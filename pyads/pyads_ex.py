@@ -149,6 +149,22 @@ def adsAddRoute(net_id, ip_address):
     if error_code:
         raise ADSError(error_code)
 
+@router_function
+def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name, added_net_id=None, sending_host_name=None):
+    # type: (SAmsNetId, str) -> None
+    """Embed a new route in the PLC.
+
+    :param pyads.structs.SAmsNetId sending_net_id: sending net id
+    :param str ip_address: ip address of the routing endpoint
+    :param str username: username for PLC
+    :param str password: password for PLC
+    :param str route_name: PLC side name for route
+    :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
+    :param ste sending_host_name: host name of sending pc, defaults to hostname
+
+    """
+    return
+    
 
 @router_function
 def adsDelRoute(net_id):
