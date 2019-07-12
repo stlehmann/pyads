@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-03-26 13:53:58
+:last modified by: Adrian Garcia
+:last modified time: 2019-06-12 11:18:00
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -150,20 +150,83 @@ def adsAddRoute(net_id, ip_address):
         raise ADSError(error_code)
 
 @router_function
-def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name, added_net_id=None, sending_host_name=None):
-    # type: (SAmsNetId, str) -> None
-    """Embed a new route in the PLC.
+def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, sending_host_name=None):
+    # type: (AmsAddr, str, str, str, str, AmsAddr, str) -> None
+    """Embed a new route in the PLC. Returns true if successful
 
     :param pyads.structs.SAmsNetId sending_net_id: sending net id
     :param str ip_address: ip address of the routing endpoint
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route
+    :param str route_name: PLC side name for route, defaults to sending_host_name or the current hostename of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
-    :param ste sending_host_name: host name of sending pc, defaults to hostname
+    :param str sending_host_name: host name of sending pc, defaults to hostname of this PC
 
     """
-    return
+    import socket
+
+    # ALL SENT STRINGS MUST BE NULL TERMINATED
+    sending_host_name = sending_host_name + '\0' if sending_host_name else socket.gethostname() + '\0'
+    added_net_id = added_net_id if added_net_id else sending_net_id
+    route_name = route_name + '\0' if route_name else sending_host_name
+
+    username = username + '\0'
+    password = password + '\0'
+
+    # The head of the UDP AMS packet containing host routing information
+    data_header = (0x036614710000000006000000).to_bytes(12, 'big')
+    data_header +=	bytes(map(int, sending_net_id.split('.')))		# Sending net ID
+    data_header += (10000).to_bytes(2, 'little')					# Internal communication port?
+    data_header += (0x0500).to_bytes(2, 'big')						# Write command
+    data_header += (0x00000c00).to_bytes(4, 'big')					# Block of unknown
+    data_header += len(sending_host_name).to_bytes(2, 'little')		# Length of sender host name
+    data_header += sending_host_name.encode('utf-8')				# Sender host name
+    data_header += (0x0700).to_bytes(2, 'big')						# Block of unknown
+
+
+    actual_data = (6).to_bytes(2, 'little')							# Byte length of AMS ID (always 6)
+    actual_data += bytes(map(int, added_net_id.split('.')))			# Net ID being added to the PLC
+    actual_data += (0x0d00).to_bytes(2, 'big')						# Block of unknown (maybe encryption?)
+    actual_data += len(username).to_bytes(2, 'little')				# Length of the user name field
+    actual_data +=	username.encode('utf-8')						# PLC Username
+    actual_data += (0x0200).to_bytes(2, 'big')						# Block of unknown
+    actual_data += len(password).to_bytes(2, 'little')				# Length of password field
+    actual_data += password.encode('utf-8')							# PLC Password
+    actual_data += (0x0500).to_bytes(2, 'big')						# Block of unknown
+    actual_data += len(route_name).to_bytes(2, 'little')			# Length of route name
+    actual_data += route_name.encode('utf-8')						# Name of route being added to the PLC
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock: # UDP
+        # Listen on 55189 for the response from the PLC
+        sock.bind(('', 55189))
+
+        # Send our data to 48899 on the PLC
+        sock.sendto(data_header + actual_data, (ip_address, 48899))
+
+        # Response should come in in less than .5 seconds, but wait longer to account for slow communications
+        sock.settimeout(5)
+        # Allow TimeoutError to be raised so user can handle it how they please
+
+        # Keep looping until we get a response from our PLC
+        addr = [0]
+        while addr[0] != ip_address:
+            data, addr = sock.recvfrom(32) # PLC response is 32 bytes long
+
+    rcvd_packet_header = data[0:12]							# AMS Packet header, seems to define communication type
+    # If the last byte in the header is 0x80, then this is a response to our request
+    if rcvd_packet_header[-1] == 0x80:
+        rcvd_PLC_AMS_ID = data[12:18]						# AMS ID of PLC
+        # Convert to a String AMS ID
+        #rcvd_PLC_AMS_ID = '.'.join([str(int.from_bytes(rcvd_PLC_AMS_ID[i:i+1], 'big')) for i in range(0, len(rcvd_PLC_AMS_ID), 1)])
+        rcvd_AMS_port = data[18:20]							# Some sort of AMS port? Little endian
+        rcvd_command_code = data[20:22]						# Command code (should be read) Little endian
+        rcvd_protocol_block = data[22:]						# Unknown block of protocol
+        rcvd_is_password_correct = rcvd_protocol_block[4:7]	# 0x040000 when password was correct, 0x000407 when it was incorrect
+   
+    if int.from_bytes(rcvd_is_password_correct, 'big') == 0x040000:
+        return True
+    else:
+        return False
     
 
 @router_function

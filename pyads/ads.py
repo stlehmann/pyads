@@ -4,8 +4,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-03-26 13:57:52
+:last modified by: Adrian Garcia
+:last modified time: 2019-06-12 11:18:00
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
@@ -18,6 +18,7 @@ from .filetimes import filetime_to_dt
 
 from .pyads_ex import (
     adsAddRoute,
+    adsAddRouteToPLC,
     adsDelRoute,
     adsPortOpenEx,
     adsPortCloseEx,
@@ -338,6 +339,20 @@ def add_route(adr, ip_address):
     """
     return adsAddRoute(adr.netIdStruct(), ip_address)
 
+def add_route_to_plc(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, sending_host_name=None):
+    # type: (AmsAddr, str, str, str, str, AmsAddr, str) -> None
+    """Embed a new route in the PLC.
+
+    :param pyads.structs.SAmsNetId sending_net_id: sending net id
+    :param str ip_address: ip address of the routing endpoint
+    :param str username: username for PLC
+    :param str password: password for PLC
+    :param str route_name: PLC side name for route, defaults to sending_host_name or the current hostename of this PC
+    :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
+    :param str sending_host_name: host name of sending pc, defaults to hostname of this PC
+
+    """
+    return adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, sending_host_name=None)
 
 def delete_route(adr):
     # type: (AmsAddr) -> None
