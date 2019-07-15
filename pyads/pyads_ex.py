@@ -175,7 +175,7 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
 
     # The head of the UDP AMS packet containing host routing information
     data_header = (0x036614710000000006000000).to_bytes(12, 'big')
-    data_header +=	bytes(map(int, sending_net_id.split('.')))		# Sending net ID
+    data_header += bytes(map(int, sending_net_id.split('.')))		# Sending net ID
     data_header += (10000).to_bytes(2, 'little')					# Internal communication port?
     data_header += (0x0500).to_bytes(2, 'big')						# Write command
     data_header += (0x00000c00).to_bytes(4, 'big')					# Block of unknown
@@ -188,7 +188,7 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
     actual_data += bytes(map(int, added_net_id.split('.')))			# Net ID being added to the PLC
     actual_data += (0x0d00).to_bytes(2, 'big')						# Block of unknown (maybe encryption?)
     actual_data += len(username).to_bytes(2, 'little')				# Length of the user name field
-    actual_data +=	username.encode('utf-8')						# PLC Username
+    actual_data += username.encode('utf-8')						# PLC Username
     actual_data += (0x0200).to_bytes(2, 'big')						# Block of unknown
     actual_data += len(password).to_bytes(2, 'little')				# Length of password field
     actual_data += password.encode('utf-8')							# PLC Password
@@ -225,9 +225,10 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
    
     if int.from_bytes(rcvd_is_password_correct, 'big') == 0x040000:
         return True
-    else:
+    elif int.from_bytes(rcvd_is_password_correct, 'big') == 0x000407:
         return False
-    
+    else:
+        return None 
 
 @router_function
 def adsDelRoute(net_id):
