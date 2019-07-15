@@ -228,7 +228,7 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
     elif int.from_bytes(rcvd_is_password_correct, 'big') == 0x000407:
         return False
     else:
-        return None 
+        raise ValueError('Received unknown response from ' + ip_address)
 
 @router_function
 def adsDelRoute(net_id):
