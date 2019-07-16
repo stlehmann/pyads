@@ -352,7 +352,7 @@ def add_route_to_plc(sending_net_id, ip_address, username, password, route_name=
     :param str sending_host_name: host name of sending pc, defaults to hostname of this PC
 
     """
-    return adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, sending_host_name=None)
+    return adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=route_name, added_net_id=added_net_id, sending_host_name=sending_host_name)
 
 def delete_route(adr):
     # type: (AmsAddr) -> None
