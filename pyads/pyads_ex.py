@@ -151,7 +151,7 @@ def adsAddRoute(net_id, ip_address):
         raise ADSError(error_code)
 
 @router_function
-def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, sending_host_name=None):
+def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, adding_host_name=None):
     # type: (AmsAddr, str, str, str, str, AmsAddr, str) -> None
     """Embed a new route in the PLC. Returns true if successful
 
@@ -159,16 +159,16 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
     :param str ip_address: ip address of the routing endpoint
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route, defaults to sending_host_name or the current hostename of this PC
+    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
-    :param str sending_host_name: host name of sending pc, defaults to hostname of this PC
+    :param str adding_host_name: host name of the PC being added, defaults to hostname of this PC
 
     """
     import socket
     # ALL SENT STRINGS MUST BE NULL TERMINATED
-    sending_host_name = sending_host_name + '\0' if sending_host_name else socket.gethostname() + '\0'
+    adding_host_name = adding_host_name + '\0' if adding_host_name else socket.gethostname() + '\0'
     added_net_id = added_net_id if added_net_id else sending_net_id
-    route_name = route_name + '\0' if route_name else sending_host_name
+    route_name = route_name + '\0' if route_name else adding_host_name
 
     username = username + '\0'
     password = password + '\0'
@@ -179,8 +179,8 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
     data_header += PORT_SYSTEMSERVICE.to_bytes(2, 'little')			# Internal communication port
     data_header += (0x0500).to_bytes(2, 'big')						# Write command
     data_header += (0x00000c00).to_bytes(4, 'big')					# Block of unknown
-    data_header += len(sending_host_name).to_bytes(2, 'little')		# Length of sender host name
-    data_header += sending_host_name.encode('utf-8')				# Sender host name
+    data_header += len(adding_host_name).to_bytes(2, 'little')		# Length of sender host name
+    data_header += adding_host_name.encode('utf-8')				# Sender host name
     data_header += (0x0700).to_bytes(2, 'big')						# Block of unknown
 
 

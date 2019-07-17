@@ -339,7 +339,7 @@ def add_route(adr, ip_address):
     """
     return adsAddRoute(adr.netIdStruct(), ip_address)
 
-def add_route_to_plc(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, sending_host_name=None):
+def add_route_to_plc(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, adding_host_name=None):
     # type: (AmsAddr, str, str, str, str, AmsAddr, str) -> None
     """Embed a new route in the PLC.
 
@@ -347,12 +347,12 @@ def add_route_to_plc(sending_net_id, ip_address, username, password, route_name=
     :param str ip_address: ip address of the routing endpoint
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route, defaults to sending_host_name or the current hostename of this PC
+    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
-    :param str sending_host_name: host name of sending pc, defaults to hostname of this PC
+    :param str adding_host_name: host name of the PC being added, defaults to hostname of this PC
 
     """
-    return adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=route_name, added_net_id=added_net_id, sending_host_name=sending_host_name)
+    return adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=route_name, added_net_id=added_net_id, adding_host_name=adding_host_name)
 
 def delete_route(adr):
     # type: (AmsAddr) -> None
