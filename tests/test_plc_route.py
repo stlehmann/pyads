@@ -1,6 +1,5 @@
-import unittest
-import threading
-import socket
+import struct
+from contextlib import closing
 from pyads import add_route_to_plc
 from pyads.utils import platform_is_linux
 
@@ -23,7 +22,7 @@ class PLCRouteTestCase(unittest.TestCase):
         pass
 
     def plc_route_reciever(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock: # UDP
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
             # Listen on 48899 for communication
             sock.bind(('', 48899))
 
@@ -33,67 +32,67 @@ class PLCRouteTestCase(unittest.TestCase):
                 data, addr = sock.recvfrom(1024)
 
             # Decipher data and 'add route'
-            data = data[12:]													# Remove our data header
+            data = data[12:]														# Remove our data header
 
-            sending_ams_bytes = data[:6]										# Sending AMS address
-            sending_ams = '.'.join([str(int.from_bytes(sending_ams_bytes[i:i+1], 'big')) for i in range(0, len(sending_ams_bytes), 1)])
+            sending_ams_bytes = data[:6]											# Sending AMS address
+            sending_ams = '.'.join(map(str, struct.unpack('>6B', sending_ams_bytes)))
             data = data[6:]
 
-            comm_port = int.from_bytes(data[:2], 'little')						# Internal communication port (PORT_SYSTEMSERVICE)
+            comm_port = struct.unpack('<H', data[:2])[0]							# Internal communication port (PORT_SYSTEMSERVICE)
             data = data[2:]
 
-            command_code = int.from_bytes(data[:2], 'little')					# Comand code to write to PLC
+            command_code = struct.unpack('<H', data[:2])[0]							# Comand code to write to PLC
             data = data[2:]
             
-            data = data[4:]														# Remove protocol bytes
+            data = data[4:]															# Remove protocol bytes
             
-            len_sending_host = int.from_bytes(data[:2], 'little')				# Length of host name
+            len_sending_host = struct.unpack('<H', data[:2])[0]						# Length of host name
             data = data[2:]
             
-            hostname = data[:len_sending_host].decode('utf-8')					# Null terminated hostname
+            hostname = data[:len_sending_host].decode('utf-8')						# Null terminated hostname
             data = data[len_sending_host:]
             
-            data = data[2:]														# Remove protocol bytes
+            data = data[2:]															# Remove protocol bytes
             
-            len_ams_id = int.from_bytes(data[:2], 'little')						# Length of adding AMS ID
+            len_ams_id = struct.unpack('<H', data[:2])[0]							# Length of adding AMS ID
             data = data[2:]
             
-            adding_ams_id_bytes  = data[:len_ams_id]							# AMS ID being added to PLC
-            adding_ams_id = '.'.join([str(int.from_bytes(adding_ams_id_bytes[i:i+1], 'big')) for i in range(0, len(adding_ams_id_bytes), 1)])
+            adding_ams_id_bytes  = data[:len_ams_id]								# AMS ID being added to PLC
+            adding_ams_id = '.'.join(map(str, struct.unpack('>6B', adding_ams_id_bytes)))
             data = data[len_ams_id:]
             
-            data = data[2:]														# Remove protocol bytes
+            data = data[2:]															# Remove protocol bytes
             
-            len_username = int.from_bytes(data[:2], 'little')					# Length of PLC username
+            len_username = struct.unpack('<H', data[:2])[0]							# Length of PLC username
             data = data[2:]
             
-            username = data[:len_username].decode('utf-8')						# Null terminated username
+            username = data[:len_username].decode('utf-8')							# Null terminated username
             data = data[len_username:]
             
-            data = data[2:]														# Remove protocol bytes
+            data = data[2:]															# Remove protocol bytes
             
-            len_password = int.from_bytes(data[:2], 'little')					# Length of PLC password
+            len_password = struct.unpack('<H', data[:2])[0]							# Length of PLC password
             data = data[2:]
             
-            password = data[:len_password].decode('utf-8')						# Null terminated username
+            password = data[:len_password].decode('utf-8')							# Null terminated username
             data = data[len_password:]
             
-            data = data[2:]														# Remove protocol bytes
+            data = data[2:]															# Remove protocol bytes
             
-            len_route_name = int.from_bytes(data[:2], 'little')					# Length of PLC password
+            len_route_name = struct.unpack('<H', data[:2])[0]						# Length of PLC password
             data = data[2:]
 
-            route_name = data[:len_route_name].decode('utf-8')					# Null terminated username
+            route_name = data[:len_route_name].decode('utf-8')						# Null terminated username
             data = data[len_route_name:]
 
-            self.assertEqual(len(data), 0)										# We should have popped everything from data
+            self.assertEqual(len(data), 0)											# We should have popped everything from data
             self.assertEqual(sending_ams, self.SENDER_AMS)
             self.assertEqual(comm_port, 10000)
             self.assertEqual(command_code, 5)
-            self.assertEqual(len_sending_host, len(self.HOSTNAME) + 1)			# +1 for the null terminator
+            self.assertEqual(len_sending_host, len(self.HOSTNAME) + 1)				# +1 for the null terminator
             self.assertEqual(hostname, self.HOSTNAME + '\0')
             self.assertEqual(adding_ams_id, self.ADDING_AMS_ID)
-            self.assertEqual(len_username, len(self.USERNAME) + 1)				# +1 for the null terminator
+            self.assertEqual(len_username, len(self.USERNAME) + 1)					# +1 for the null terminator
             self.assertEqual(username, self.USERNAME + '\0')
 
             # Don't check the password since that's part the correct/incorrect response test
@@ -110,17 +109,16 @@ class PLCRouteTestCase(unittest.TestCase):
                 password_correct = False
 
             # Build response
-            response = (0x036614710000000006000080).to_bytes(12, 'big')			# Same header as being sent to the PLC, but with 80 at the end
-            response += bytes(map(int, self.PLC_AMS_ID.split('.')))					# PLC AMS id
-            response += (10000).to_bytes(2, 'little')							# Internal communication port (PORT_SYSTEMSERVICE)
-            response += (0x0100).to_bytes(2, 'big')								# Command code read
-            response += (0x00000104).to_bytes(4, 'big')							# Block of unknown protocol
+            response = struct.pack('>12s', b'\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x80')			# Same header as being sent to the PLC, but with 80 at the end
+            response += bytes(map(int, self.PLC_AMS_ID.split('.')))				# PLC AMS id
+            response += struct.pack('<H', 10000)								# Internal communication port (PORT_SYSTEMSERVICE)
+            response += struct.pack('>2s', b'\x01\x00')								# Command code read
+            response += struct.pack('>4s', b'\x00\x00\x01\x04')							# Block of unknown protocol
             if password_correct:
-                response += (0x040000).to_bytes(3, 'big')						# Password Correct
+                response += struct.pack('>3s', b'\x04\x00\x00')						# Password Correct 
             else:
-                response += (0x000407).to_bytes(3, 'big')						# Password Incorrect
-            response += (0x000000).to_bytes(2, 'big')							# Block of unknown protocol
-            print(response)
+                response += struct.pack('>3s', b'\x00\x04\x07')						# Password Incorrect
+            response += struct.pack('>2s', b'\x00\x00')								# Block of unknown protocol
 
             # Send our response to 55189
             sock.sendto(response, (self.PLC_IP, 55189))

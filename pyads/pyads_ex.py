@@ -34,7 +34,7 @@ from .constants import (
     PLCTYPE_UDINT,
     ADSIGRP_SYM_VALBYHND,
     ADSIGRP_SYM_RELEASEHND,
-	PORT_SYSTEMSERVICE
+    PORT_SYSTEMSERVICE
 )
 from .errorcodes import ERROR_CODES
 
@@ -165,6 +165,8 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
 
     """
     import socket
+    import struct
+    from contextlib import closing
     # ALL SENT STRINGS MUST BE NULL TERMINATED
     adding_host_name = adding_host_name + '\0' if adding_host_name else socket.gethostname() + '\0'
     added_net_id = added_net_id if added_net_id else sending_net_id
@@ -174,29 +176,29 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
     password = password + '\0'
 
     # The head of the UDP AMS packet containing host routing information
-    data_header = (0x036614710000000006000000).to_bytes(12, 'big')
+    data_header = struct.pack('>12s', b'\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x00')
     data_header += bytes(map(int, sending_net_id.split('.')))		# Sending net ID
-    data_header += PORT_SYSTEMSERVICE.to_bytes(2, 'little')			# Internal communication port
-    data_header += (0x0500).to_bytes(2, 'big')						# Write command
-    data_header += (0x00000c00).to_bytes(4, 'big')					# Block of unknown
-    data_header += len(adding_host_name).to_bytes(2, 'little')		# Length of sender host name
-    data_header += adding_host_name.encode('utf-8')				# Sender host name
-    data_header += (0x0700).to_bytes(2, 'big')						# Block of unknown
+    data_header += struct.pack('<H', PORT_SYSTEMSERVICE)			# Internal communication port
+    data_header += struct.pack('>2s', b'\x05\x00')					# Write command
+    data_header += struct.pack('>4s', b'\x00\x00\x0c\x00')			# Block of unknown
+    data_header += struct.pack('<H', len(adding_host_name))			# Length of sender host name
+    data_header += adding_host_name.encode('utf-8')					# Sender host name
+    data_header += struct.pack('>2s', b'\x07\x00')					# Block of unknown
 
 
-    actual_data = (6).to_bytes(2, 'little')							# Byte length of AMS ID (always 6)
+    actual_data = struct.pack('<H', 6)								# Byte length of AMS ID (always 6)
     actual_data += bytes(map(int, added_net_id.split('.')))			# Net ID being added to the PLC
-    actual_data += (0x0d00).to_bytes(2, 'big')						# Block of unknown (maybe encryption?)
-    actual_data += len(username).to_bytes(2, 'little')				# Length of the user name field
+    actual_data += struct.pack('>2s', b'\x0d\x00')					# Block of unknown (maybe encryption?)
+    actual_data += struct.pack('<H', len(username))					# Length of the user name field
     actual_data += username.encode('utf-8')							# PLC Username
-    actual_data += (0x0200).to_bytes(2, 'big')						# Block of unknown
-    actual_data += len(password).to_bytes(2, 'little')				# Length of password field
+    actual_data += struct.pack('>2s', b'\x02\x00')					# Block of unknown
+    actual_data += struct.pack('<H', len(password))					# Length of password field
     actual_data += password.encode('utf-8')							# PLC Password
-    actual_data += (0x0500).to_bytes(2, 'big')						# Block of unknown
-    actual_data += len(route_name).to_bytes(2, 'little')			# Length of route name
+    actual_data += struct.pack('>2s', b'\x05\x00')					# Block of unknown
+    actual_data += struct.pack('<H', len(route_name))				# Length of route name
     actual_data += route_name.encode('utf-8')						# Name of route being added to the PLC
 
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock: # UDP
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock: # UDP
         # Listen on 55189 for the response from the PLC
         sock.bind(('', 55189))
 
@@ -223,9 +225,9 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
         rcvd_protocol_block = data[22:]						# Unknown block of protocol
         rcvd_is_password_correct = rcvd_protocol_block[4:7]	# 0x040000 when password was correct, 0x000407 when it was incorrect
    
-    if int.from_bytes(rcvd_is_password_correct, 'big') == 0x040000:
+    if rcvd_is_password_correct == b'\x04\x00\x00':
         return True
-    elif int.from_bytes(rcvd_is_password_correct, 'big') == 0x000407:
+    elif rcvd_is_password_correct == b'\x00\x04\x07':
         return False
     else:
         raise ValueError('Received unknown response from ' + ip_address)
