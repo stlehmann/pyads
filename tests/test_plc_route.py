@@ -134,7 +134,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
             # Try to set up a route with ourselves using all the optionals
             try:
-                result = add_route_to_plc(self.SENDER_AMS, self.PLC_IP, self.USERNAME, self.PASSWORD, route_name=self.ROUTE_NAME, added_net_id=self.ADDING_AMS_ID, sending_host_name=self.HOSTNAME)
+                result = add_route_to_plc(self.SENDER_AMS, self.PLC_IP, self.USERNAME, self.PASSWORD, route_name=self.ROUTE_NAME, added_net_id=self.ADDING_AMS_ID, adding_host_name=self.HOSTNAME)
             except:
                 result = None
 
@@ -149,7 +149,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
             # Try to set up a route with ourselves using all the optionals AND an incorrect password
             try:
-                result = add_route_to_plc(self.SENDER_AMS, self.PLC_IP, self.USERNAME, 'Incorrect Password', route_name=self.ROUTE_NAME, added_net_id=self.ADDING_AMS_ID, sending_host_name=self.HOSTNAME)
+                result = add_route_to_plc(self.SENDER_AMS, self.PLC_IP, self.USERNAME, 'Incorrect Password', route_name=self.ROUTE_NAME, added_net_id=self.ADDING_AMS_ID, adding_host_name=self.HOSTNAME)
             except:
                 result = None
 
