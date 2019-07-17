@@ -1,3 +1,6 @@
+import unittest
+import threading
+import socket
 import struct
 from contextlib import closing
 from pyads import add_route_to_plc
