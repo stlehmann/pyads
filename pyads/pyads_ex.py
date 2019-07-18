@@ -168,6 +168,7 @@ def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, pas
     import struct
     from contextlib import closing
     # ALL SENT STRINGS MUST BE NULL TERMINATED
+    adding_host_name += '\0'
     added_net_id = added_net_id if added_net_id else sending_net_id
     route_name = route_name + '\0' if route_name else adding_host_name
 
