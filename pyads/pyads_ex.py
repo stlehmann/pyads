@@ -151,17 +151,17 @@ def adsAddRoute(net_id, ip_address):
         raise ADSError(error_code)
 
 @router_function
-def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=None, added_net_id=None, adding_host_name=None):
-    # type: (AmsAddr, str, str, str, str, AmsAddr, str) -> None
-    """Embed a new route in the PLC. Returns true if successful
+def adsAddRouteToPLC(adding_net_id, adding_host_name, ip_address, username, password, route_name=None, added_net_id=None):
+    # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
+    """Embed a new route in the PLC.
 
-    :param pyads.structs.SAmsNetId sending_net_id: sending net id
+    :param pyads.structs.SAmsNetId adding_net_id: sending net id
+    :param str adding_host_name: host name (or IP) of the PC being added, defaults to hostname of this PC
     :param str ip_address: ip address of the routing endpoint
     :param str username: username for PLC
     :param str password: password for PLC
     :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
-    :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
-    :param str adding_host_name: host name of the PC being added, defaults to hostname of this PC
+    :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to adding_net_id
 
     """
     import socket
@@ -169,7 +169,7 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
     from contextlib import closing
     # ALL SENT STRINGS MUST BE NULL TERMINATED
     adding_host_name = adding_host_name + '\0' if adding_host_name else socket.gethostname() + '\0'
-    added_net_id = added_net_id if added_net_id else sending_net_id
+    added_net_id = added_net_id if added_net_id else adding_net_id
     route_name = route_name + '\0' if route_name else adding_host_name
 
     username = username + '\0'
@@ -177,7 +177,7 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
 
     # The head of the UDP AMS packet containing host routing information
     data_header = struct.pack('>12s', b'\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x00')
-    data_header += bytes(map(int, sending_net_id.split('.')))		# Sending net ID
+    data_header += bytes(map(int, adding_net_id.split('.')))		# Sending net ID
     data_header += struct.pack('<H', PORT_SYSTEMSERVICE)			# Internal communication port
     data_header += struct.pack('>2s', b'\x05\x00')					# Write command
     data_header += struct.pack('>4s', b'\x00\x00\x0c\x00')			# Block of unknown
