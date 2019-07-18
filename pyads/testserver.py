@@ -417,10 +417,10 @@ class BasicHandler(AbstractHandler):
 
         elif command_id == constants.ADSCOMMAND_READSTATE:
             logger.info("Command received: READ_STATE")
-            ads_state = struct.pack("<I", constants.ADSSTATE_RUN)
+            ads_state = struct.pack("<H", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
             # I suspect it may be unsued..
-            device_state = struct.pack("<I", 0)
+            device_state = struct.pack("<H", 0)
 
             response_content = ads_state + device_state
 
