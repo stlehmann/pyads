@@ -224,13 +224,14 @@ def adsAddRouteToPLC(sending_net_id, ip_address, username, password, route_name=
         rcvd_command_code = data[20:22]						# Command code (should be read) Little endian
         rcvd_protocol_block = data[22:]						# Unknown block of protocol
         rcvd_is_password_correct = rcvd_protocol_block[4:7]	# 0x040000 when password was correct, 0x000407 when it was incorrect
-   
-    if rcvd_is_password_correct == b'\x04\x00\x00':
-        return True
-    elif rcvd_is_password_correct == b'\x00\x04\x07':
-        return False
-    else:
-        raise ValueError('Received unknown response from ' + ip_address)
+
+        if rcvd_is_password_correct == b'\x04\x00\x00':
+            return True
+        elif rcvd_is_password_correct == b'\x00\x04\x07':
+            return False
+    
+	# If we fell through the whole way to the bottom, then we got a weird response
+    raise RuntimeError("Unexpected response from PLC")
 
 @router_function
 def adsDelRoute(net_id):
