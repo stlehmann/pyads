@@ -1,5 +1,4 @@
-FROM python:alpine
-RUN apk add build-base
+FROM python:3.7
 COPY . /pyads
 WORKDIR /pyads
 RUN python setup.py build
