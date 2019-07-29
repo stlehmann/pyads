@@ -161,10 +161,10 @@ class AdvancedHandler:
 
         def handle_read_state():
             logger.info('Command received: READ_STATE')
-            ads_state = struct.pack('<I', constants.ADSSTATE_RUN)
+            ads_state = struct.pack('<H', constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
             # I suspect it may be unsued..
-            device_state = struct.pack('<I', 0)
+            device_state = struct.pack('<H', 0)
             result = b'\x00' * 4
             return result + ads_state + device_state
 

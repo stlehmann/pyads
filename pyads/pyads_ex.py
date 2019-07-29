@@ -243,11 +243,11 @@ def adsSyncReadStateReqEx(port, address):
     ams_address_pointer = ctypes.pointer(address.amsAddrStruct())
 
     # Current ADS status and corresponding pointer
-    ads_state = ctypes.c_int()
+    ads_state = ctypes.c_uint16()
     ads_state_pointer = ctypes.pointer(ads_state)
 
     # Current device status and corresponding pointer
-    device_state = ctypes.c_int()
+    device_state = ctypes.c_uint16()
     device_state_pointer = ctypes.pointer(device_state)
 
     error_code = sync_read_state_request(
