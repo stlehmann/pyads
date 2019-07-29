@@ -9,8 +9,8 @@
 
 """
 import typing
-from ctypes import c_byte, c_short, Structure, c_ubyte, c_ushort, c_ulong, \
-    c_ulonglong, Union, c_uint32, c_uint64
+from ctypes import (c_byte, Structure, c_ubyte, Union, c_uint16, c_uint32,
+                    c_uint64)
 from .constants import ADSTRANS_SERVERONCHA
 
 
@@ -18,9 +18,9 @@ class SAdsVersion(Structure):
     """Struct containing ADS version information."""
 
     _fields_ = [
-        ("version", c_byte),
-        ("revision", c_byte),
-        ("build", c_short)
+        ("version", c_ubyte),
+        ("revision", c_ubyte),
+        ("build", c_uint16)
     ]
 
 
@@ -58,7 +58,7 @@ class SAmsAddr(Structure):
 
     _pack_ = 1
     _fields_ = [("netId", SAmsNetId),
-                ("port", c_ushort)]
+                ("port", c_uint16)]
 
 
 class AmsAddr(object):
@@ -132,7 +132,7 @@ class AmsAddr(object):
     @port.setter
     def port(self, value):
         # type: (int) -> None
-        self._ams_addr.port = c_ushort(value)
+        self._ams_addr.port = c_uint16(value)
 
     def amsAddrStruct(self):
         # type: () -> SAmsAddr
@@ -288,8 +288,8 @@ class SAdsSymbolUploadInfo(Structure):
     """C structure representation of AdsSymbolUploadInfo."""
 
     _pack_ = 1
-    _fields_ = [("nSymbols", c_ulong),
-                ("nSymSize", c_ulong)]
+    _fields_ = [("nSymbols", c_uint32),
+                ("nSymSize", c_uint32)]
 
 
 class SAdsSymbolEntry(Structure):
@@ -308,12 +308,15 @@ class SAdsSymbolEntry(Structure):
     """
 
     _pack_ = 1
-    _fields_ = [("entryLength", c_ulong),
-                ("iGroup", c_ulong),
-                ("iOffs", c_ulong),
-                ("size", c_ulong),
-                ("dataType", c_ulong),
-                ("flags", c_ulong),
-                ("nameLength", c_ushort),
-                ("typeLength", c_ushort),
-                ("commentLength", c_ushort)]
+    _fields_ = [("entryLength", c_uint32),
+                ("iGroup", c_uint32),
+                ("iOffs", c_uint32),
+                ("size", c_uint32),
+                ("dataType", c_uint32),
+                ("flags", c_uint32),
+                ("nameLength", c_uint16),
+                ("typeLength", c_uint16),
+                ("commentLength", c_uint16),
+                ("stringBuffer", c_ubyte * (256 * 3)),
+                # 3 strings contained, with max length 256
+                ]

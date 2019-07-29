@@ -23,7 +23,6 @@ from ctypes import (
     c_float,
     c_double,
     c_char,
-    c_short,
     c_int64,
     c_uint64,
 )
@@ -77,9 +76,9 @@ def PLCTYPE_ARR_DINT(n):
 
 
 def PLCTYPE_ARR_SHORT(n):
-    # type: (int) -> Type[Array[c_short]]
+    # type: (int) -> Type[Array[c_int16]]
     """Return an array with n short values."""
-    return c_short * n
+    return c_int16 * n
 
 
 # Index Group
