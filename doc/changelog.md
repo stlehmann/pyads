@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.12
+
+* update adslib to current upstream version (2018-03-22)
+* fix structure definition inaccurarcies (issue #72)
+* fix compatibility issue with new version of adslib (issue #78)
+
 ## 3.0.11
 
 * fixed bug where parameter return_ctypes has not been passed through call
