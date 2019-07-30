@@ -5,8 +5,8 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Adrian Garcia
-:last modified time: 2019-06-12 11:18:00
+:last modified by: Stefan Lehmann
+:last modified time: 2019-07-30 16:57:32
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -177,7 +177,7 @@ def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, pas
 
     # The head of the UDP AMS packet containing host routing information
     data_header = struct.pack('>12s', b'\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x00')
-    data_header += bytes(map(int, sending_net_id.split('.')))		# Sending net ID
+    data_header += struct.pack('>6B', *map(int, sending_net_id.split('.')))		# Sending net ID
     data_header += struct.pack('<H', PORT_SYSTEMSERVICE)			# Internal communication port
     data_header += struct.pack('>2s', b'\x05\x00')					# Write command
     data_header += struct.pack('>4s', b'\x00\x00\x0c\x00')			# Block of unknown
@@ -187,7 +187,7 @@ def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, pas
 
 
     actual_data = struct.pack('<H', 6)								# Byte length of AMS ID (always 6)
-    actual_data += bytes(map(int, added_net_id.split('.')))			# Net ID being added to the PLC
+    actual_data += struct.pack('>6B', *map(int, added_net_id.split('.')))			# Net ID being added to the PLC
     actual_data += struct.pack('>2s', b'\x0d\x00')					# Block of unknown (maybe encryption?)
     actual_data += struct.pack('<H', len(username))					# Length of the user name field
     actual_data += username.encode('utf-8')							# PLC Username
