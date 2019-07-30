@@ -25,10 +25,35 @@ added in the TwinCat Router UI).
 >>> adr = pyads.AmsAddr('127.0.0.1.1.1', pyads.PORT_SPS1)
 >>> pyads.add_route(adr, remote_ip)
 ```
+Another option is to use the Connection class.
+```python
+>>> remote_ip = '192.168.0.100'
+>>> remote_ads = '5.12.82.20.1.1'
+>>> with pyads.Connection(remote_ads, pyads.PORT_SPS1, remote_ip) as plc:
+>>>     plc.read_by_name('.TAG_NAME', pyads.PLCTYPE_INT)
+```
+
 Get the AMS address of the local machine. This may need to be added to
 the routing table of the remote machine.
 **NOTE: On Linux machines at least one route must be added before the call
 to `get_local_address()` will function properly.**
+
+### Adding route to PLC on Linux
+Beckhoff PLCs require that a route be added to the routing table of the PLC. Normally this is handled in the TwinCAT router on Windows, but on Linux there is no such option.
+This only needs to be done once when initially setting up a connection to a remote PLC.
+
+Adding a route to a remote PLC to allow connections to a PC with the Hostname "MyPC"
+``` python
+>>> import pyads
+>>> SENDER_AMS = '1.2.3.4.1.1'
+>>> PLC_IP = '192.168.0.100'
+>>> USERNAME = 'user'
+>>> PASSWORD = 'password'
+>>> ROUTE_NAME = 'RouteToMyPC'
+>>> HOSTNAME = 'MyPC'
+>>> PLC_AMS_ID = '11.22.33.44.1.1'
+>>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, USERNAME, PASSWORD, route_name=ROUTE_NAME)
+```
 
 ### Creating routes on Windows
 
