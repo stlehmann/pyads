@@ -10,7 +10,7 @@ is handled differently on Windows and Linux.
 
 ### Creating routes on Linux
 
-Open a port and create a AmsAddr object for the remote machine.
+Open a port and create an AmsAddr object for the remote machine.
 
 ```python
 >>> import pyads
@@ -38,7 +38,7 @@ the routing table of the remote machine.
 **NOTE: On Linux machines at least one route must be added before the call
 to `get_local_address()` will function properly.**
 
-### Adding route to PLC on Linux
+### Adding routes to a PLC on Linux
 Beckhoff PLCs require that a route be added to the routing table of the PLC. Normally this is handled in the TwinCAT router on Windows, but on Linux there is no such option.
 This only needs to be done once when initially setting up a connection to a remote PLC.
 

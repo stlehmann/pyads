@@ -59,6 +59,23 @@ the routing table of the remote machine.
 **NOTE: On Linux machines at least one route must be added before the call
 to `get_local_address()` will function properly.**
 
+### Adding routes to a PLC on Linux
+Beckhoff PLCs require that a route be added to the routing table of the PLC. Normally this is handled in the TwinCAT router on Windows, but on Linux there is no such option.
+This only needs to be done once when initially setting up a connection to a remote PLC.
+
+Adding a route to a remote PLC to allow connections to a PC with the Hostname "MyPC"
+``` python
+>>> import pyads
+>>> SENDER_AMS = '1.2.3.4.1.1'
+>>> PLC_IP = '192.168.0.100'
+>>> USERNAME = 'user'
+>>> PASSWORD = 'password'
+>>> ROUTE_NAME = 'RouteToMyPC'
+>>> HOSTNAME = 'MyPC'
+>>> PLC_AMS_ID = '11.22.33.44.1.1'
+>>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, USERNAME, PASSWORD, route_name=ROUTE_NAME)
+```
+
 ### Creating routes on Windows
 
 On Windows you don't need to manually add the routes with pyads but instead you
