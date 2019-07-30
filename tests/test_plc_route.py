@@ -113,7 +113,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
             # Build response
             response = struct.pack('>12s', b'\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x80')			# Same header as being sent to the PLC, but with 80 at the end
-            response += bytes(map(int, self.PLC_AMS_ID.split('.')))				# PLC AMS id
+            response += struct.pack(">6B", *map(int, self.PLC_AMS_ID.split('.')))				# PLC AMS id
             response += struct.pack('<H', 10000)								# Internal communication port (PORT_SYSTEMSERVICE)
             response += struct.pack('>2s', b'\x01\x00')								# Command code read
             response += struct.pack('>4s', b'\x00\x00\x01\x04')							# Block of unknown protocol
