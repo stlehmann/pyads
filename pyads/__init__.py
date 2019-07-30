@@ -6,7 +6,7 @@
 
 :created on: 2018-06-11 18:15:53
 :last modified by: Stefan Lehmann
-:last modified time: 2019-07-29 14:49:13
+:last modified time: 2019-07-30 17:18:43
 
 """
 from .structs import AmsAddr, NotificationAttrib
@@ -44,4 +44,4 @@ from .constants import ADSSTATE_INVALID, ADSSTATE_IDLE, ADSSTATE_RESET, \
 from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, \
     ADSTRANS_CLIENT1REQ, ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
 
-__version__ = '3.0.12'
+__version__ = '3.1.0'

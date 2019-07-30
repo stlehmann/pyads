@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.0
+
+* add routes to a plc remotely with pyads.add_route_to_plc()
+
 ## 3.0.12
 
 * update adslib to current upstream version (2018-03-22)
