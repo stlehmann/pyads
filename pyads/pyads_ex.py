@@ -216,20 +216,20 @@ def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, pas
 
     rcvd_packet_header = data[0:12]							# AMS Packet header, seems to define communication type
     # If the last byte in the header is 0x80, then this is a response to our request
-    if rcvd_packet_header[-1] == 0x80:
-        rcvd_PLC_AMS_ID = data[12:18]						# AMS ID of PLC
+    if struct.unpack(">B", rcvd_packet_header[-1:])[0] == 0x80:
+        rcvd_PLC_AMS_ID = struct.unpack(">6B", data[12:18])[0]	    # AMS ID of PLC
         # Convert to a String AMS ID
         #rcvd_PLC_AMS_ID = '.'.join([str(int.from_bytes(rcvd_PLC_AMS_ID[i:i+1], 'big')) for i in range(0, len(rcvd_PLC_AMS_ID), 1)])
-        rcvd_AMS_port = data[18:20]							# Some sort of AMS port? Little endian
-        rcvd_command_code = data[20:22]						# Command code (should be read) Little endian
-        rcvd_protocol_block = data[22:]						# Unknown block of protocol
-        rcvd_is_password_correct = rcvd_protocol_block[4:7]	# 0x040000 when password was correct, 0x000407 when it was incorrect
+        rcvd_AMS_port = struct.unpack("<H", data[18:20])	        # Some sort of AMS port? Little endian
+        rcvd_command_code = struct.unpack("<2s", data[20:22])       # Command code (should be read) Little endian
+        rcvd_protocol_block = data[22:]						        # Unknown block of protocol
+        rcvd_is_password_correct = rcvd_protocol_block[4:7]	        # 0x040000 when password was correct, 0x000407 when it was incorrect
 
         if rcvd_is_password_correct == b'\x04\x00\x00':
             return True
         elif rcvd_is_password_correct == b'\x00\x04\x07':
             return False
-    
+
 	# If we fell through the whole way to the bottom, then we got a weird response
     raise RuntimeError("Unexpected response from PLC")
 
