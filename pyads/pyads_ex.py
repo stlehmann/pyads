@@ -827,7 +827,7 @@ def adsSyncAddDeviceNotificationReqEx(
 
     if err_code:
         raise ADSError(err_code)
-    callback_store[pNotification.value] = c_callback
+    callback_store[(adr, pNotification.value)] = c_callback
     return (pNotification.value, hnl)
 
 
@@ -846,7 +846,7 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle, user_handl
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     nHNotification = ctypes.c_ulong(notification_handle)
     err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr, nHNotification)
-    callback_store.pop(notification_handle, None)
+    del callback_store[(adr, notification_handle)]
     if err_code:
         raise ADSError(err_code)
 
