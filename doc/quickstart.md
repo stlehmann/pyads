@@ -126,13 +126,53 @@ For reading strings the maximum buffer length is 1024.
 'abc'
 ```
 
-You can also read/write arrays. For this you simply need to multiply the datatype by
-the number of array elements you want to read/write.
+### Read and write arrays or structures by name
+
+You can also read/write arrays and structures. For this you simply need to multiply the datatype by
+the number of elements in the array or structure you want to read/write. Only structures made up of
+the same datatype can be used.
+
+**Arrays**
 
 ```python
 >>> plc.write_by_name('global.sample_array', [1, 2, 3], pyads.PLCTYPE_INT * 3)
 >>> plc.read_by_name('global.sample_array', pyads.PLCTYPE_INT * 3)
-(1, 2, 3)
+[1, 2, 3]
+```
+
+```python
+>>> plc.write_by_name('global.sample_array[0]', 5, pyads.PLCTYPE_INT)
+>>> plc.read_by_name('global.sample_array[0]', pyads.PLCTYPE_INT)
+5
+```
+
+**Structures**
+
+TwinCAT declaration:
+```
+TYPE sample_structure :
+STRUCT
+	rVar : LREAL;
+	rVar2 : LREAL;
+	rVar3 : LREAL;
+	rVar4 : ARRAY [1..3] OF LREAL;
+END_STRUCT
+END_TYPE
+```
+
+Python code:
+```python
+>>> plc.write_by_name('global.sample_structure',
+                      [11.1, 22.2, 33.3, 44.4, 55.5, 66.6],
+                      pyads.PLCTYPE_LREAL * 6)
+>>> plc.read_by_name('global.sample_structure', pyads.PLCTYPE_LREAL * 6)
+[11.1, 22.2, 33.3, 44.4, 55.5, 66.6]
+```
+
+```python
+>>> plc.write_by_name('global.sample_structure.rVar2', 1234.5, pyads.PLCTYPE_LREAL)
+>>> plc.read_by_name('global.sample_structure.rVar2', pyads.PLCTYPE_LREAL)
+1234.5
 ```
 
 ### Read and write values by address
