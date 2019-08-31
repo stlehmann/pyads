@@ -56,7 +56,7 @@ if platform_is_windows():  # pragma: no cover, skip Windows test
         ctypes.c_ulong,
     )
 
-elif platform_is_linux:
+elif platform_is_linux():
     # try to load local adslib.so in favor to global one
     local_adslib = os.path.join(os.path.dirname(__file__), "adslib.so")
     if os.path.isfile(local_adslib):
