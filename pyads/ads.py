@@ -56,6 +56,12 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
+    PLC_BYTE_TYPES,
+    PLC_2_BYTE_TYPES,
+    PLC_4_BYTE_TYPES,
+    PLC_8_BYTE_TYPES,
+    PLC_DEFAULT_STRING_SIZE,
+    DATATYPE_MAP
 )
 
 from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib, SAdsNotificationHeader
@@ -339,6 +345,7 @@ def add_route(adr, ip_address):
     """
     return adsAddRoute(adr.netIdStruct(), ip_address)
 
+
 def add_route_to_plc(sending_net_id, adding_host_name, ip_address, username, password, route_name=None, added_net_id=None):
     # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
     """Embed a new route in the PLC.
@@ -353,6 +360,7 @@ def add_route_to_plc(sending_net_id, adding_host_name, ip_address, username, pas
 
     """
     return adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, password, route_name=route_name, added_net_id=added_net_id)
+
 
 def delete_route(adr):
     # type: (AmsAddr) -> None
@@ -414,6 +422,137 @@ def set_timeout(ms):
     """Set timeout."""
     if port is not None:
         return adsSyncSetTimeoutEx(port, ms)
+
+
+def size_of_structure(structure_def):
+    # type: (Tuple) -> c_type_array
+    """Calculate the size of a structure in number of BYTEs
+
+    :param tuple structure_def: special tuple defining the structure and
+            types contained within it according o PLCTYPE constants
+
+            Expected input example:
+
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3),
+                ('ivar2', pyads.PLCTYPE_UDINT, 1),
+                ('iVar3', pyads.PLCTYPE_UINT, 1),
+                ('iVar4', pyads.PLCTYPE_BYTE, 1),
+                ('iVar5', pyads.PLCTYPE_SINT, 1),
+                ('iVar6', pyads.PLCTYPE_USINT, 1),
+                ('bVar', pyads.PLCTYPE_BOOL, 4),
+                ('iVar7', pyads.PLCTYPE_WORD, 1),
+                ('iVar8', pyads.PLCTYPE_DWORD, 1),
+            )
+            i.e ('Variable Name', variable type, arr size (1 if not array),
+                 length of string (if defined in PLC))
+
+            If array of structure is to be calculated use
+            'size_of_structure(structure_def * X)'
+
+    :return: cTypes_Array: data size required to read/write a structure of multiple types
+    """
+    num_of_bytes = 0
+    for item in structure_def:
+        try:
+            var, plc_datatype, size = item
+            str_len = None
+        except ValueError:
+            var, plc_datatype, size, str_len = item
+
+        if plc_datatype == PLCTYPE_STRING:
+            if str_len is not None:
+                num_of_bytes += ((str_len + 1) * size)
+            else:
+                num_of_bytes += ((PLC_DEFAULT_STRING_SIZE + 1) * size)
+        elif plc_datatype in PLC_8_BYTE_TYPES:
+            num_of_bytes += (8 * size)
+        elif plc_datatype in PLC_4_BYTE_TYPES:
+            num_of_bytes += (4 * size)
+        elif plc_datatype in PLC_2_BYTE_TYPES:
+            num_of_bytes += (2 * size)
+        elif plc_datatype in PLC_BYTE_TYPES:
+            num_of_bytes += (1 * size)
+        else:
+            raise RuntimeError(
+                'Datatype not found. Check structure definition')
+    return PLCTYPE_USINT * num_of_bytes
+
+
+def list_from_bytes(byte_list, structure_def):
+    """Return a list of PLC values from a list of BYTE values read from PLC
+
+    :param byte_list: list of byte values for an entire structure
+    :param tuple structure_def: special tuple defining the structure and
+            types contained within it according o PLCTYPE constants
+
+            Expected input example:
+
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3),
+                ('ivar2', pyads.PLCTYPE_UDINT, 1),
+                ('iVar3', pyads.PLCTYPE_UINT, 1),
+                ('iVar4', pyads.PLCTYPE_BYTE, 1),
+                ('iVar5', pyads.PLCTYPE_SINT, 1),
+                ('iVar6', pyads.PLCTYPE_USINT, 1),
+                ('bVar', pyads.PLCTYPE_BOOL, 4),
+                ('iVar7', pyads.PLCTYPE_WORD, 1),
+                ('iVar8', pyads.PLCTYPE_DWORD, 1),
+            )
+            i.e ('Variable Name', variable type, arr size (1 if not array),
+                 length of string (if defined in PLC))
+
+            If array of structure is to be calculated use
+            'list_from_bytes(structure_def * X)'
+    :return: list of values for each variable type in order of structure
+    """
+    values = []
+    index = 0
+    for item in structure_def:
+        try:
+            var, plc_datatype, size = item
+            str_len = None
+        except ValueError:
+            var, plc_datatype, size, str_len = item
+
+        for i in range(size):
+            if plc_datatype == PLCTYPE_STRING:
+                if str_len is not None:
+                    pass
+                else:
+                    str_len = PLC_DEFAULT_STRING_SIZE
+                values.append(
+                    bytes(byte_list[index:(index + (str_len + 1))])
+                    .partition(b'\0')[0].decode('utf-8'))
+                index += (str_len + 1)
+            elif plc_datatype not in DATATYPE_MAP:
+                raise RuntimeError(
+                    'Datatype not found. Check structure definition')
+            elif plc_datatype in PLC_8_BYTE_TYPES:
+                values.append(struct.unpack(DATATYPE_MAP[plc_datatype],
+                              bytes(byte_list[index:(index + 8)]))[0])
+                index += 8
+            elif plc_datatype in PLC_4_BYTE_TYPES:
+                values.append(struct.unpack(DATATYPE_MAP[plc_datatype],
+                              bytes(byte_list[index:(index + 4)]))[0])
+                index += 4
+            elif plc_datatype in PLC_2_BYTE_TYPES:
+                values.append(struct.unpack(DATATYPE_MAP[plc_datatype],
+                              bytes(byte_list[index:(index + 2)]))[0])
+                index += 2
+            elif plc_datatype in PLC_BYTE_TYPES:
+                values.append(struct.unpack(DATATYPE_MAP[plc_datatype],
+                              bytes(byte_list[index:(index + 1)]))[0])
+                index += 1
+    return values
 
 
 class Connection(object):
@@ -636,6 +775,47 @@ class Connection(object):
 
         return None
 
+    def read_structure_by_name(self, data_name, structure_def):
+        # type: (str, Tuple) -> List
+        """Read a structure of multiple types
+
+        :param string data_name: data name
+        :param tuple structure_def: special tuple defining the structure and
+            types contained within it according to PLCTYPE constants, must match
+            the structure defined in the PLC, PLC structure must be defined with
+            {attribute 'pack_mode' :=  '1'}
+
+            Expected input example:
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3),
+                ('ivar2', pyads.PLCTYPE_UDINT, 1),
+                ('iVar3', pyads.PLCTYPE_UINT, 1),
+                ('iVar4', pyads.PLCTYPE_BYTE, 1),
+                ('iVar5', pyads.PLCTYPE_SINT, 1),
+                ('iVar6', pyads.PLCTYPE_USINT, 1),
+                ('bVar', pyads.PLCTYPE_BOOL, 4),
+                ('iVar7', pyads.PLCTYPE_WORD, 1),
+                ('iVar8', pyads.PLCTYPE_DWORD, 1),
+            )
+            i.e ('Variable Name', variable type, arr size (1 if not array),
+                 length of string (if defined in PLC))
+
+            If array of structure use
+            'read_structure_by_name(data_name, structure_def * X)'
+
+        :return: list values: list of all values in order of the structure
+            definition
+        """
+        values = self.read_by_name(data_name, size_of_structure(structure_def))
+        if values is not None:
+            return list_from_bytes(values, structure_def)
+
+        return None
+
     def write_by_name(self, data_name, value, plc_datatype):
         # type: (str, Any, Type) -> None
         """Send data synchronous to an ADS-device from data name.
@@ -788,21 +968,6 @@ class Connection(object):
                 # Get dynamically sized data array
                 data = (c_ubyte * data_size).from_address(addressof(contents) + SAdsNotificationHeader.data.offset)
 
-                datatype_map = {
-                    PLCTYPE_BOOL: "<?",
-                    PLCTYPE_BYTE: "<c",
-                    PLCTYPE_DINT: "<i",
-                    PLCTYPE_DWORD: "<I",
-                    PLCTYPE_INT: "<h",
-                    PLCTYPE_LREAL: "<d",
-                    PLCTYPE_REAL: "<f",
-                    PLCTYPE_SINT: "<b",
-                    PLCTYPE_UDINT: "<L",
-                    PLCTYPE_UINT: "<H",
-                    PLCTYPE_USINT: "<B",
-                    PLCTYPE_WORD: "<H",
-                }  # type: Dict[Type, str]
-
                 if plc_datatype == PLCTYPE_STRING:
                     # read only until null-termination character
                     value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
@@ -812,12 +977,12 @@ class Connection(object):
                     fit_size = min(data_size, sizeof(value))
                     memmove(addressof(value), addressof(data), fit_size)
 
-                elif plc_datatype not in datatype_map:
+                elif plc_datatype not in DATATYPE_MAP:
                     value = bytearray(data)
 
                 else:
                     value = struct.unpack(
-                        datatype_map[plc_datatype], bytearray(data)
+                        DATATYPE_MAP[plc_datatype], bytearray(data)
                     )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)

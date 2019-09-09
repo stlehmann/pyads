@@ -50,6 +50,33 @@ PLCTYPE_WORD = c_uint16
 PLCTYPE_LINT = c_int64
 PLCTYPE_ULINT = c_uint64
 
+# PLC Type sizes in BYTES
+PLC_BYTE_TYPES = {PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_SINT, PLCTYPE_USINT}
+PLC_2_BYTE_TYPES = {PLCTYPE_WORD, PLCTYPE_INT, PLCTYPE_UINT}
+PLC_4_BYTE_TYPES = {PLCTYPE_DWORD, PLCTYPE_DINT, PLCTYPE_UDINT,
+                    PLCTYPE_REAL, PLCTYPE_TIME, PLCTYPE_TOD, PLCTYPE_DATE,
+                    PLCTYPE_DT}
+PLC_8_BYTE_TYPES = {PLCTYPE_LREAL}
+PLC_DEFAULT_STRING_SIZE = 80
+
+# Datatype unpacking values
+DATATYPE_MAP = {
+    PLCTYPE_BOOL: "<?",
+    PLCTYPE_BYTE: "<B",
+    PLCTYPE_DINT: "<i",
+    PLCTYPE_DWORD: "<I",
+    PLCTYPE_INT: "<h",
+    PLCTYPE_LREAL: "<d",
+    PLCTYPE_REAL: "<f",
+    PLCTYPE_SINT: "<b",
+    PLCTYPE_UDINT: "<I",
+    PLCTYPE_UINT: "<H",
+    PLCTYPE_USINT: "<B",
+    PLCTYPE_WORD: "<H",
+}  # type: Dict[Type, str]
+
+
+
 
 def PLCTYPE_ARR_REAL(n):
     # type: (int) -> Type[Array[c_float]]
