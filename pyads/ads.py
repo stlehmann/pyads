@@ -29,6 +29,8 @@ from .pyads_ex import (
     adsSyncWriteReqEx,
     adsSyncReadWriteReqEx2,
     adsSyncReadReqEx2,
+    adsGetHandle,
+    adsReleaseHandle,
     adsSyncReadByNameEx,
     adsSyncWriteByNameEx,
     adsSyncAddDeviceNotificationReqEx,
@@ -619,36 +621,68 @@ class Connection(object):
 
         return None
 
-    def read_by_name(self, data_name, plc_datatype, return_ctypes=False):
-        # type: (str, Type, bool) -> Any
-        """Read data synchronous from an ADS-device from data name.
+    def get_handle(self, data_name):
+        # type: (str) -> int
+        """Get the handle of the PLC-variable, handles obtained using this
+         method should be released using method 'release_handle'
 
         :param string data_name: data name
+        :return: int: PLC-variable handle
+        """
+        if self._port is not None:
+            return adsGetHandle(self._port, self._adr, data_name)
+
+        return None
+
+    def release_handle(self, handle):
+        # type: (int) -> None
+        """ Release handle of a PLC-variable
+
+        :param int handle: handle of PLC-variable to be released
+        """
+        if self._port is not None:
+            adsReleaseHandle(self._port, self._adr, handle)
+
+    def read_by_name(
+            self, data_name, plc_datatype, return_ctypes=False, handle=None):
+        # type: (str, Type, bool, int) -> Any
+        """Read data synchronous from an ADS-device from data name
+
+        :param string data_name: data name,  can be empty string if handle is used
         :param int plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
             :return: value: **value**
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
+        :param int handle: PLC-variable handle, pass in handle if previously
+            obtained to speed up reading (default: None)
 
         """
         if self._port:
-            return adsSyncReadByNameEx(self._port, self._adr, data_name, plc_datatype, return_ctypes)
+            return adsSyncReadByNameEx(
+                self._port,
+                self._adr,
+                data_name,
+                plc_datatype,
+                return_ctypes=return_ctypes,
+                handle=handle)
 
         return None
 
-    def write_by_name(self, data_name, value, plc_datatype):
-        # type: (str, Any, Type) -> None
-        """Send data synchronous to an ADS-device from data name.
+    def write_by_name(self, data_name, value, plc_datatype, handle=None):
+        # type: (str, Any, Type, int) -> None
+        """Send data synchronous to an ADS-device from data name
 
-        :param string data_name: PLC storage address
+        :param string data_name: data name, can be empty string if handle is used
         :param value: value to write to the storage address of the PLC
         :param int plc_datatype: type of the data given to the PLC,
             according to PLCTYPE constants
-
+        :param int handle: PLC-variable handle, pass in handle if previously
+            obtained to speed up writing (default: None)
         """
         if self._port:
             return adsSyncWriteByNameEx(
-                self._port, self._adr, data_name, value, plc_datatype
+                self._port, self._adr, data_name, value, plc_datatype, handle=handle
             )
 
     def add_device_notification(self, data_name, attr, callback, user_handle=None):
