@@ -324,6 +324,39 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         expected_result = 0
         self.assertEqual(read_value, expected_result)
 
+    def test_read_by_name_with_handle(self):
+        # type: () -> None
+        """Test read_by_name method with handle passed in"""
+        handle_name = "TestHandle"
+        with self.plc:
+            handle = self.plc.get_handle(handle_name)
+            read_value = self.plc.read_by_name('',
+                                               constants.PLCTYPE_BYTE,
+                                               handle=handle)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 2 requests
+        self.assertEqual(len(requests), 2)
+
+        # Assert that the server received the handle by name
+        received_value = requests[0].ams_header.data[16:]
+        sent_value = (handle_name + '\x00').encode('utf-8')
+        self.assertEqual(sent_value, received_value)
+
+        # Assert that next, the Read command was used to get the value
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READ)
+
+        # Check read value returned by server:
+        # Test server just returns repeated bytes of 0x0F terminated with 0x00
+        # But because the read value is only 1-byte long, we just get 0x00
+        expected_result = 0
+        self.assertEqual(read_value, expected_result)
+
+        with self.plc:
+            self.plc.release_handle(handle)
+
     def test_write_by_name(self):
         handle_name = "TestHandle"
         value = "Test Value"
@@ -350,6 +383,36 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+    def test_write_by_name_with_handle(self):
+        # type: () -> None
+        """Test write_by_name method with handle passed in"""
+        handle_name = "TestHandle"
+        value = "Test Value"
+
+        with self.plc:
+            handle = self.plc.get_handle(handle_name)
+            self.plc.write_by_name(
+                '', value, constants.PLCTYPE_STRING, handle=handle
+            )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 2 requests
+        self.assertEqual(len(requests), 2)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that Write command was used to write the value
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
+        # Check the value written matches our value
+        received_value = requests[1].ams_header.data[12:].decode('utf-8').rstrip('\x00')
+        self.assertEqual(value, received_value)
+
+        with self.plc:
+            self.plc.release_handle(handle)
 
     def test_device_notification(self):
 
@@ -420,6 +483,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         )
         self.assertIsNone(plc.read(1, 2, pyads.PLCTYPE_INT))
         self.assertIsNone(plc.read_by_name("hello", pyads.PLCTYPE_INT))
+        self.assertIsNone(plc.get_handle("hello"))
         self.assertIsNone(
             plc.add_device_notification(
                 "test", pyads.NotificationAttrib(4), lambda x: x
@@ -431,6 +495,38 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         """Test timeout function."""
         with self.plc:
             self.assertIsNone(self.plc.set_timeout(100))
+
+    def test_get_and_release_handle(self):
+        # type: () -> None
+        """Test get_handle and release_handle methods"""
+        handle_name = "TestHandle"
+        with self.plc:
+            handle = self.plc.get_handle(handle_name)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received a single request
+        self.assertEqual(len(requests), 1)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        # Assert that the server received the handle by name
+        received_value = requests[0].ams_header.data[16:]
+        sent_value = (handle_name + '\x00').encode('utf-8')
+        self.assertEqual(sent_value, received_value)
+
+        with self.plc:
+            self.plc.release_handle(handle)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server history now has 2 requests
+        self.assertEqual(len(requests), 2)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
 
 
 if __name__ == '__main__':
