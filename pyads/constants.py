@@ -13,7 +13,7 @@ from typing import Type
 from ctypes import (
     Array,
     c_bool,
-    c_byte,
+    c_ubyte,
     c_int8,
     c_uint8,
     c_int16,
@@ -31,7 +31,7 @@ STRING_BUFFER = 1024
 
 # plc data types:
 PLCTYPE_BOOL = c_bool
-PLCTYPE_BYTE = c_byte
+PLCTYPE_BYTE = c_ubyte
 PLCTYPE_DATE = c_int32
 PLCTYPE_DINT = c_int32
 PLCTYPE_DT = c_int32

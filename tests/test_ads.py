@@ -11,6 +11,7 @@
 import pyads
 from pyads import AmsAddr
 from pyads.utils import platform_is_linux
+from ctypes import c_ubyte
 import unittest
 
 
@@ -109,6 +110,72 @@ class AdsTest(unittest.TestCase):
         pyads.open_port()
         self.assertIsNone(pyads.set_timeout(100))
         pyads.open_port()
+
+    def test_size_of_structure(self):
+        # type: () -> None
+        """Test size_of_structure function"""
+        # known structure size with defined string
+        structure_def = (
+            ('rVar', pyads.PLCTYPE_LREAL, 1),
+            ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+            ('rVar1', pyads.PLCTYPE_REAL, 4),
+            ('iVar', pyads.PLCTYPE_DINT, 5),
+            ('iVar1', pyads.PLCTYPE_INT, 3),
+            ('ivar2', pyads.PLCTYPE_UDINT, 6),
+            ('iVar3', pyads.PLCTYPE_UINT, 7),
+            ('iVar4', pyads.PLCTYPE_BYTE, 1),
+            ('iVar5', pyads.PLCTYPE_SINT, 1),
+            ('iVar6', pyads.PLCTYPE_USINT, 1),
+            ('bVar', pyads.PLCTYPE_BOOL, 4),
+            ('iVar7', pyads.PLCTYPE_WORD, 1),
+            ('iVar8', pyads.PLCTYPE_DWORD, 1),
+        )
+        self.assertEqual(pyads.size_of_structure(structure_def), c_ubyte*173)
+
+        # test for PLC_DEFAULT_STRING_SIZE
+        structure_def = (
+            ('sVar', pyads.PLCTYPE_STRING, 4),
+        )
+        self.assertEqual(
+            pyads.size_of_structure(structure_def),
+            c_ubyte * ((pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4))
+
+        # tests for incorrect definitions
+        structure_def = (
+            ('sVar', pyads.PLCTYPE_STRING, 4),
+            ('rVar', 1, 1),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+        )
+        with self.assertRaises(RuntimeError):
+            pyads.size_of_structure(structure_def)
+
+        structure_def = (
+            ('sVar', pyads.PLCTYPE_STRING, 4),
+            (pyads.PLCTYPE_REAL, 1),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+        )
+        with self.assertRaises(RuntimeError):
+            pyads.size_of_structure(structure_def)
+
+        structure_def = (
+            ('sVar', pyads.PLCTYPE_STRING, 4),
+            ('rVar', pyads.PLCTYPE_REAL, ''),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ('iVar1', pyads.PLCTYPE_INT, 3),
+        )
+        with self.assertRaises(RuntimeError):
+            pyads.size_of_structure(structure_def)
+
+        # test another correct definition with array of structure
+        structure_def = (
+            ('bVar', pyads.PLCTYPE_BOOL, 1),
+            ('rVar', pyads.PLCTYPE_LREAL, 3),
+            ('sVar', pyads.PLCTYPE_STRING, 2),
+            ('iVar', pyads.PLCTYPE_DINT, 10),
+            ('iVar1', pyads.PLCTYPE_INT, 3),
+            ('bVar1', pyads.PLCTYPE_BOOL, 4),
+        )
+        self.assertEqual(pyads.size_of_structure(structure_def * 5), c_ubyte*1185)
 
 
 if __name__ == "__main__":
