@@ -61,7 +61,7 @@ from .constants import (
     PLC_4_BYTE_TYPES,
     PLC_8_BYTE_TYPES,
     PLC_DEFAULT_STRING_SIZE,
-    DATATYPE_MAP
+    DATATYPE_MAP,
 )
 
 from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib, SAdsNotificationHeader
@@ -425,7 +425,7 @@ def set_timeout(ms):
 
 
 def size_of_structure(structure_def):
-    """Calculate the size of a structure in number of BYTEs
+    """Calculate the size of a structure in number of BYTEs.
 
     :param tuple structure_def: special tuple defining the structure and
             types contained within it according o PLCTYPE constants
@@ -461,37 +461,29 @@ def size_of_structure(structure_def):
             var, plc_datatype, size = item
             str_len = None
         except ValueError:
-            try:
-                var, plc_datatype, size, str_len = item
-            except Exception as e:
-                raise RuntimeError(
-                    'Can not calculate structure size, check structure definition') from e
+            var, plc_datatype, size, str_len = item
 
-        try:
-            if plc_datatype == PLCTYPE_STRING:
-                if str_len is not None:
-                    num_of_bytes += ((str_len + 1) * size)
-                else:
-                    num_of_bytes += ((PLC_DEFAULT_STRING_SIZE + 1) * size)
-            elif plc_datatype in PLC_8_BYTE_TYPES:
-                num_of_bytes += (8 * size)
-            elif plc_datatype in PLC_4_BYTE_TYPES:
-                num_of_bytes += (4 * size)
-            elif plc_datatype in PLC_2_BYTE_TYPES:
-                num_of_bytes += (2 * size)
-            elif plc_datatype in PLC_BYTE_TYPES:
-                num_of_bytes += (1 * size)
+        if plc_datatype == PLCTYPE_STRING:
+            if str_len is not None:
+                num_of_bytes += ((str_len + 1) * size)
             else:
-                raise RuntimeError('Datatype not found')
-        except Exception as e:
-            raise RuntimeError(
-                'Can not calculate structure size, check structure definition') from e
+                num_of_bytes += ((PLC_DEFAULT_STRING_SIZE + 1) * size)
+        elif plc_datatype in PLC_8_BYTE_TYPES:
+            num_of_bytes += (8 * size)
+        elif plc_datatype in PLC_4_BYTE_TYPES:
+            num_of_bytes += (4 * size)
+        elif plc_datatype in PLC_2_BYTE_TYPES:
+            num_of_bytes += (2 * size)
+        elif plc_datatype in PLC_BYTE_TYPES:
+            num_of_bytes += (1 * size)
+        else:
+            raise RuntimeError('Datatype not found')
 
     return c_ubyte * num_of_bytes
 
 
 def list_from_bytes(byte_list, structure_def):
-    """Return a list of PLC values from a list of BYTE values read from PLC
+    """Return a list of PLC values from a list of BYTE values read from PLC.
 
     :param byte_list: list of byte values for an entire structure
     :param tuple structure_def: special tuple defining the structure and
@@ -519,6 +511,7 @@ def list_from_bytes(byte_list, structure_def):
 
             If array of structure is to be calculated use
             'list_from_bytes(structure_def * X)'
+
     :return: list of values for each variable type in order of structure
     """
     values = []
@@ -784,7 +777,7 @@ class Connection(object):
 
     def read_structure_by_name(self, data_name, structure_def):
         # type: (str, Tuple) -> List
-        """Read a structure of multiple types
+        """Read a structure of multiple types.
 
         :param string data_name: data name
         :param tuple structure_def: special tuple defining the structure and

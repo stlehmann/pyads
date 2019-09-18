@@ -154,7 +154,7 @@ class AdsTest(unittest.TestCase):
             (pyads.PLCTYPE_REAL, 1),
             ('iVar', pyads.PLCTYPE_DINT, 1),
         )
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             pyads.size_of_structure(structure_def)
 
         structure_def = (
@@ -163,7 +163,7 @@ class AdsTest(unittest.TestCase):
             ('iVar', pyads.PLCTYPE_DINT, 1),
             ('iVar1', pyads.PLCTYPE_INT, 3),
         )
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(TypeError):
             pyads.size_of_structure(structure_def)
 
         # test another correct definition with array of structure
