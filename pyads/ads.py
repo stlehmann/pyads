@@ -649,7 +649,7 @@ class Connection(object):
             self, data_name, plc_datatype, return_ctypes=False, handle=None
     ):
         # type: (str, Type, bool, int) -> Any
-        """Read data synchronous from an ADS-device from data name
+        """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name,  can be empty string if handle is used
         :param int plc_datatype: type of the data given to the PLC, according
@@ -674,7 +674,7 @@ class Connection(object):
 
     def write_by_name(self, data_name, value, plc_datatype, handle=None):
         # type: (str, Any, Type, int) -> None
-        """Send data synchronous to an ADS-device from data name
+        """Send data synchronous to an ADS-device from data name.
 
         :param string data_name: data name, can be empty string if handle is used
         :param value: value to write to the storage address of the PLC
