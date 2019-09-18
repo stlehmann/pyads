@@ -624,9 +624,11 @@ class Connection(object):
     def get_handle(self, data_name):
         # type: (str) -> int
         """Get the handle of the PLC-variable, handles obtained using this
-         method should be released using method 'release_handle'
+         method should be released using method 'release_handle'.
 
         :param string data_name: data name
+
+        :rtype: int
         :return: int: PLC-variable handle
         """
         if self._port is not None:
@@ -636,7 +638,7 @@ class Connection(object):
 
     def release_handle(self, handle):
         # type: (int) -> None
-        """ Release handle of a PLC-variable
+        """ Release handle of a PLC-variable.
 
         :param int handle: handle of PLC-variable to be released
         """
@@ -644,7 +646,8 @@ class Connection(object):
             adsReleaseHandle(self._port, self._adr, handle)
 
     def read_by_name(
-            self, data_name, plc_datatype, return_ctypes=False, handle=None):
+            self, data_name, plc_datatype, return_ctypes=False, handle=None
+    ):
         # type: (str, Type, bool, int) -> Any
         """Read data synchronous from an ADS-device from data name
 

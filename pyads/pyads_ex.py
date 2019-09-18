@@ -640,12 +640,13 @@ def adsSyncReadReqEx2(
 
 def adsGetHandle(port, address, data_name):
     # type: (int, AmsAddr, str) -> int
-    """Get the handle of the PLC-variable
+    """Get the handle of the PLC-variable.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
-    :param data_name: string data_name: data name
-    :return: int: PLC-variable handle
+    :param string data_name: data name
+    :rtype: int
+    :return: handle: PLC-variable handle
     """
     handle = adsSyncReadWriteReqEx2(
         port,
@@ -662,7 +663,7 @@ def adsGetHandle(port, address, data_name):
 
 def adsReleaseHandle(port, address, handle):
     # type: (int, AmsAddr, int) -> None
-    """Release the handle of the PLC-variable
+    """Release the handle of the PLC-variable.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -672,7 +673,8 @@ def adsReleaseHandle(port, address, handle):
 
 
 def adsSyncReadByNameEx(
-    port, address, data_name, data_type, return_ctypes=False, handle=None):
+    port, address, data_name, data_type, return_ctypes=False, handle=None
+):
     # type: (int, AmsAddr, str, Type, bool, int) -> Any
     """Read data synchronous from an ADS-device from data name.
 
@@ -706,7 +708,8 @@ def adsSyncReadByNameEx(
 
 
 def adsSyncWriteByNameEx(
-    port, address, data_name, value, data_type, handle=None):
+        port, address, data_name, value, data_type, handle=None
+):
     # type: (int, AmsAddr, str, Any, Type, int) -> None
     """Send data synchronous to an ADS-device from data name.
 
@@ -732,7 +735,8 @@ def adsSyncWriteByNameEx(
 
 
 def adsSyncAddDeviceNotificationReqEx(
-    port, adr, data_name, pNoteAttrib, callback, user_handle=None):
+    port, adr, data_name, pNoteAttrib, callback, user_handle=None
+):
     # type: (int, AmsAddr, str, NotificationAttrib, Callable, int) -> Tuple[int, int]
     """Add a device notification.
 
