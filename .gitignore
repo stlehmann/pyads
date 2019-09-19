@@ -35,3 +35,6 @@ deploy
 coverage
 .mypy_cache/
 .pytest_cache/
+
+# vscode files
+.vscode/
