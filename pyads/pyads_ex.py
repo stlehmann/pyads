@@ -638,8 +638,44 @@ def adsSyncReadReqEx2(
     return data
 
 
-def adsSyncReadByNameEx(port, address, data_name, data_type, return_ctypes=False):
-    # type: (int, AmsAddr, str, Type, bool) -> Any
+def adsGetHandle(port, address, data_name):
+    # type: (int, AmsAddr, str) -> int
+    """Get the handle of the PLC-variable.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param pyads.structs.AmsAddr address: local or remote AmsAddr
+    :param string data_name: data name
+    :rtype: int
+    :return: handle: PLC-variable handle
+    """
+    handle = adsSyncReadWriteReqEx2(
+        port,
+        address,
+        ADSIGRP_SYM_HNDBYNAME,
+        0x0,
+        PLCTYPE_UDINT,
+        data_name,
+        PLCTYPE_STRING,
+    )
+
+    return handle
+
+
+def adsReleaseHandle(port, address, handle):
+    # type: (int, AmsAddr, int) -> None
+    """Release the handle of the PLC-variable.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param pyads.structs.AmsAddr address: local or remote AmsAddr
+    :param int handle: handle of PLC-variable to be released
+    """
+    adsSyncWriteReqEx(port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT)
+
+
+def adsSyncReadByNameEx(
+    port, address, data_name, data_type, return_ctypes=False, handle=None
+):
+    # type: (int, AmsAddr, str, Type, bool, int) -> Any
     """Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -649,34 +685,32 @@ def adsSyncReadByNameEx(port, address, data_name, data_type, return_ctypes=False
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param int handle: PLC-variable handle (default: None)
     :rtype: data_type
     :return: value: **value**
 
     """
-    # Get the handle of the PLC-variable
-    handle = adsSyncReadWriteReqEx2(
-        port,
-        address,
-        ADSIGRP_SYM_HNDBYNAME,
-        0x0,
-        PLCTYPE_UDINT,
-        data_name,
-        PLCTYPE_STRING,
-    )
+    if handle is None:
+        no_handle = True
+        handle = adsGetHandle(port, address, data_name)
+    else:
+        no_handle = False
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
         port, address, ADSIGRP_SYM_VALBYHND, handle, data_type, return_ctypes
     )
 
-    # Release the handle of the PLC-variable
-    adsSyncWriteReqEx(port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT)
+    if no_handle is True:
+        adsReleaseHandle(port, address, handle)
 
     return value
 
 
-def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
-    # type: (int, AmsAddr, str, Any, Type) -> None
+def adsSyncWriteByNameEx(
+        port, address, data_name, value, data_type, handle=None
+):
+    # type: (int, AmsAddr, str, Any, Type, int) -> None
     """Send data synchronous to an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -685,24 +719,19 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type):
     :param value: value to write to the storage address of the PLC
     :param Type data_type: type of the data given to the PLC,
         according to PLCTYPE constants
-
+    :param int handle: PLC-variable handle (default: None)
     """
-    # Get the handle of the PLC-variable
-    handle = adsSyncReadWriteReqEx2(
-        port,
-        address,
-        ADSIGRP_SYM_HNDBYNAME,
-        0x0,
-        PLCTYPE_UDINT,
-        data_name,
-        PLCTYPE_STRING,
-    )
+    if handle is None:
+        no_handle = True
+        handle = adsGetHandle(port, address, data_name)
+    else:
+        no_handle = False
 
     # Write the value of a PLC-variable, via handle
     adsSyncWriteReqEx(port, address, ADSIGRP_SYM_VALBYHND, handle, value, data_type)
 
-    # Release the handle of the PLC-variable
-    adsSyncWriteReqEx(port, address, ADSIGRP_SYM_RELEASEHND, 0, handle, PLCTYPE_UDINT)
+    if no_handle is True:
+        adsReleaseHandle(port, address, handle)
 
 
 def adsSyncAddDeviceNotificationReqEx(
