@@ -23,4 +23,5 @@ def platform_is_linux():
 def platform_is_windows():
     # type: () -> bool
     """Return True if current platform is Windows."""
-    return sys.platform == 'win32'
+    # cli being .NET (IronPython)
+    return sys.platform == 'win32' or sys.platform == 'cli'
