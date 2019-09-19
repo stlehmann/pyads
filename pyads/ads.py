@@ -4,13 +4,14 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
+:last modified by: Adrian Garcia
+:last modified time: 2019-06-12 11:18:00
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
 from datetime import datetime
 import struct
 from ctypes import memmove, addressof, c_ubyte, Structure, sizeof
-from collections import OrderedDict
 
 from .utils import platform_is_linux
 from .filetimes import filetime_to_dt
@@ -57,17 +58,9 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
-    PLC_DEFAULT_STRING_SIZE,
-    DATATYPE_MAP,
 )
 
-from .structs import (
-    AmsAddr,
-    SAmsNetId,
-    AdsVersion,
-    NotificationAttrib,
-    SAdsNotificationHeader,
-)
+from .structs import AmsAddr, SAmsNetId, AdsVersion, NotificationAttrib, SAdsNotificationHeader
 
 linux = platform_is_linux()
 port = None  # type: int
@@ -340,48 +333,29 @@ def write_by_name(adr, data_name, value, plc_datatype):
 
 
 def add_route(adr, ip_address):
-    # type: (Union[str, AmsAddr], str) -> None
+    # type: (AmsAddr, str) -> None
     """Establish a new route in the AMS Router (linux Only).
 
-    :param adr: AMS Address of routing endpoint as str or AmsAddr object
+    :param pyads.structs.AmsAddr adr: AMS Address of routing endpoint
     :param str ip_address: ip address of the routing endpoint
     """
-    if isinstance(adr, str):
-        adr = AmsAddr(adr)
-
     return adsAddRoute(adr.netIdStruct(), ip_address)
 
 
-def add_route_to_plc(
-    sending_net_id,
-    adding_host_name,
-    ip_address,
-    username,
-    password,
-    route_name=None,
-    added_net_id=None,
-):
-    # type: (str, str, str, str, str, str, str) -> bool
+def add_route_to_plc(sending_net_id, adding_host_name, ip_address, username, password, route_name=None, added_net_id=None):
+    # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
     """Embed a new route in the PLC.
 
     :param pyads.structs.SAmsNetId sending_net_id: sending net id
-    :param str adding_host_name: host name (or IP) of the PC being added
-    :param str ip_address: ip address of the PLC
+    :param str adding_host_name: host name (or IP) of the PC being added, defaults to hostname of this PC
+    :param str ip_address: ip address of the routing endpoint
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
+    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
 
     """
-    return adsAddRouteToPLC(
-        sending_net_id,
-        adding_host_name,
-        ip_address,
-        username,
-        password,
-        route_name=route_name,
-        added_net_id=added_net_id,
-    )
+    return adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, password, route_name=route_name, added_net_id=added_net_id)
 
 
 def delete_route(adr):
@@ -444,134 +418,6 @@ def set_timeout(ms):
     """Set timeout."""
     if port is not None:
         return adsSyncSetTimeoutEx(port, ms)
-
-
-def size_of_structure(structure_def):
-    """Calculate the size of a structure in number of BYTEs.
-
-    :param tuple structure_def: special tuple defining the structure and
-            types contained within it according o PLCTYPE constants
-
-            Expected input example:
-
-            structure_def = (
-                ('rVar', pyads.PLCTYPE_LREAL, 1),
-                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-                ('rVar1', pyads.PLCTYPE_REAL, 1),
-                ('iVar', pyads.PLCTYPE_DINT, 1),
-                ('iVar1', pyads.PLCTYPE_INT, 3),
-                ('ivar2', pyads.PLCTYPE_UDINT, 1),
-                ('iVar3', pyads.PLCTYPE_UINT, 1),
-                ('iVar4', pyads.PLCTYPE_BYTE, 1),
-                ('iVar5', pyads.PLCTYPE_SINT, 1),
-                ('iVar6', pyads.PLCTYPE_USINT, 1),
-                ('bVar', pyads.PLCTYPE_BOOL, 4),
-                ('iVar7', pyads.PLCTYPE_WORD, 1),
-                ('iVar8', pyads.PLCTYPE_DWORD, 1),
-            )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
-
-            If array of structure multiply structure_def input by array size
-
-    :return: c_ubyte_Array: data size required to read/write a structure of multiple types
-    """
-    num_of_bytes = 0
-    for item in structure_def:
-        try:
-            var, plc_datatype, size = item
-            str_len = None
-        except ValueError:
-            var, plc_datatype, size, str_len = item
-
-        if plc_datatype == PLCTYPE_STRING:
-            if str_len is not None:
-                num_of_bytes += (str_len + 1) * size
-            else:
-                num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * size
-        elif plc_datatype not in DATATYPE_MAP:
-            raise RuntimeError("Datatype not found")
-        else:
-            num_of_bytes += sizeof(plc_datatype) * size
-
-    return c_ubyte * num_of_bytes
-
-
-def dict_from_bytes(byte_list, structure_def, array_size=1):
-    """Return an ordered dict of PLC values from a list of BYTE values read from PLC.
-
-    :param byte_list: list of byte values for an entire structure
-    :param tuple structure_def: special tuple defining the structure and
-            types contained within it according o PLCTYPE constants
-
-            Expected input example:
-
-            structure_def = (
-                ('rVar', pyads.PLCTYPE_LREAL, 1),
-                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-                ('rVar1', pyads.PLCTYPE_REAL, 1),
-                ('iVar', pyads.PLCTYPE_DINT, 1),
-                ('iVar1', pyads.PLCTYPE_INT, 3),
-                ('ivar2', pyads.PLCTYPE_UDINT, 1),
-                ('iVar3', pyads.PLCTYPE_UINT, 1),
-                ('iVar4', pyads.PLCTYPE_BYTE, 1),
-                ('iVar5', pyads.PLCTYPE_SINT, 1),
-                ('iVar6', pyads.PLCTYPE_USINT, 1),
-                ('bVar', pyads.PLCTYPE_BOOL, 4),
-                ('iVar7', pyads.PLCTYPE_WORD, 1),
-                ('iVar8', pyads.PLCTYPE_DWORD, 1),
-            )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
-
-    :param array_size: size of array if reading array of structure, defaults to 1
-    :type array_size: int, optional
-
-    :return: ordered dictionary of values for each variable type in order of structure
-    """
-    values_list = []
-    index = 0
-    for structure in range(0, array_size):
-        values = OrderedDict()
-        for item in structure_def:
-            try:
-                var, plc_datatype, size = item
-                str_len = None
-            except ValueError:
-                var, plc_datatype, size, str_len = item
-
-            var_array = []
-            for i in range(size):
-                if plc_datatype == PLCTYPE_STRING:
-                    if str_len is None:
-                        str_len = PLC_DEFAULT_STRING_SIZE
-                    var_array.append(
-                        bytearray(byte_list[index : (index + (str_len + 1))])
-                        .partition(b"\0")[0]
-                        .decode("utf-8")
-                    )
-                    index += str_len + 1
-                elif plc_datatype not in DATATYPE_MAP:
-                    raise RuntimeError("Datatype not found. Check structure definition")
-                else:
-                    n_bytes = sizeof(plc_datatype)
-                    var_array.append(
-                        struct.unpack(
-                            DATATYPE_MAP[plc_datatype],
-                            bytearray(byte_list[index : (index + n_bytes)]),
-                        )[0]
-                    )
-                    index += n_bytes
-            if size == 1:  # if not an array, don't want a list in the dict return
-                values[var] = var_array[0]
-            else:
-                values[var] = var_array
-        values_list.append(values)
-
-    if array_size != 1:
-        return values_list
-    else:
-        return values_list[0]
 
 
 class Connection(object):
@@ -772,12 +618,7 @@ class Connection(object):
         """
         if self._port is not None:
             return adsSyncReadReqEx2(
-                self._port,
-                self._adr,
-                index_group,
-                index_offset,
-                plc_datatype,
-                return_ctypes,
+                self._port, self._adr, index_group, index_offset, plc_datatype, return_ctypes
             )
 
         return None
@@ -806,7 +647,9 @@ class Connection(object):
         if self._port is not None:
             adsReleaseHandle(self._port, self._adr, handle)
 
-    def read_by_name(self, data_name, plc_datatype, return_ctypes=False, handle=None):
+    def read_by_name(
+            self, data_name, plc_datatype, return_ctypes=False, handle=None
+    ):
         # type: (str, Type, bool, int) -> Any
         """Read data synchronous from an ADS-device from data name.
 
@@ -827,58 +670,7 @@ class Connection(object):
                 data_name,
                 plc_datatype,
                 return_ctypes=return_ctypes,
-                handle=handle,
-            )
-
-        return None
-
-    def read_structure_by_name(
-        self, data_name, structure_def, array_size=1, structure_size=None, handle=None
-    ):
-        """Read a structure of multiple types.
-
-        :param string data_name: data name
-        :param tuple structure_def: special tuple defining the structure and
-            types contained within it according to PLCTYPE constants, must match
-            the structure defined in the PLC, PLC structure must be defined with
-            {attribute 'pack_mode' :=  '1'}
-
-            Expected input example:
-            structure_def = (
-                ('rVar', pyads.PLCTYPE_LREAL, 1),
-                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-                ('rVar1', pyads.PLCTYPE_REAL, 1),
-                ('iVar', pyads.PLCTYPE_DINT, 1),
-                ('iVar1', pyads.PLCTYPE_INT, 3),
-                ('ivar2', pyads.PLCTYPE_UDINT, 1),
-                ('iVar3', pyads.PLCTYPE_UINT, 1),
-                ('iVar4', pyads.PLCTYPE_BYTE, 1),
-                ('iVar5', pyads.PLCTYPE_SINT, 1),
-                ('iVar6', pyads.PLCTYPE_USINT, 1),
-                ('bVar', pyads.PLCTYPE_BOOL, 4),
-                ('iVar7', pyads.PLCTYPE_WORD, 1),
-                ('iVar8', pyads.PLCTYPE_DWORD, 1),
-            )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
-
-        :param array_size: size of array if reading array of structure, defaults to 1
-        :type array_size: int, optional
-        :param structure_size: size of structure if known by previous use of
-            size_of_structure, defaults to None
-        :type structure_size: , optional
-        :param handle: PLC-variable handle, pass in handle if previously
-            obtained to speed up reading, defaults to None
-        :type handle: int, optional
-
-        :return: values_dict: ordered dictionary of all values corresponding to the structure
-            definition
-        """
-        if structure_size is None:
-            structure_size = size_of_structure(structure_def * array_size)
-        values = self.read_by_name(data_name, structure_size, handle=handle)
-        if values is not None:
-            return dict_from_bytes(values, structure_def, array_size=array_size)
+                handle=handle)
 
         return None
 
@@ -1033,9 +825,22 @@ class Connection(object):
                 contents = notification.contents
                 data_size = contents.cbSampleSize
                 # Get dynamically sized data array
-                data = (c_ubyte * data_size).from_address(
-                    addressof(contents) + SAdsNotificationHeader.data.offset
-                )
+                data = (c_ubyte * data_size).from_address(addressof(contents) + SAdsNotificationHeader.data.offset)
+
+                datatype_map = {
+                    PLCTYPE_BOOL: "<?",
+                    PLCTYPE_BYTE: "<c",
+                    PLCTYPE_DINT: "<i",
+                    PLCTYPE_DWORD: "<I",
+                    PLCTYPE_INT: "<h",
+                    PLCTYPE_LREAL: "<d",
+                    PLCTYPE_REAL: "<f",
+                    PLCTYPE_SINT: "<b",
+                    PLCTYPE_UDINT: "<L",
+                    PLCTYPE_UINT: "<H",
+                    PLCTYPE_USINT: "<B",
+                    PLCTYPE_WORD: "<H",
+                }  # type: Dict[Type, str]
 
                 if plc_datatype == PLCTYPE_STRING:
                     # read only until null-termination character
@@ -1046,13 +851,13 @@ class Connection(object):
                     fit_size = min(data_size, sizeof(value))
                     memmove(addressof(value), addressof(data), fit_size)
 
-                elif plc_datatype not in DATATYPE_MAP:
+                elif plc_datatype not in datatype_map:
                     value = bytearray(data)
 
                 else:
-                    value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[
-                        0
-                    ]
+                    value = struct.unpack(
+                        datatype_map[plc_datatype], bytearray(data)
+                    )[0]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
 
