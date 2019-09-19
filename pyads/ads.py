@@ -341,6 +341,7 @@ def add_route(adr, ip_address):
     """
     return adsAddRoute(adr.netIdStruct(), ip_address)
 
+
 def add_route_to_plc(sending_net_id, adding_host_name, ip_address, username, password, route_name=None, added_net_id=None):
     # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
     """Embed a new route in the PLC.
@@ -355,6 +356,7 @@ def add_route_to_plc(sending_net_id, adding_host_name, ip_address, username, pas
 
     """
     return adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, password, route_name=route_name, added_net_id=added_net_id)
+
 
 def delete_route(adr):
     # type: (AmsAddr) -> None
