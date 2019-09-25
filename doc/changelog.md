@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.1.1
+* get/release handle methods for faster read/write by name
+
 ## 3.1.0
 
 * add routes to a plc remotely with pyads.add_route_to_plc()
