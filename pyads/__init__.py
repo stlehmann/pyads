@@ -15,7 +15,7 @@ from .ads import open_port, close_port, get_local_address, read_state, \
     write_control, read_device_info, write, read_write, read, \
     read_by_name, write_by_name, add_route, add_route_to_plc, delete_route, \
     add_device_notification, del_device_notification, Connection, \
-    set_local_address, set_timeout, size_of_structure, list_from_bytes
+    set_local_address, set_timeout, size_of_structure, dict_from_bytes
 
 from .pyads_ex import ADSError
 
