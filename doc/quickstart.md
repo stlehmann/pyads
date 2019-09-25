@@ -175,6 +175,33 @@ Python code:
 1234.5
 ```
 
+### Read and write values by handle
+
+When reading and writing by name, internally pyads is acquiring a handle from the PLC, 
+reading/writing the value using that handle, before releasing the handle. A handle is 
+just a unique identifier that the PLC associates to an address meaning that should an 
+address change, the ADS client does not need to know the new address.
+
+It is possible to manage the acquiring, tracking and releasing of handles yourself, which is 
+advantageous if you plan on reading/writing the value frequently in your program, or 
+wish to speed up the reading/writing by up to three times; as by default when reading/writing 
+by name it makes 3 ADS calls (acquire, read/write, release), where as if you track the 
+handles manually it only makes a single ADS call.
+
+Using the Connection class:
+
+```python
+>>> var_handle = plc.get_handle('global.bool_value')
+>>> plc.write_by_name('', True, pyads.PLCTYPE_BOOL, handle=var_handle)
+>>> plc.read_by_name('', pyads.PLCTYPE_BOOL, handle=var_handle)
+True
+>>> plc.release_handle(var_handle)
+```
+
+**Be aware to release handles before closing the port to the PLC.** Leaving handles open 
+reduces the available bandwidth in the ADS router.
+
+
 ### Read and write values by address
 
 Read and write *UDINT* variables by address.
