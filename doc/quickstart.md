@@ -208,7 +208,7 @@ Then you can read the structure:
 
 ```python
 >>> plc.read_structure_by_name('global.sample_structure', structure_def)
-OrderedDict([('rVar': 11.1), ('rVar2': 22.2), ('iVar': 3), ('iVar2': [4, 44, 444]), ('sVar': 'abc')])
+OrderedDict([('rVar', 11.1), ('rVar2', 22.2), ('iVar', 3), ('iVar2', [4, 44, 444]), ('sVar', 'abc')])
 ```
 
 ### Read and write values by handle

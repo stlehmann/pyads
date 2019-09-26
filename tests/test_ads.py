@@ -197,21 +197,21 @@ class AdsTest(unittest.TestCase):
             ('iVar7', pyads.PLCTYPE_WORD, 1),
             ('iVar8', pyads.PLCTYPE_DWORD, 1),
         )
-        values = OrderedDict({
-            'rVar': 1.11,
-            'sVar': ['Hello', 'World'],
-            'rVar1': [2.25, 2.25, 2.5, 2.75],
-            'iVar': [3, 4, 5, 6, 7],
-            'iVar1': [8, 9, 10],
-            'ivar2': [11, 12, 13, 14, 15, 16],
-            'iVar3': [17, 18, 19, 20, 21, 22, 23],
-            'iVar4': 24,
-            'iVar5': 25,
-            'iVar6': 26,
-            'bVar': [True, False, True, False],
-            'iVar7': 27,
-            'iVar8': 28
-        })
+        values = OrderedDict([
+            ('rVar', 1.11),
+            ('sVar', ['Hello', 'World']),
+            ('rVar1', [2.25, 2.25, 2.5, 2.75]),
+            ('iVar', [3, 4, 5, 6, 7]),
+            ('iVar1', [8, 9, 10]),
+            ('ivar2', [11, 12, 13, 14, 15, 16]),
+            ('iVar3', [17, 18, 19, 20, 21, 22, 23]),
+            ('iVar4', 24),
+            ('iVar5', 25),
+            ('iVar6', 26),
+            ('bVar', [True, False, True, False]),
+            ('iVar7', 27),
+            ('iVar8', 28)
+        ])
         bytes_list = [195, 245, 40, 92, 143, 194, 241, 63, 72, 101, 108, 108, 111,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 111, 114, 108, 100, 0,
@@ -225,21 +225,21 @@ class AdsTest(unittest.TestCase):
         self.assertEqual(values,
                          pyads.dict_from_bytes(bytes_list, structure_def))
 
-        values = OrderedDict({
-            'rVar': 780245.5678,
-            'sVar': ['TwinCat works', 'with Python using pyads'],
-            'rVar1': [65.5, 89.75, 999.5, 55555.0],
-            'iVar': [24567, -5678988, 12, -393, 0],
-            'iVar1': [-20563, 32765, -1],
-            'ivar2': [100001, 1234567890, 76, 582, 94034536, 2167],
-            'iVar3': [2167, 987, 63000, 5648, 678, 2734, 43768],
-            'iVar4': 200,
-            'iVar5': 127,
-            'iVar6': 255,
-            'bVar': [True, False, True, False],
-            'iVar7': 45367,
-            'iVar8': 256000000
-        })
+        values = OrderedDict([
+            ('rVar', 780245.5678),
+            ('sVar', ['TwinCat works', 'with Python using pyads']),
+            ('rVar1', [65.5, 89.75, 999.5, 55555.0]),
+            ('iVar', [24567, -5678988, 12, -393, 0]),
+            ('iVar1', [-20563, 32765, -1]),
+            ('ivar2', [100001, 1234567890, 76, 582, 94034536, 2167]),
+            ('iVar3', [2167, 987, 63000, 5648, 678, 2734, 43768]),
+            ('iVar4', 200),
+            ('iVar5', 127),
+            ('iVar6', 255),
+            ('bVar', [True, False, True, False]),
+            ('iVar7', 45367),
+            ('iVar8', 256000000)
+        ])
         bytes_list = [125, 174, 182, 34, 171, 207, 39, 65, 84, 119, 105, 110, 67,
                       97, 116, 32, 119, 111, 114, 107, 115, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105,
@@ -262,12 +262,12 @@ class AdsTest(unittest.TestCase):
             ('sVar', pyads.PLCTYPE_STRING, 1),
             ('iVar2', pyads.PLCTYPE_DINT, 1),
         )
-        values = OrderedDict({
-            'iVar': 32767,
-            'bVar': True,
-            'sVar': 'Testing the default string size of 80',
-            'iVar2': -25600000
-        })
+        values = OrderedDict([
+            ('iVar', 32767),
+            ('bVar', True),
+            ('sVar', 'Testing the default string size of 80'),
+            ('iVar2', -25600000)
+        ])
         bytes_list = [255, 127, 1, 84, 101, 115, 116, 105, 110, 103, 32, 116, 104,
                       101, 32, 100, 101, 102, 97, 117, 108, 116, 32, 115, 116, 114,
                       105, 110, 103, 32, 115, 105, 122, 101, 32, 111, 102, 32, 56,
@@ -280,24 +280,24 @@ class AdsTest(unittest.TestCase):
 
         # test another correct definition with array of structure
         values_list = [
-            OrderedDict({
-                'iVar': 32767,
-                'bVar': True,
-                'sVar': 'Testing the default string size of 80',
-                'iVar2': -25600000
-            }),
-            OrderedDict({
-                'iVar': -32768,
-                'bVar': True,
-                'sVar': 'Another Test using the default string size of 80',
-                'iVar2': -25600000
-            }),
-            OrderedDict({
-                'iVar': 0,
-                'bVar': False,
-                'sVar': 'Last Test String of Array',
-                'iVar2': 1234567890
-            }),
+            OrderedDict([
+                ('iVar', 32767),
+                ('bVar', True),
+                ('sVar', 'Testing the default string size of 80'),
+                ('iVar2', -25600000)
+            ]),
+            OrderedDict([
+                ('iVar', -32768),
+                ('bVar', True),
+                ('sVar', 'Another Test using the default string size of 80'),
+                ('iVar2', -25600000)
+            ]),
+            OrderedDict([
+                ('iVar', 0),
+                ('bVar', False),
+                ('sVar', 'Last Test String of Array'),
+                ('iVar2', 1234567890)
+            ]),
         ]
         bytes_list = [255, 127, 1, 84, 101, 115, 116, 105, 110, 103, 32, 116, 104,
                       101, 32, 100, 101, 102, 97, 117, 108, 116, 32, 115, 116, 114,
