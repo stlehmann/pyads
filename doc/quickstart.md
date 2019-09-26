@@ -126,13 +126,10 @@ For reading strings the maximum buffer length is 1024.
 'abc'
 ```
 
-### Read and write arrays or structures by name
+### Read and write arrays by name
 
-You can also read/write arrays and structures. For this you simply need to multiply the datatype by
-the number of elements in the array or structure you want to read/write. Only structures made up of
-the same datatype can be used.
-
-**Arrays**
+You can also read/write arrays. For this you simply need to multiply the datatype by
+the number of elements in the array or structure you want to read/write. 
 
 ```python
 >>> plc.write_by_name('global.sample_array', [1, 2, 3], pyads.PLCTYPE_INT * 3)
@@ -146,7 +143,9 @@ the same datatype can be used.
 5
 ```
 
-**Structures**
+### Read and write structures by name
+
+#### Structures of the same datatype
 
 TwinCAT declaration:
 ```
@@ -173,6 +172,43 @@ Python code:
 >>> plc.write_by_name('global.sample_structure.rVar2', 1234.5, pyads.PLCTYPE_LREAL)
 >>> plc.read_by_name('global.sample_structure.rVar2', pyads.PLCTYPE_LREAL)
 1234.5
+```
+
+#### Structures with multiple datatypes (_read only_)
+
+TwinCAT declaration:
+```
+{attribute 'pack mode' := 1}
+TYPE sample_structure :
+STRUCT
+	rVar : LREAL;
+	rVar2 : REAL;
+	iVar : INT;
+	iVar2 : ARRAY [1..3] OF DINT;
+    sVar : STRING;
+END_STRUCT
+END_TYPE
+```
+
+Python code:
+
+First you must declare a tuple which defines the PLC structure. This should match the order
+as declared in the PLC.
+
+```python
+>>> structure_def = (
+...    ('rVar', pyads.PLCTYPE_LREAL, 1),
+...    ('rVar2', pyads.PLCTYPE_REAL, 1),
+...    ('iVar', pyads.PLCTYPE_INT, 1),
+...    ('iVar2', pyads.PLCTYPE_DINT, 3),
+...    ('sVar', pyads.PLCTYPE_STRING, 1))
+```
+
+Then you can read the structure:
+
+```python
+>>> plc.read_structure_by_name('global.sample_structure', structure_def)
+OrderedDict([('rVar': 11.1), ('rVar2': 22.2), ('iVar': 3), ('iVar2': [4, 44, 444]), ('sVar': 'abc')])
 ```
 
 ### Read and write values by handle

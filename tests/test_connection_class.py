@@ -485,6 +485,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assertIsNone(plc.read_by_name("hello", pyads.PLCTYPE_INT))
         self.assertIsNone(plc.get_handle("hello"))
         self.assertIsNone(
+            plc.read_structure_by_name("hello", (('', pyads.PLCTYPE_BOOL, 1),
+                                                 ('', pyads.PLCTYPE_BOOL, 1))
+                                       )
+        )
+        self.assertIsNone(
             plc.add_device_notification(
                 "test", pyads.NotificationAttrib(4), lambda x: x
             )
