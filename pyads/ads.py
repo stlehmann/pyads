@@ -4,8 +4,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Adrian Garcia
-:last modified time: 2019-06-12 11:18:00
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict

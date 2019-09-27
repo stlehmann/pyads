@@ -4,8 +4,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:58
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-19 09:42:16
 
 """
 import pyads
@@ -320,10 +318,34 @@ class AdsTest(unittest.TestCase):
         self.assertEqual(values_list,
                          pyads.dict_from_bytes(bytes_list, structure_def, array_size=3))
 
+        # test for not default string and array of LREALs
+        structure_def = (
+            ('sVar', pyads.PLCTYPE_STRING, 1, 20),
+            ('rVar', pyads.PLCTYPE_LREAL, 4),
+        )
+        values = OrderedDict([
+            ('sVar', 'pyads'),
+            ('rVar', [1.11, 2.22, 3.33, 4.44])
+        ])
+        bytes_list = [112, 121, 97, 100, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 195, 245, 40, 92, 143, 194, 241, 63, 195, 245,
+                      40, 92, 143, 194, 1, 64, 164, 112, 61, 10, 215, 163, 10, 64,
+                      195, 245, 40, 92, 143, 194, 17, 64]
+        self.assertEqual(values,
+                         pyads.dict_from_bytes(bytes_list, structure_def))
+
         # tests for incorrect definitions
         structure_def = (
             ('sVar', pyads.PLCTYPE_STRING, 4),
             ('rVar', 1, 1),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+        )
+        with self.assertRaises(RuntimeError):
+            pyads.dict_from_bytes([], structure_def)
+
+        structure_def = (
+            ('sVar', pyads.PLCTYPE_STRING, 4),
+            ('rVar', 1, 2),
             ('iVar', pyads.PLCTYPE_DINT, 1),
         )
         with self.assertRaises(RuntimeError):
@@ -345,8 +367,6 @@ class AdsTest(unittest.TestCase):
         )
         with self.assertRaises(TypeError):
             pyads.dict_from_bytes([], structure_def)
-
-        # TODO tests for byte size not equal to structure def struct.error
 
 
 if __name__ == "__main__":

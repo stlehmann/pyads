@@ -5,8 +5,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-07-30 17:18:43
 
 """
 from .structs import AmsAddr, NotificationAttrib
