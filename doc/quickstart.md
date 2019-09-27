@@ -331,7 +331,7 @@ def callbackString(adr, notification, user):
         var = str(bytearray(dest)).split('\x00')[0]
 ```
 
-#### Device Notification callback
+#### Device Notification callback decorator
 
 To make the handling of notifications more pythonic a notification decorator has
 been introduced in version 2.2.4. This decorator takes care of converting the
@@ -356,6 +356,31 @@ ctype values transfered via ADS to python datatypes.
 
 2017-10-01 10:41:23.640000: received new notitifiction for variable "GVL.intvar", value: abc
 
+```
+
+Structures can be read in a this way by requesting bytes directly from the PLC.
+Usage is similar to reading structures by name where you must first declare a tuple 
+defining the PLC structure.
+
+```python
+>>> structure_def = (
+...     ('rVar', pyads.PLCTYPE_LREAL, 1),
+...     ('rVar2', pyads.PLCTYPE_REAL, 1),
+...     ('iVar', pyads.PLCTYPE_INT, 1),
+...     ('iVar2', pyads.PLCTYPE_DINT, 3),
+...     ('sVar', pyads.PLCTYPE_STRING, 1))
+>>>
+>>> size_of_struct = pyads.size_of_structure(structure_def)
+>>>
+>>> @plc.notification(size_of_struct)
+>>> def callback(handle, name, timestamp, value):
+...     values = pyads.dict_from_bytes(value, structure_def)
+...     print(values)
+>>>
+>>> attr = pyads.NotificationAttrib(ctypes.sizeof(size_of_struct))
+>>> plc.add_device_notification('MAIN.secondStruct', attr, callback)
+
+OrderedDict([('rVar', 11.1), ('rVar2', 22.2), ('iVar', 3), ('iVar2', [4, 44, 444]), ('sVar', 'abc')])
 ```
 
 The notification callback works for all basic plc datatypes but not for
