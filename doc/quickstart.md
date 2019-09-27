@@ -378,7 +378,7 @@ defining the PLC structure.
 ...     print(values)
 >>>
 >>> attr = pyads.NotificationAttrib(ctypes.sizeof(size_of_struct))
->>> plc.add_device_notification('MAIN.secondStruct', attr, callback)
+>>> plc.add_device_notification('global.sample_structure', attr, callback)
 
 OrderedDict([('rVar', 11.1), ('rVar2', 22.2), ('iVar', 3), ('iVar2', [4, 44, 444]), ('sVar', 'abc')])
 ```
