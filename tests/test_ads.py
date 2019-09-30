@@ -115,100 +115,101 @@ class AdsTest(unittest.TestCase):
         """Test size_of_structure function"""
         # known structure size with defined string
         structure_def = (
-            ('rVar', pyads.PLCTYPE_LREAL, 1),
-            ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-            ('rVar1', pyads.PLCTYPE_REAL, 4),
-            ('iVar', pyads.PLCTYPE_DINT, 5),
-            ('iVar1', pyads.PLCTYPE_INT, 3),
-            ('ivar2', pyads.PLCTYPE_UDINT, 6),
-            ('iVar3', pyads.PLCTYPE_UINT, 7),
-            ('iVar4', pyads.PLCTYPE_BYTE, 1),
-            ('iVar5', pyads.PLCTYPE_SINT, 1),
-            ('iVar6', pyads.PLCTYPE_USINT, 1),
-            ('bVar', pyads.PLCTYPE_BOOL, 4),
-            ('iVar7', pyads.PLCTYPE_WORD, 1),
-            ('iVar8', pyads.PLCTYPE_DWORD, 1),
+            ("rVar", pyads.PLCTYPE_LREAL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 2, 35),
+            ("rVar1", pyads.PLCTYPE_REAL, 4),
+            ("iVar", pyads.PLCTYPE_DINT, 5),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("ivar2", pyads.PLCTYPE_UDINT, 6),
+            ("iVar3", pyads.PLCTYPE_UINT, 7),
+            ("iVar4", pyads.PLCTYPE_BYTE, 1),
+            ("iVar5", pyads.PLCTYPE_SINT, 1),
+            ("iVar6", pyads.PLCTYPE_USINT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 4),
+            ("iVar7", pyads.PLCTYPE_WORD, 1),
+            ("iVar8", pyads.PLCTYPE_DWORD, 1),
         )
         self.assertEqual(pyads.size_of_structure(structure_def), c_ubyte * 173)
 
         # test for PLC_DEFAULT_STRING_SIZE
-        structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
-        )
+        structure_def = (("sVar", pyads.PLCTYPE_STRING, 4),)
         self.assertEqual(
             pyads.size_of_structure(structure_def),
-            c_ubyte * ((pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4))
+            c_ubyte * ((pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4),
+        )
 
         # tests for incorrect definitions
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
-            ('rVar', 1, 1),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
+            ("rVar", 1, 1),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
         )
         with self.assertRaises(RuntimeError):
             pyads.size_of_structure(structure_def)
 
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
             (pyads.PLCTYPE_REAL, 1),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
         )
         with self.assertRaises(ValueError):
             pyads.size_of_structure(structure_def)
 
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
-            ('rVar', pyads.PLCTYPE_REAL, ''),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
-            ('iVar1', pyads.PLCTYPE_INT, 3),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
+            ("rVar", pyads.PLCTYPE_REAL, ""),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
         )
         with self.assertRaises(TypeError):
             pyads.size_of_structure(structure_def)
 
         # test another correct definition with array of structure
         structure_def = (
-            ('bVar', pyads.PLCTYPE_BOOL, 1),
-            ('rVar', pyads.PLCTYPE_LREAL, 3),
-            ('sVar', pyads.PLCTYPE_STRING, 2),
-            ('iVar', pyads.PLCTYPE_DINT, 10),
-            ('iVar1', pyads.PLCTYPE_INT, 3),
-            ('bVar1', pyads.PLCTYPE_BOOL, 4),
+            ("bVar", pyads.PLCTYPE_BOOL, 1),
+            ("rVar", pyads.PLCTYPE_LREAL, 3),
+            ("sVar", pyads.PLCTYPE_STRING, 2),
+            ("iVar", pyads.PLCTYPE_DINT, 10),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("bVar1", pyads.PLCTYPE_BOOL, 4),
         )
-        self.assertEqual(pyads.size_of_structure(structure_def, array_size=5), c_ubyte * 1185)
+        self.assertEqual(
+            pyads.size_of_structure(structure_def * 5), c_ubyte * 1185
+        )
 
     def test_dict_from_bytes(self):
         # type: () -> None
         """Test dict_from_bytes function"""
         # tests for known values
         structure_def = (
-            ('rVar', pyads.PLCTYPE_LREAL, 1),
-            ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-            ('rVar1', pyads.PLCTYPE_REAL, 4),
-            ('iVar', pyads.PLCTYPE_DINT, 5),
-            ('iVar1', pyads.PLCTYPE_INT, 3),
-            ('ivar2', pyads.PLCTYPE_UDINT, 6),
-            ('iVar3', pyads.PLCTYPE_UINT, 7),
-            ('iVar4', pyads.PLCTYPE_BYTE, 1),
-            ('iVar5', pyads.PLCTYPE_SINT, 1),
-            ('iVar6', pyads.PLCTYPE_USINT, 1),
-            ('bVar', pyads.PLCTYPE_BOOL, 4),
-            ('iVar7', pyads.PLCTYPE_WORD, 1),
-            ('iVar8', pyads.PLCTYPE_DWORD, 1),
+            ("rVar", pyads.PLCTYPE_LREAL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 2, 35),
+            ("rVar1", pyads.PLCTYPE_REAL, 4),
+            ("iVar", pyads.PLCTYPE_DINT, 5),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("ivar2", pyads.PLCTYPE_UDINT, 6),
+            ("iVar3", pyads.PLCTYPE_UINT, 7),
+            ("iVar4", pyads.PLCTYPE_BYTE, 1),
+            ("iVar5", pyads.PLCTYPE_SINT, 1),
+            ("iVar6", pyads.PLCTYPE_USINT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 4),
+            ("iVar7", pyads.PLCTYPE_WORD, 1),
+            ("iVar8", pyads.PLCTYPE_DWORD, 1),
         )
         values = OrderedDict([
-            ('rVar', 1.11),
-            ('sVar', ['Hello', 'World']),
-            ('rVar1', [2.25, 2.25, 2.5, 2.75]),
-            ('iVar', [3, 4, 5, 6, 7]),
-            ('iVar1', [8, 9, 10]),
-            ('ivar2', [11, 12, 13, 14, 15, 16]),
-            ('iVar3', [17, 18, 19, 20, 21, 22, 23]),
-            ('iVar4', 24),
-            ('iVar5', 25),
-            ('iVar6', 26),
-            ('bVar', [True, False, True, False]),
-            ('iVar7', 27),
-            ('iVar8', 28)
+            ("rVar", 1.11),
+            ("sVar", ["Hello", "World"]),
+            ("rVar1", [2.25, 2.25, 2.5, 2.75]),
+            ("iVar", [3, 4, 5, 6, 7]),
+            ("iVar1", [8, 9, 10]),
+            ("ivar2", [11, 12, 13, 14, 15, 16]),
+            ("iVar3", [17, 18, 19, 20, 21, 22, 23]),
+            ("iVar4", 24),
+            ("iVar5", 25),
+            ("iVar6", 26),
+            ("bVar", [True, False, True, False]),
+            ("iVar7", 27),
+            ("iVar8", 28)
         ])
         bytes_list = [195, 245, 40, 92, 143, 194, 241, 63, 72, 101, 108, 108, 111,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -224,19 +225,19 @@ class AdsTest(unittest.TestCase):
                          pyads.dict_from_bytes(bytes_list, structure_def))
 
         values = OrderedDict([
-            ('rVar', 780245.5678),
-            ('sVar', ['TwinCat works', 'with Python using pyads']),
-            ('rVar1', [65.5, 89.75, 999.5, 55555.0]),
-            ('iVar', [24567, -5678988, 12, -393, 0]),
-            ('iVar1', [-20563, 32765, -1]),
-            ('ivar2', [100001, 1234567890, 76, 582, 94034536, 2167]),
-            ('iVar3', [2167, 987, 63000, 5648, 678, 2734, 43768]),
-            ('iVar4', 200),
-            ('iVar5', 127),
-            ('iVar6', 255),
-            ('bVar', [True, False, True, False]),
-            ('iVar7', 45367),
-            ('iVar8', 256000000)
+            ("rVar", 780245.5678),
+            ("sVar", ["TwinCat works", "with Python using pyads"]),
+            ("rVar1", [65.5, 89.75, 999.5, 55555.0]),
+            ("iVar", [24567, -5678988, 12, -393, 0]),
+            ("iVar1", [-20563, 32765, -1]),
+            ("ivar2", [100001, 1234567890, 76, 582, 94034536, 2167]),
+            ("iVar3", [2167, 987, 63000, 5648, 678, 2734, 43768]),
+            ("iVar4", 200),
+            ("iVar5", 127),
+            ("iVar6", 255),
+            ("bVar", [True, False, True, False]),
+            ("iVar7", 45367),
+            ("iVar8", 256000000)
         ])
         bytes_list = [125, 174, 182, 34, 171, 207, 39, 65, 84, 119, 105, 110, 67,
                       97, 116, 32, 119, 111, 114, 107, 115, 0, 0, 0, 0, 0, 0, 0,
@@ -255,16 +256,16 @@ class AdsTest(unittest.TestCase):
 
         # test for PLC_DEFAULT_STRING_SIZE
         structure_def = (
-            ('iVar', pyads.PLCTYPE_INT, 1),
-            ('bVar', pyads.PLCTYPE_BOOL, 1),
-            ('sVar', pyads.PLCTYPE_STRING, 1),
-            ('iVar2', pyads.PLCTYPE_DINT, 1),
+            ("iVar", pyads.PLCTYPE_INT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 1),
+            ("iVar2", pyads.PLCTYPE_DINT, 1),
         )
         values = OrderedDict([
-            ('iVar', 32767),
-            ('bVar', True),
-            ('sVar', 'Testing the default string size of 80'),
-            ('iVar2', -25600000)
+            ("iVar", 32767),
+            ("bVar", True),
+            ("sVar", "Testing the default string size of 80"),
+            ("iVar2", -25600000)
         ])
         bytes_list = [255, 127, 1, 84, 101, 115, 116, 105, 110, 103, 32, 116, 104,
                       101, 32, 100, 101, 102, 97, 117, 108, 116, 32, 115, 116, 114,
@@ -279,22 +280,22 @@ class AdsTest(unittest.TestCase):
         # test another correct definition with array of structure
         values_list = [
             OrderedDict([
-                ('iVar', 32767),
-                ('bVar', True),
-                ('sVar', 'Testing the default string size of 80'),
-                ('iVar2', -25600000)
+                ("iVar", 32767),
+                ("bVar", True),
+                ("sVar", "Testing the default string size of 80"),
+                ("iVar2", -25600000)
             ]),
             OrderedDict([
-                ('iVar', -32768),
-                ('bVar', True),
-                ('sVar', 'Another Test using the default string size of 80'),
-                ('iVar2', -25600000)
+                ("iVar", -32768),
+                ("bVar", True),
+                ("sVar", "Another Test using the default string size of 80"),
+                ("iVar2", -25600000)
             ]),
             OrderedDict([
-                ('iVar', 0),
-                ('bVar', False),
-                ('sVar', 'Last Test String of Array'),
-                ('iVar2', 1234567890)
+                ("iVar", 0),
+                ("bVar", False),
+                ("sVar", "Last Test String of Array"),
+                ("iVar2", 1234567890)
             ]),
         ]
         bytes_list = [255, 127, 1, 84, 101, 115, 116, 105, 110, 103, 32, 116, 104,
@@ -320,12 +321,12 @@ class AdsTest(unittest.TestCase):
 
         # test for not default string and array of LREALs
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 1, 20),
-            ('rVar', pyads.PLCTYPE_LREAL, 4),
+            ("sVar", pyads.PLCTYPE_STRING, 1, 20),
+            ("rVar", pyads.PLCTYPE_LREAL, 4),
         )
         values = OrderedDict([
-            ('sVar', 'pyads'),
-            ('rVar', [1.11, 2.22, 3.33, 4.44])
+            ("sVar", "pyads"),
+            ("rVar", [1.11, 2.22, 3.33, 4.44])
         ])
         bytes_list = [112, 121, 97, 100, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 195, 245, 40, 92, 143, 194, 241, 63, 195, 245,
@@ -336,34 +337,34 @@ class AdsTest(unittest.TestCase):
 
         # tests for incorrect definitions
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
-            ('rVar', 1, 1),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
+            ("rVar", 1, 1),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
         )
         with self.assertRaises(RuntimeError):
             pyads.dict_from_bytes([], structure_def)
 
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
-            ('rVar', 1, 2),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
+            ("rVar", 1, 2),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
         )
         with self.assertRaises(RuntimeError):
             pyads.dict_from_bytes([], structure_def)
 
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
             (pyads.PLCTYPE_REAL, 1),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
         )
         with self.assertRaises(ValueError):
             pyads.dict_from_bytes([], structure_def)
 
         structure_def = (
-            ('sVar', pyads.PLCTYPE_STRING, 4),
-            ('rVar', pyads.PLCTYPE_REAL, ''),
-            ('iVar', pyads.PLCTYPE_DINT, 1),
-            ('iVar1', pyads.PLCTYPE_INT, 3),
+            ("sVar", pyads.PLCTYPE_STRING, 4),
+            ("rVar", pyads.PLCTYPE_REAL, ""),
+            ("iVar", pyads.PLCTYPE_DINT, 1),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
         )
         with self.assertRaises(TypeError):
             pyads.dict_from_bytes([], structure_def)

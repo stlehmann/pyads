@@ -329,9 +329,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         handle_name = "TestHandle"
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            read_value = self.plc.read_by_name('',
-                                               constants.PLCTYPE_BYTE,
-                                               handle=handle)
+            read_value = self.plc.read_by_name(
+                "", constants.PLCTYPE_BYTE, handle=handle
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -369,8 +369,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # test with no structure size passed in
         with self.plc:
-            read_value = self.plc.read_structure_by_name(handle_name,
-                                                         structure_def)
+            read_value = self.plc.read_structure_by_name(handle_name, structure_def)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -395,24 +394,24 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Test server just returns repeated bytes of 0x0F terminated with 0x00
         # But because the read value is only 1-byte long, we just get 0x00
         expected_result = OrderedDict([
-            ('xVar', 0)
+            ("xVar", 0)
         ])
         self.assertEqual(read_value, expected_result)
 
         # Test with structure size passed in
         structure_size = pyads.size_of_structure(structure_def)
         with self.plc:
-            read_value =  \
-                self.plc.read_structure_by_name(handle_name, structure_def,
-                                                structure_size=structure_size)
+            read_value = self.plc.read_structure_by_name(
+                handle_name, structure_def, structure_size=structure_size
+            )
         self.assertEqual(read_value, expected_result)
 
         # Test with handle passed in
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            read_value =  \
-                self.plc.read_structure_by_name('', structure_def,
-                                                handle=handle)
+            read_value = self.plc.read_structure_by_name(
+                "", structure_def, handle=handle
+            )
         self.assertEqual(read_value, expected_result)
         with self.plc:
             self.plc.release_handle(handle)
@@ -422,9 +421,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         value = "Test Value"
 
         with self.plc:
-            self.plc.write_by_name(
-                handle_name, value, constants.PLCTYPE_STRING
-            )
+            self.plc.write_by_name(handle_name, value, constants.PLCTYPE_STRING)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -452,9 +449,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            self.plc.write_by_name(
-                '', value, constants.PLCTYPE_STRING, handle=handle
-            )
+            self.plc.write_by_name("", value, constants.PLCTYPE_STRING, handle=handle)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -510,15 +505,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         with self.plc:
             self.assertTrue(self.plc.is_open)
-            self.plc.write_by_name(
-                handle_name, value, constants.PLCTYPE_STRING
-            )
+            self.plc.write_by_name(handle_name, value, constants.PLCTYPE_STRING)
         self.assertFalse(self.plc.is_open)
         with self.plc:
             self.assertTrue(self.plc.is_open)
-            self.plc.read_by_name(
-                handle_name, constants.PLCTYPE_STRING
-            )
+            self.plc.read_by_name(handle_name, constants.PLCTYPE_STRING)
         self.assertFalse(self.plc.is_open)
 
     def test_get_local_address(self):
@@ -538,16 +529,14 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assertIsNone(plc.get_local_address())
         self.assertIsNone(plc.read_state())
         self.assertIsNone(plc.read_device_info())
-        self.assertIsNone(
-            plc.read_write(1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT)
-        )
+        self.assertIsNone(plc.read_write(1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT))
         self.assertIsNone(plc.read(1, 2, pyads.PLCTYPE_INT))
         self.assertIsNone(plc.read_by_name("hello", pyads.PLCTYPE_INT))
         self.assertIsNone(plc.get_handle("hello"))
         self.assertIsNone(
-            plc.read_structure_by_name("hello", (('', pyads.PLCTYPE_BOOL, 1),
-                                                 ('', pyads.PLCTYPE_BOOL, 1))
-                                       )
+            plc.read_structure_by_name(
+                "hello", (("", pyads.PLCTYPE_BOOL, 1), ("", pyads.PLCTYPE_BOOL, 1))
+            )
         )
         self.assertIsNone(
             plc.add_device_notification(
