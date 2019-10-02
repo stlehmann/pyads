@@ -549,15 +549,15 @@ def dict_from_bytes(byte_list, structure_def, array_size=1):
                     )
                     index += str_len + 1
                 elif plc_datatype not in DATATYPE_MAP:
-                    raise RuntimeError(
-                        "Datatype not found. Check structure definition"
-                    )
+                    raise RuntimeError("Datatype not found. Check structure definition")
                 else:
                     n_bytes = sizeof(plc_datatype)
-                    var_array.append(struct.unpack(
-                        DATATYPE_MAP[plc_datatype],
-                        bytearray(byte_list[index: (index + n_bytes)]),
-                    )[0])
+                    var_array.append(
+                        struct.unpack(
+                            DATATYPE_MAP[plc_datatype],
+                            bytearray(byte_list[index : (index + n_bytes)]),
+                        )[0]
+                    )
                     index += n_bytes
             if size == 1:  # if not an array, don't want a list in the dict return
                 values[var] = var_array[0]
