@@ -57,10 +57,6 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
-    PLC_BYTE_TYPES,
-    PLC_2_BYTE_TYPES,
-    PLC_4_BYTE_TYPES,
-    PLC_8_BYTE_TYPES,
     PLC_DEFAULT_STRING_SIZE,
     DATATYPE_MAP,
 )
@@ -490,16 +486,10 @@ def size_of_structure(structure_def):
                 num_of_bytes += (str_len + 1) * size
             else:
                 num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * size
-        elif plc_datatype in PLC_8_BYTE_TYPES:
-            num_of_bytes += 8 * size
-        elif plc_datatype in PLC_4_BYTE_TYPES:
-            num_of_bytes += 4 * size
-        elif plc_datatype in PLC_2_BYTE_TYPES:
-            num_of_bytes += 2 * size
-        elif plc_datatype in PLC_BYTE_TYPES:
-            num_of_bytes += 1 * size
-        else:
+        elif plc_datatype not in DATATYPE_MAP:
             raise RuntimeError("Datatype not found")
+        else:
+            num_of_bytes += sizeof(plc_datatype) * size
 
     return c_ubyte * num_of_bytes
 
@@ -547,98 +537,35 @@ def dict_from_bytes(byte_list, structure_def, array_size=1):
             except ValueError:
                 var, plc_datatype, size, str_len = item
 
-            if size == 1:  # add straight to dictionary if not array
+            var_array = []
+            for i in range(size):
                 if plc_datatype == PLCTYPE_STRING:
-                    if str_len is not None:
-                        pass
-                    else:
+                    if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
-                    values[var] = (
+                    var_array.append(
                         bytearray(byte_list[index : (index + (str_len + 1))])
                         .partition(b"\0")[0]
                         .decode("utf-8")
                     )
                     index += str_len + 1
                 elif plc_datatype not in DATATYPE_MAP:
-                    raise RuntimeError("Datatype not found. Check structure definition")
-                elif plc_datatype in PLC_8_BYTE_TYPES:
-                    values[var] = struct.unpack(
+                    raise RuntimeError(
+                        "Datatype not found. Check structure definition"
+                    )
+                else:
+                    n_bytes = sizeof(plc_datatype)
+                    var_array.append(struct.unpack(
                         DATATYPE_MAP[plc_datatype],
-                        bytearray(byte_list[index : (index + 8)]),
-                    )[0]
-                    index += 8
-                elif plc_datatype in PLC_4_BYTE_TYPES:
-                    values[var] = struct.unpack(
-                        DATATYPE_MAP[plc_datatype],
-                        bytearray(byte_list[index : (index + 4)]),
-                    )[0]
-                    index += 4
-                elif plc_datatype in PLC_2_BYTE_TYPES:
-                    values[var] = struct.unpack(
-                        DATATYPE_MAP[plc_datatype],
-                        bytearray(byte_list[index : (index + 2)]),
-                    )[0]
-                    index += 2
-                elif plc_datatype in PLC_BYTE_TYPES:
-                    values[var] = struct.unpack(
-                        DATATYPE_MAP[plc_datatype],
-                        bytearray(byte_list[index : (index + 1)]),
-                    )[0]
-                    index += 1
-            else:  # otherwise build array before values then add array to dictionary
-                var_array = []
-                for i in range(size):
-                    if plc_datatype == PLCTYPE_STRING:
-                        if str_len is not None:
-                            pass
-                        else:
-                            str_len = PLC_DEFAULT_STRING_SIZE
-                        var_array.append(
-                            bytearray(byte_list[index : (index + (str_len + 1))])
-                            .partition(b"\0")[0]
-                            .decode("utf-8")
-                        )
-                        index += str_len + 1
-                    elif plc_datatype not in DATATYPE_MAP:
-                        raise RuntimeError(
-                            "Datatype not found. Check structure definition"
-                        )
-                    elif plc_datatype in PLC_8_BYTE_TYPES:
-                        var_array.append(
-                            struct.unpack(
-                                DATATYPE_MAP[plc_datatype],
-                                bytearray(byte_list[index : (index + 8)]),
-                            )[0]
-                        )
-                        index += 8
-                    elif plc_datatype in PLC_4_BYTE_TYPES:
-                        var_array.append(
-                            struct.unpack(
-                                DATATYPE_MAP[plc_datatype],
-                                bytearray(byte_list[index : (index + 4)]),
-                            )[0]
-                        )
-                        index += 4
-                    elif plc_datatype in PLC_2_BYTE_TYPES:
-                        var_array.append(
-                            struct.unpack(
-                                DATATYPE_MAP[plc_datatype],
-                                bytearray(byte_list[index : (index + 2)]),
-                            )[0]
-                        )
-                        index += 2
-                    elif plc_datatype in PLC_BYTE_TYPES:
-                        var_array.append(
-                            struct.unpack(
-                                DATATYPE_MAP[plc_datatype],
-                                bytearray(byte_list[index : (index + 1)]),
-                            )[0]
-                        )
-                        index += 1
+                        bytearray(byte_list[index: (index + n_bytes)]),
+                    )[0])
+                    index += n_bytes
+            if size == 1:  # if not an array, don't want a list in the dict return
+                values[var] = var_array[0]
+            else:
                 values[var] = var_array
         values_list.append(values)
 
-    if array_size is not 1:
+    if array_size != 1:
         return values_list
     else:
         return values_list[0]
