@@ -340,12 +340,15 @@ def write_by_name(adr, data_name, value, plc_datatype):
 
 
 def add_route(adr, ip_address):
-    # type: (AmsAddr, str) -> None
+    # type: (Union[str, AmsAddr], str) -> None
     """Establish a new route in the AMS Router (linux Only).
 
-    :param pyads.structs.AmsAddr adr: AMS Address of routing endpoint
+    :param adr: AMS Address of routing endpoint as str or AmsAddr object
     :param str ip_address: ip address of the routing endpoint
     """
+    if isinstance(adr, str):
+        adr = AmsAddr(adr)
+
     return adsAddRoute(adr.netIdStruct(), ip_address)
 
 

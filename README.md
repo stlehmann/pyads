@@ -100,9 +100,7 @@ the route to the testserver needs to be added from another python console.
 
 ```python
 >>> import pyads
->>> pyads.open_port()
->>> adr = pyads.AmsAddr('127.0.0.1.1.1', pyads.PORT_SPS1)
->>> pyads.add_route(adr, '127.0.0.1')
+>>> pyads.add_route("127.0.0.1.1.1", '127.0.0.1')
 ```
 
 ## Usage
