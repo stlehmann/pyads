@@ -171,6 +171,8 @@ Python code:
 
 #### Structures with multiple datatypes (_read only_)
 
+**The structure in the PLC must be defined with `{attribute ‘pack_mode’ := ‘1’}.**
+
 TwinCAT declaration:
 ```
 {attribute 'pack mode' := 1}
