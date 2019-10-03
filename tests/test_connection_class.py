@@ -4,8 +4,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:58
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-19 10:46:49
 
 """
 import time
@@ -14,6 +12,7 @@ import pyads
 import struct
 from pyads.testserver import AdsTestServer, AmsPacket
 from pyads import constants
+from collections import OrderedDict
 
 
 # These are pretty arbitrary
@@ -330,9 +329,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         handle_name = "TestHandle"
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            read_value = self.plc.read_by_name('',
-                                               constants.PLCTYPE_BYTE,
-                                               handle=handle)
+            read_value = self.plc.read_by_name(
+                "", constants.PLCTYPE_BYTE, handle=handle
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -357,14 +356,72 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.plc.release_handle(handle)
 
+    def test_read_structure_by_name(self):
+        # type: () -> None
+        """Test read by structure method"""
+        # TODO may need testserver.py changes to increase test usefulness
+
+        handle_name = "TestHandle"
+
+        structure_def = (
+            ('xVar', pyads.PLCTYPE_BYTE, 1),
+        )
+
+        # test with no structure size passed in
+        with self.plc:
+            read_value = self.plc.read_structure_by_name(handle_name, structure_def)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 3 requests
+        self.assertEqual(len(requests), 3)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        # Assert that the server received the handle by name
+        received_value = requests[0].ams_header.data[16:]
+        sent_value = (handle_name + '\x00').encode('utf-8')
+        self.assertEqual(sent_value, received_value)
+
+        # Assert that next, the Read command was used to get the value
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READ)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+        # Check read value returned by server:
+        # Test server just returns repeated bytes of 0x0F terminated with 0x00
+        # But because the read value is only 1-byte long, we just get 0x00
+        expected_result = OrderedDict([
+            ("xVar", 0)
+        ])
+        self.assertEqual(read_value, expected_result)
+
+        # Test with structure size passed in
+        structure_size = pyads.size_of_structure(structure_def)
+        with self.plc:
+            read_value = self.plc.read_structure_by_name(
+                handle_name, structure_def, structure_size=structure_size
+            )
+        self.assertEqual(read_value, expected_result)
+
+        # Test with handle passed in
+        with self.plc:
+            handle = self.plc.get_handle(handle_name)
+            read_value = self.plc.read_structure_by_name(
+                "", structure_def, handle=handle
+            )
+        self.assertEqual(read_value, expected_result)
+        with self.plc:
+            self.plc.release_handle(handle)
+
     def test_write_by_name(self):
         handle_name = "TestHandle"
         value = "Test Value"
 
         with self.plc:
-            self.plc.write_by_name(
-                handle_name, value, constants.PLCTYPE_STRING
-            )
+            self.plc.write_by_name(handle_name, value, constants.PLCTYPE_STRING)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -392,9 +449,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            self.plc.write_by_name(
-                '', value, constants.PLCTYPE_STRING, handle=handle
-            )
+            self.plc.write_by_name("", value, constants.PLCTYPE_STRING, handle=handle)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -450,15 +505,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         with self.plc:
             self.assertTrue(self.plc.is_open)
-            self.plc.write_by_name(
-                handle_name, value, constants.PLCTYPE_STRING
-            )
+            self.plc.write_by_name(handle_name, value, constants.PLCTYPE_STRING)
         self.assertFalse(self.plc.is_open)
         with self.plc:
             self.assertTrue(self.plc.is_open)
-            self.plc.read_by_name(
-                handle_name, constants.PLCTYPE_STRING
-            )
+            self.plc.read_by_name(handle_name, constants.PLCTYPE_STRING)
         self.assertFalse(self.plc.is_open)
 
     def test_get_local_address(self):
@@ -478,12 +529,15 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assertIsNone(plc.get_local_address())
         self.assertIsNone(plc.read_state())
         self.assertIsNone(plc.read_device_info())
-        self.assertIsNone(
-            plc.read_write(1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT)
-        )
+        self.assertIsNone(plc.read_write(1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT))
         self.assertIsNone(plc.read(1, 2, pyads.PLCTYPE_INT))
         self.assertIsNone(plc.read_by_name("hello", pyads.PLCTYPE_INT))
         self.assertIsNone(plc.get_handle("hello"))
+        self.assertIsNone(
+            plc.read_structure_by_name(
+                "hello", (("", pyads.PLCTYPE_BOOL, 1), ("", pyads.PLCTYPE_BOOL, 1))
+            )
+        )
         self.assertIsNone(
             plc.add_device_notification(
                 "test", pyads.NotificationAttrib(4), lambda x: x

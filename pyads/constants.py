@@ -5,8 +5,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-12 14:33:30
 
 """
 from typing import Type
@@ -28,6 +26,7 @@ from ctypes import (
 )
 
 STRING_BUFFER = 1024
+PLC_DEFAULT_STRING_SIZE = 80
 
 # plc data types:
 PLCTYPE_BOOL = c_bool
@@ -49,6 +48,22 @@ PLCTYPE_USINT = c_uint8
 PLCTYPE_WORD = c_uint16
 PLCTYPE_LINT = c_int64
 PLCTYPE_ULINT = c_uint64
+
+# Datatype unpacking values
+DATATYPE_MAP = {
+    PLCTYPE_BOOL: "<?",
+    PLCTYPE_BYTE: "<B",
+    PLCTYPE_DINT: "<i",
+    PLCTYPE_DWORD: "<I",
+    PLCTYPE_INT: "<h",
+    PLCTYPE_LREAL: "<d",
+    PLCTYPE_REAL: "<f",
+    PLCTYPE_SINT: "<b",
+    PLCTYPE_UDINT: "<I",
+    PLCTYPE_UINT: "<H",
+    PLCTYPE_USINT: "<B",
+    PLCTYPE_WORD: "<H",
+}  # type: Dict[Type, str]
 
 
 def PLCTYPE_ARR_REAL(n):
