@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.2
+* new function read_structure_by_name to read a structure with multiple 
+datatypes from the plc (issue #82, many thanks to @chrisbeardy)
+* simplify pyads.add_route, now the ams address can be supplied by a string
+instead of an AmsAddr object
+
 ## 3.1.1
 * get/release handle methods for faster read/write by name
 
