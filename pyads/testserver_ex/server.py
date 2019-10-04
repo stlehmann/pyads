@@ -20,23 +20,28 @@ from .handler import AdvancedHandler
 from ..structs import AmsAddr
 
 
-AMS_NET_ID = '127.0.0.1.1.1'
+AMS_NET_ID = "127.0.0.1.1.1"
 ADS_PORT = 48898
 
 
 # init logger
-logger = logging.getLogger('pyads.testserver_ex')
+logger = logging.getLogger("pyads.testserver_ex")
 stdout_handler = logging.StreamHandler()
-stdout_handler.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
+stdout_handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
 stdout_handler.setLevel(logging.DEBUG)
 logger.addHandler(stdout_handler)
 logger.setLevel(logging.INFO)
 
 
 class Testserver(threading.Thread):
-
-    def __init__(self, handler=None, ip_address='', ams_net_id=AMS_NET_ID,
-                 port=ADS_PORT, logging=True):
+    def __init__(
+        self,
+        handler=None,
+        ip_address="",
+        ams_net_id=AMS_NET_ID,
+        port=ADS_PORT,
+        logging=True,
+    ):
 
         self.handler = handler or AdvancedHandler()
         self.ip_address = ip_address
@@ -76,30 +81,35 @@ class Testserver(threading.Thread):
         self._run = True
         self.socket.listen(5)
 
-        logger.info('Server listening on {0}:{1}'.format(
-            self.ip_address or 'localhost', self.port))
+        logger.info(
+            "Server listening on {0}:{1}".format(
+                self.ip_address or "localhost", self.port
+            )
+        )
 
         while self._run:
             ready, _, _ = select.select([self.socket], [], [], 0.1)
 
             if ready:
                 client, address = self.socket.accept()
-                logger.info('New connection from {0}:{1}'.format(*address))
+                logger.info("New connection from {0}:{1}".format(*address))
 
-                client_connection = AdsClientConnection(self.handler, client,
-                                                        address, self)
+                client_connection = AdsClientConnection(
+                    self.handler, client, address, self
+                )
                 client_connection.start()
                 self.clients.append(client_connection)
 
 
 @click.command()
-@click.argument('port', type=int)
-@click.option('--netid', help='Change the netid that the server uses.',
-              default=AMS_NET_ID)
+@click.argument("port", type=int)
+@click.option(
+    "--netid", help="Change the netid that the server uses.", default=AMS_NET_ID
+)
 def main(port, netid):
     testserver = Testserver(ams_net_id=netid, port=port)
     testserver.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -16,8 +16,8 @@ from collections import OrderedDict
 
 
 # These are pretty arbitrary
-TEST_SERVER_AMS_NET_ID = '127.0.0.1.1.1'
-TEST_SERVER_IP_ADDRESS = '127.0.0.1'
+TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
+TEST_SERVER_IP_ADDRESS = "127.0.0.1"
 TEST_SERVER_AMS_PORT = pyads.PORT_SPS1
 
 
@@ -47,16 +47,16 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # type: () -> None
         """Establish connection to the testserver."""
         self.test_server.request_history = []
-        self.plc = pyads.Connection(TEST_SERVER_AMS_NET_ID,
-                                    TEST_SERVER_AMS_PORT,
-                                    TEST_SERVER_IP_ADDRESS)
+        self.plc = pyads.Connection(
+            TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
+        )
 
     def assert_command_id(self, request, target_id):
         # type: (AmsPacket, int) -> None
         """Assert command_id and target_id."""
         # Check the request code received by the server
         command_id = request.ams_header.command_id
-        command_id = struct.unpack('<H', command_id)[0]
+        command_id = struct.unpack("<H", command_id)[0]
         self.assertEqual(command_id, target_id)
 
     def test_initialization(self):
@@ -98,14 +98,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             requests = self.test_server.request_history
 
             self.assertEqual(len(requests), 1)
-            self.assert_command_id(requests[0],
-                                   constants.ADSCOMMAND_READDEVICEINFO)
-
+            self.assert_command_id(requests[0], constants.ADSCOMMAND_READDEVICEINFO)
 
     def test_read_uint(self):
         with self.plc:
-            result = self.plc.read(pyads.INDEXGROUP_DATA, 1,
-                                   pyads.PLCTYPE_UDINT)
+            result = self.plc.read(pyads.INDEXGROUP_DATA, 1, pyads.PLCTYPE_UDINT)
 
             # Retrieve list of received requests from server
             requests = self.test_server.request_history
@@ -117,7 +114,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             self.assert_command_id(requests[0], constants.ADSCOMMAND_READ)
 
             # Test server just returns repeated bytes of 0x0F terminated with 0x00
-            expected_result = struct.unpack('<I', '\x0F\x0F\x0F\x00'.encode('utf-8'))[0]
+            expected_result = struct.unpack("<I", "\x0F\x0F\x0F\x00".encode("utf-8"))[0]
 
             self.assertEqual(result, expected_result)
 
@@ -125,9 +122,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Make request to read data from a random index (the test server will
         # return the same thing regardless)
         with self.plc:
-            result = self.plc.read(index_group=constants.INDEXGROUP_DATA,
-                                   index_offset=1,
-                                   plc_datatype=constants.PLCTYPE_STRING)
+            result = self.plc.read(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1,
+                plc_datatype=constants.PLCTYPE_STRING,
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -141,7 +140,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # The string buffer is 1024 bytes long, this will be filled with \x0F
         # and null terminated with \x00 by our test server. The \x00 will get
         # chopped off during parsing to python string type
-        expected_result = '\x0F' * 1023
+        expected_result = "\x0F" * 1023
         self.assertEqual(result, expected_result)
 
     def test_write_uint(self):
@@ -150,8 +149,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.plc.write(
                 index_group=constants.INDEXGROUP_DATA,
-                index_offset=1, value=value,
-                plc_datatype=constants.PLCTYPE_UDINT
+                index_offset=1,
+                value=value,
+                plc_datatype=constants.PLCTYPE_UDINT,
             )
 
         # Retrieve list of received requests from server
@@ -164,7 +164,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[0], constants.ADSCOMMAND_WRITE)
 
         # Check the value received by the server
-        received_value = struct.unpack('<I', requests[0].ams_header.data[12:])[0]
+        received_value = struct.unpack("<I", requests[0].ams_header.data[12:])[0]
 
         self.assertEqual(value, received_value)
 
@@ -174,8 +174,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.plc.write(
                 index_group=constants.INDEXGROUP_DATA,
-                index_offset=1, value=value,
-                plc_datatype=constants.PLCTYPE_REAL
+                index_offset=1,
+                value=value,
+                plc_datatype=constants.PLCTYPE_REAL,
             )
 
         # Retrieve list of received requests from server
@@ -188,13 +189,13 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[0], constants.ADSCOMMAND_WRITE)
 
         # Check the value received by the server
-        received_value = struct.unpack('<f', requests[0].ams_header.data[12:])[0]
+        received_value = struct.unpack("<f", requests[0].ams_header.data[12:])[0]
 
         # Pythons internal representation of a float has a higher precision
         # than 32 bits, so will be more precise than the value received by the
         # server. To do a comparison we must put the initial 'write' value
         # through the round-trip of converting to 32-bit precision.
-        value_32 = struct.unpack('<f', struct.pack('<f', value))[0]
+        value_32 = struct.unpack("<f", struct.pack("<f", value))[0]
 
         self.assertEqual(value_32, received_value)
 
@@ -204,8 +205,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.plc.write(
                 index_group=constants.INDEXGROUP_DATA,
-                index_offset=1, value=value,
-                plc_datatype=constants.PLCTYPE_STRING
+                index_offset=1,
+                value=value,
+                plc_datatype=constants.PLCTYPE_STRING,
             )
 
         # Retrieve list of received requests from server
@@ -221,7 +223,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         received_value = requests[0].ams_header.data[12:]
 
         # String should have been sent null terminated
-        sent_value = (value + '\x00').encode('utf-8')
+        sent_value = (value + "\x00").encode("utf-8")
 
         self.assertEqual(sent_value, received_value)
 
@@ -250,8 +252,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Device state is unused I think? Always seems to be zero
         with self.plc:
             self.plc.write_control(
-                ads_state=constants.ADSSTATE_RESET, device_state=0, data=0,
-                plc_datatype=constants.PLCTYPE_BYTE
+                ads_state=constants.ADSSTATE_RESET,
+                device_state=0,
+                data=0,
+                plc_datatype=constants.PLCTYPE_BYTE,
             )
 
         # Retrieve list of received requests from server
@@ -269,8 +273,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             read_value = self.plc.read_write(
                 index_group=constants.INDEXGROUP_DATA,
-                index_offset=1, plc_read_datatype=constants.PLCTYPE_UDINT,
-                value=write_value, plc_write_datatype=constants.PLCTYPE_UDINT
+                index_offset=1,
+                plc_read_datatype=constants.PLCTYPE_UDINT,
+                value=write_value,
+                plc_write_datatype=constants.PLCTYPE_UDINT,
             )
 
         # Retrieve list of received requests from server
@@ -283,20 +289,19 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
 
         # Check the value received by the server
-        received_value = struct.unpack('<I', requests[0].ams_header.data[16:])[0]
+        received_value = struct.unpack("<I", requests[0].ams_header.data[16:])[0]
         self.assertEqual(write_value, received_value)
 
         # Check read value returned by server:
         # Test server just returns repeated bytes of 0x0F terminated with 0x00
-        expected_result = struct.unpack('<I', '\x0F\x0F\x0F\x00'.encode('utf-8'))[0]
+        expected_result = struct.unpack("<I", "\x0F\x0F\x0F\x00".encode("utf-8"))[0]
         self.assertEqual(read_value, expected_result)
 
     def test_read_by_name(self):
         handle_name = "TestHandle"
 
         with self.plc:
-            read_value = self.plc.read_by_name(handle_name,
-                                               constants.PLCTYPE_BYTE)
+            read_value = self.plc.read_by_name(handle_name, constants.PLCTYPE_BYTE)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -308,7 +313,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
         # Assert that the server received the handle by name
         received_value = requests[0].ams_header.data[16:]
-        sent_value = (handle_name + '\x00').encode('utf-8')
+        sent_value = (handle_name + "\x00").encode("utf-8")
         self.assertEqual(sent_value, received_value)
 
         # Assert that next, the Read command was used to get the value
@@ -341,7 +346,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Assert that the server received the handle by name
         received_value = requests[0].ams_header.data[16:]
-        sent_value = (handle_name + '\x00').encode('utf-8')
+        sent_value = (handle_name + "\x00").encode("utf-8")
         self.assertEqual(sent_value, received_value)
 
         # Assert that next, the Read command was used to get the value
@@ -363,9 +368,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         handle_name = "TestHandle"
 
-        structure_def = (
-            ('xVar', pyads.PLCTYPE_BYTE, 1),
-        )
+        structure_def = (("xVar", pyads.PLCTYPE_BYTE, 1),)
 
         # test with no structure size passed in
         with self.plc:
@@ -381,7 +384,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
         # Assert that the server received the handle by name
         received_value = requests[0].ams_header.data[16:]
-        sent_value = (handle_name + '\x00').encode('utf-8')
+        sent_value = (handle_name + "\x00").encode("utf-8")
         self.assertEqual(sent_value, received_value)
 
         # Assert that next, the Read command was used to get the value
@@ -393,9 +396,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Check read value returned by server:
         # Test server just returns repeated bytes of 0x0F terminated with 0x00
         # But because the read value is only 1-byte long, we just get 0x00
-        expected_result = OrderedDict([
-            ("xVar", 0)
-        ])
+        expected_result = OrderedDict([("xVar", 0)])
         self.assertEqual(read_value, expected_result)
 
         # Test with structure size passed in
@@ -435,7 +436,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Assert that Write command was used to write the value
         self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
         # Check the value written matches our value
-        received_value = requests[1].ams_header.data[12:].decode('utf-8').rstrip('\x00')
+        received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
         self.assertEqual(value, received_value)
 
         # Assert that Write was used to release the handle
@@ -463,18 +464,17 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Assert that Write command was used to write the value
         self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
         # Check the value written matches our value
-        received_value = requests[1].ams_header.data[12:].decode('utf-8').rstrip('\x00')
+        received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
         self.assertEqual(value, received_value)
 
         with self.plc:
             self.plc.release_handle(handle)
 
     def test_device_notification(self):
-
         def callback(adr, notification, user):
             pass
 
-        handle_name = 'test'
+        handle_name = "test"
         attr = pyads.NotificationAttrib(8)
         requests = self.test_server.request_history
 
@@ -525,7 +525,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             adr = self.plc.get_local_address()
             self.assertIsNotNone(adr)
 
-        plc = pyads.Connection('127.0.0.1.1.1', 851)
+        plc = pyads.Connection("127.0.0.1.1.1", 851)
         self.assertIsNone(plc.get_local_address())
         self.assertIsNone(plc.read_state())
         self.assertIsNone(plc.read_device_info())
@@ -567,7 +567,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
         # Assert that the server received the handle by name
         received_value = requests[0].ams_header.data[16:]
-        sent_value = (handle_name + '\x00').encode('utf-8')
+        sent_value = (handle_name + "\x00").encode("utf-8")
         self.assertEqual(sent_value, received_value)
 
         with self.plc:
@@ -583,7 +583,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         unittest.main()

@@ -16,12 +16,11 @@ from ctypes import c_ubyte
 def platform_is_linux():
     # type: () -> bool
     """Return True if current platform is Linux or Mac OS."""
-    return sys.platform.startswith('linux') or \
-        sys.platform.startswith('darwin')
+    return sys.platform.startswith("linux") or sys.platform.startswith("darwin")
 
 
 def platform_is_windows():
     # type: () -> bool
     """Return True if current platform is Windows."""
     # cli being .NET (IronPython)
-    return sys.platform == 'win32' or sys.platform == 'cli'
+    return sys.platform == "win32" or sys.platform == "cli"

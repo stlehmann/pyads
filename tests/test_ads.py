@@ -173,9 +173,7 @@ class AdsTest(unittest.TestCase):
             ("iVar1", pyads.PLCTYPE_INT, 3),
             ("bVar1", pyads.PLCTYPE_BOOL, 4),
         )
-        self.assertEqual(
-            pyads.size_of_structure(structure_def * 5), c_ubyte * 1185
-        )
+        self.assertEqual(pyads.size_of_structure(structure_def * 5), c_ubyte * 1185)
 
     def test_dict_from_bytes(self):
         # type: () -> None
@@ -196,21 +194,24 @@ class AdsTest(unittest.TestCase):
             ("iVar7", pyads.PLCTYPE_WORD, 1),
             ("iVar8", pyads.PLCTYPE_DWORD, 1),
         )
-        values = OrderedDict([
-            ("rVar", 1.11),
-            ("sVar", ["Hello", "World"]),
-            ("rVar1", [2.25, 2.25, 2.5, 2.75]),
-            ("iVar", [3, 4, 5, 6, 7]),
-            ("iVar1", [8, 9, 10]),
-            ("ivar2", [11, 12, 13, 14, 15, 16]),
-            ("iVar3", [17, 18, 19, 20, 21, 22, 23]),
-            ("iVar4", 24),
-            ("iVar5", 25),
-            ("iVar6", 26),
-            ("bVar", [True, False, True, False]),
-            ("iVar7", 27),
-            ("iVar8", 28)
-        ])
+        values = OrderedDict(
+            [
+                ("rVar", 1.11),
+                ("sVar", ["Hello", "World"]),
+                ("rVar1", [2.25, 2.25, 2.5, 2.75]),
+                ("iVar", [3, 4, 5, 6, 7]),
+                ("iVar1", [8, 9, 10]),
+                ("ivar2", [11, 12, 13, 14, 15, 16]),
+                ("iVar3", [17, 18, 19, 20, 21, 22, 23]),
+                ("iVar4", 24),
+                ("iVar5", 25),
+                ("iVar6", 26),
+                ("bVar", [True, False, True, False]),
+                ("iVar7", 27),
+                ("iVar8", 28),
+            ]
+        )
+        # fmt: off
         bytes_list = [195, 245, 40, 92, 143, 194, 241, 63, 72, 101, 108, 108, 111,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 111, 114, 108, 100, 0,
@@ -221,24 +222,27 @@ class AdsTest(unittest.TestCase):
                       0, 0, 0, 13, 0, 0, 0, 14, 0, 0, 0, 15, 0, 0, 0, 16, 0, 0, 0,
                       17, 0, 18, 0, 19, 0, 20, 0, 21, 0, 22, 0, 23, 0, 24, 25, 26,
                       1, 0, 1, 0, 27, 0, 28, 0, 0, 0]
-        self.assertEqual(values,
-                         pyads.dict_from_bytes(bytes_list, structure_def))
+        # fmt: on
+        self.assertEqual(values, pyads.dict_from_bytes(bytes_list, structure_def))
 
-        values = OrderedDict([
-            ("rVar", 780245.5678),
-            ("sVar", ["TwinCat works", "with Python using pyads"]),
-            ("rVar1", [65.5, 89.75, 999.5, 55555.0]),
-            ("iVar", [24567, -5678988, 12, -393, 0]),
-            ("iVar1", [-20563, 32765, -1]),
-            ("ivar2", [100001, 1234567890, 76, 582, 94034536, 2167]),
-            ("iVar3", [2167, 987, 63000, 5648, 678, 2734, 43768]),
-            ("iVar4", 200),
-            ("iVar5", 127),
-            ("iVar6", 255),
-            ("bVar", [True, False, True, False]),
-            ("iVar7", 45367),
-            ("iVar8", 256000000)
-        ])
+        values = OrderedDict(
+            [
+                ("rVar", 780245.5678),
+                ("sVar", ["TwinCat works", "with Python using pyads"]),
+                ("rVar1", [65.5, 89.75, 999.5, 55555.0]),
+                ("iVar", [24567, -5678988, 12, -393, 0]),
+                ("iVar1", [-20563, 32765, -1]),
+                ("ivar2", [100001, 1234567890, 76, 582, 94034536, 2167]),
+                ("iVar3", [2167, 987, 63000, 5648, 678, 2734, 43768]),
+                ("iVar4", 200),
+                ("iVar5", 127),
+                ("iVar6", 255),
+                ("bVar", [True, False, True, False]),
+                ("iVar7", 45367),
+                ("iVar8", 256000000),
+            ]
+        )
+        # fmt: off
         bytes_list = [125, 174, 182, 34, 171, 207, 39, 65, 84, 119, 105, 110, 67,
                       97, 116, 32, 119, 111, 114, 107, 115, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 119, 105,
@@ -251,8 +255,8 @@ class AdsTest(unittest.TestCase):
                       0, 104, 218, 154, 5, 119, 8, 0, 0, 119, 8, 219, 3, 24, 246,
                       16, 22, 166, 2, 174, 10, 248, 170, 200, 127, 255, 1, 0, 1, 0,
                       55, 177, 0, 64, 66, 15]
-        self.assertEqual(values,
-                         pyads.dict_from_bytes(bytes_list, structure_def))
+        # fmt: on
+        self.assertEqual(values, pyads.dict_from_bytes(bytes_list, structure_def))
 
         # test for PLC_DEFAULT_STRING_SIZE
         structure_def = (
@@ -261,12 +265,15 @@ class AdsTest(unittest.TestCase):
             ("sVar", pyads.PLCTYPE_STRING, 1),
             ("iVar2", pyads.PLCTYPE_DINT, 1),
         )
-        values = OrderedDict([
-            ("iVar", 32767),
-            ("bVar", True),
-            ("sVar", "Testing the default string size of 80"),
-            ("iVar2", -25600000)
-        ])
+        values = OrderedDict(
+            [
+                ("iVar", 32767),
+                ("bVar", True),
+                ("sVar", "Testing the default string size of 80"),
+                ("iVar2", -25600000),
+            ]
+        )
+        # fmt: off
         bytes_list = [255, 127, 1, 84, 101, 115, 116, 105, 110, 103, 32, 116, 104,
                       101, 32, 100, 101, 102, 97, 117, 108, 116, 32, 115, 116, 114,
                       105, 110, 103, 32, 115, 105, 122, 101, 32, 111, 102, 32, 56,
@@ -274,30 +281,37 @@ class AdsTest(unittest.TestCase):
                       0, 72, 137, 131, 248, 3, 6, 0, 72, 141, 131, 104, 12, 6, 0,
                       72, 137, 131, 0, 4, 6, 0, 72, 141, 131, 224, 114, 6, 0, 72,
                       0, 96, 121, 254]
-        self.assertEqual(values,
-                         pyads.dict_from_bytes(bytes_list, structure_def))
+        # fmt: on
+        self.assertEqual(values, pyads.dict_from_bytes(bytes_list, structure_def))
 
         # test another correct definition with array of structure
         values_list = [
-            OrderedDict([
-                ("iVar", 32767),
-                ("bVar", True),
-                ("sVar", "Testing the default string size of 80"),
-                ("iVar2", -25600000)
-            ]),
-            OrderedDict([
-                ("iVar", -32768),
-                ("bVar", True),
-                ("sVar", "Another Test using the default string size of 80"),
-                ("iVar2", -25600000)
-            ]),
-            OrderedDict([
-                ("iVar", 0),
-                ("bVar", False),
-                ("sVar", "Last Test String of Array"),
-                ("iVar2", 1234567890)
-            ]),
+            OrderedDict(
+                [
+                    ("iVar", 32767),
+                    ("bVar", True),
+                    ("sVar", "Testing the default string size of 80"),
+                    ("iVar2", -25600000),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("iVar", -32768),
+                    ("bVar", True),
+                    ("sVar", "Another Test using the default string size of 80"),
+                    ("iVar2", -25600000),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("iVar", 0),
+                    ("bVar", False),
+                    ("sVar", "Last Test String of Array"),
+                    ("iVar2", 1234567890),
+                ]
+            ),
         ]
+        # fmt: off
         bytes_list = [255, 127, 1, 84, 101, 115, 116, 105, 110, 103, 32, 116, 104,
                       101, 32, 100, 101, 102, 97, 117, 108, 116, 32, 115, 116, 114,
                       105, 110, 103, 32, 115, 105, 122, 101, 32, 111, 102, 32, 56,
@@ -316,24 +330,24 @@ class AdsTest(unittest.TestCase):
                       168, 19, 6, 0, 72, 137, 131, 0, 5, 6, 0, 72, 141, 131, 0, 20,
                       6, 0, 72, 137, 131, 8, 5, 6, 0, 72, 141, 131, 96, 20, 6, 210,
                       2, 150, 73]
-        self.assertEqual(values_list,
-                         pyads.dict_from_bytes(bytes_list, structure_def, array_size=3))
+        # fmt: on
+        self.assertEqual(
+            values_list, pyads.dict_from_bytes(bytes_list, structure_def, array_size=3)
+        )
 
         # test for not default string and array of LREALs
         structure_def = (
             ("sVar", pyads.PLCTYPE_STRING, 1, 20),
             ("rVar", pyads.PLCTYPE_LREAL, 4),
         )
-        values = OrderedDict([
-            ("sVar", "pyads"),
-            ("rVar", [1.11, 2.22, 3.33, 4.44])
-        ])
+        values = OrderedDict([("sVar", "pyads"), ("rVar", [1.11, 2.22, 3.33, 4.44])])
+        # fmt: off
         bytes_list = [112, 121, 97, 100, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                       0, 0, 0, 0, 195, 245, 40, 92, 143, 194, 241, 63, 195, 245,
                       40, 92, 143, 194, 1, 64, 164, 112, 61, 10, 215, 163, 10, 64,
                       195, 245, 40, 92, 143, 194, 17, 64]
-        self.assertEqual(values,
-                         pyads.dict_from_bytes(bytes_list, structure_def))
+        # fmt: on
+        self.assertEqual(values, pyads.dict_from_bytes(bytes_list, structure_def))
 
         # tests for incorrect definitions
         structure_def = (

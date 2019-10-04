@@ -1050,9 +1050,9 @@ class Connection(object):
                     value = bytearray(data)
 
                 else:
-                    value = struct.unpack(
-                        DATATYPE_MAP[plc_datatype], bytearray(data)
-                    )[0]
+                    value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[
+                        0
+                    ]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
 
