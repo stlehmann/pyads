@@ -85,8 +85,7 @@ def dt_to_filetime(dt):
     """
     if (dt.tzinfo is None) or (dt.tzinfo.utcoffset(dt) is None):
         dt = dt.replace(tzinfo=utc)
-    return EPOCH_AS_FILETIME + (timegm(dt.timetuple()) *
-                                HUNDREDS_OF_NANOSECONDS)
+    return EPOCH_AS_FILETIME + (timegm(dt.timetuple()) * HUNDREDS_OF_NANOSECONDS)
 
 
 def filetime_to_dt(ft):
@@ -101,10 +100,10 @@ def filetime_to_dt(ft):
     datetime.datetime(2009, 7, 25, 23, 0)
 
     """
-    return datetime.utcfromtimestamp((ft - EPOCH_AS_FILETIME) /
-                                     HUNDREDS_OF_NANOSECONDS)
+    return datetime.utcfromtimestamp((ft - EPOCH_AS_FILETIME) / HUNDREDS_OF_NANOSECONDS)
 
 
 if __name__ == "__main__":  # pragma: no cover
     import doctest
+
     doctest.testmod()

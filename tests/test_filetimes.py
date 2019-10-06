@@ -13,7 +13,6 @@ from pyads.filetimes import UTC, dt_to_filetime, filetime_to_dt
 
 
 class FiletimesTestCase(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -28,7 +27,7 @@ class FiletimesTestCase(unittest.TestCase):
         self.assertEqual(timedelta(0), utc.utcoffset(datetime.now()))
 
         # timezone is UTC
-        self.assertEqual('UTC', utc.tzname(datetime.now()))
+        self.assertEqual("UTC", utc.tzname(datetime.now()))
 
         # daylight savings time is 0
         self.assertEqual(timedelta(0), utc.dst(datetime.now()))
@@ -44,5 +43,5 @@ class FiletimesTestCase(unittest.TestCase):
         self.assertEqual(dt_now, dt)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
