@@ -5,8 +5,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-07-30 16:57:32
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional
@@ -158,20 +156,15 @@ def adsAddRouteToPLC(
     ip_address,
     username,
     password,
-    route_name=None,
-    added_net_id=None,
 ):
-    # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
+    # type: (str, str, str, str, str) -> bool
     """Embed a new route in the PLC.
 
-    :param pyads.structs.SAmsNetId sending_net_id: sending net id
-    :param str adding_host_name: host name (or IP) of the PC being added, defaults to hostname of this PC
-    :param str ip_address: ip address of the routing endpoint
+    :param str sending_net_id: sending net id
+    :param str adding_host_name: host name (or IP) of the PC being added
+    :param str ip_address: ip address of the PLC
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
-    :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
-
     """
     import socket
     import struct
@@ -179,9 +172,6 @@ def adsAddRouteToPLC(
 
     # ALL SENT STRINGS MUST BE NULL TERMINATED
     adding_host_name += "\0"
-    added_net_id = added_net_id if added_net_id else sending_net_id
-    route_name = route_name + "\0" if route_name else adding_host_name
-
     username = username + "\0"
     password = password + "\0"
 
@@ -203,7 +193,7 @@ def adsAddRouteToPLC(
 
     actual_data = struct.pack("<H", 6)  # Byte length of AMS ID (always 6)
     actual_data += struct.pack(
-        ">6B", *map(int, added_net_id.split("."))
+        ">6B", *map(int, sending_net_id.split("."))
     )  # Net ID being added to the PLC
     actual_data += struct.pack(
         ">2s", b"\x0d\x00"
@@ -214,8 +204,8 @@ def adsAddRouteToPLC(
     actual_data += struct.pack("<H", len(password))  # Length of password field
     actual_data += password.encode("utf-8")  # PLC Password
     actual_data += struct.pack(">2s", b"\x05\x00")  # Block of unknown
-    actual_data += struct.pack("<H", len(route_name))  # Length of route name
-    actual_data += route_name.encode("utf-8")  # Name of route being added to the PLC
+    actual_data += struct.pack("<H", len(adding_host_name))  # Length of route name
+    actual_data += adding_host_name.encode("utf-8")  # Name of route being added to the PLC
 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on 55189 for the response from the PLC

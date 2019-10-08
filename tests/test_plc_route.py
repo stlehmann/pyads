@@ -13,8 +13,6 @@ class PLCRouteTestCase(unittest.TestCase):
     PLC_IP = "127.0.0.1"
     USERNAME = "user"
     PASSWORD = "password"
-    ROUTE_NAME = "Route"
-    ADDING_AMS_ID = "5.6.7.8.1.1"
     HOSTNAME = "Host"
     PLC_AMS_ID = "11.22.33.44.1.1"
 
@@ -106,7 +104,7 @@ class PLCRouteTestCase(unittest.TestCase):
                 len_sending_host, len(self.HOSTNAME) + 1
             )  # +1 for the null terminator
             self.assertEqual(hostname, self.HOSTNAME + "\0")
-            self.assertEqual(adding_ams_id, self.ADDING_AMS_ID)
+            self.assertEqual(adding_ams_id, self.SENDER_AMS)
             self.assertEqual(
                 len_username, len(self.USERNAME) + 1
             )  # +1 for the null terminator
@@ -118,9 +116,9 @@ class PLCRouteTestCase(unittest.TestCase):
             # self.assertEqual(password, self.PASSWORD + '\0')
 
             self.assertEqual(
-                len_route_name, len(self.ROUTE_NAME) + 1
+                len_route_name, len(self.HOSTNAME) + 1
             )  # +1 for the null terminator
-            self.assertEqual(route_name, self.ROUTE_NAME + "\0")
+            self.assertEqual(route_name, self.HOSTNAME + "\0")
 
             if password == self.PASSWORD + "\0":
                 password_correct = True
@@ -165,8 +163,6 @@ class PLCRouteTestCase(unittest.TestCase):
                     self.PLC_IP,
                     self.USERNAME,
                     self.PASSWORD,
-                    route_name=self.ROUTE_NAME,
-                    added_net_id=self.ADDING_AMS_ID,
                 )
             except:
                 result = None
@@ -188,8 +184,6 @@ class PLCRouteTestCase(unittest.TestCase):
                     self.PLC_IP,
                     self.USERNAME,
                     "Incorrect Password",
-                    route_name=self.ROUTE_NAME,
-                    added_net_id=self.ADDING_AMS_ID,
                 )
             except:
                 result = None
