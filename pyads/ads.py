@@ -387,15 +387,15 @@ def add_route_to_plc(
     route_name=None,
     added_net_id=None,
 ):
-    # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
+    # type: (str, str, str, str, str, str, str) -> bool
     """Embed a new route in the PLC.
 
     :param pyads.structs.SAmsNetId sending_net_id: sending net id
-    :param str adding_host_name: host name (or IP) of the PC being added, defaults to hostname of this PC
-    :param str ip_address: ip address of the routing endpoint
+    :param str adding_host_name: host name (or IP) of the PC being added
+    :param str ip_address: ip address of the PLC
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
+    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
 
     """
@@ -778,19 +778,18 @@ class Connection(object):
         return_ctypes=False,
         check_length=True,
     ):
-        # type: (int, int, Type, Any, Type, bool, bool) -> Any
+        # type: (int, int, Optional[Type], Any, Optional[Type], bool, bool) -> Any
         """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
-        :param int plc_read_datatype: type of the data given to the PLC to
-            respond to, according to PLCTYPE constants
+        :param Type plc_read_datatype: type of the data given to the PLC to respond to,
+            according to PLCTYPE constants, or None to not read anything
         :param value: value to write to the storage address of the PLC
-        :param plc_write_datatype: type of the data given to the PLC,
-            according to PLCTYPE constants
-            :rtype: PLCTYPE
-    :param bool return_ctypes: return ctypes instead of python types if True
+        :param Type plc_write_datatype: type of the data given to the PLC, according to
+            PLCTYPE constants, or None to not write anything
+        :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)

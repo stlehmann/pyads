@@ -53,7 +53,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
             data = data[4:]  # Remove protocol bytes
 
-            len_route_name = struct.unpack("<H", data[:2])[0]  # Length of PLC password
+            len_route_name = struct.unpack("<H", data[:2])[0]  # Length of route name
             data = data[2:]
 
             route_name = data[:len_route_name].decode(
