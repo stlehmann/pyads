@@ -43,7 +43,7 @@ probably went something wrong with the build process of the shared library. In
 this case you can create the *adslib.so* manually by doing the following:
 
 ```bash
-$ cd src
+$ cd adslib
 $ make
 $ sudo make install
 ```
