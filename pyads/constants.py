@@ -102,7 +102,7 @@ INDEXGROUP_MEMORYBYTE = 0x4020  #: plc memory area (%M), offset means byte-offse
 # READ_MX - WRITE_MX
 INDEXGROUP_MEMORYBIT = (
     0x4021
-)  #: plc memory area (%MX), offset means the bit adress, calculatedb by bytenumber * 8 + bitnumber  # noqa: E501
+)  #: plc memory area (%MX), offset means the bit address, calculatedb by bytenumber * 8 + bitnumber  # noqa: E501
 # PLCADS_IGR_RMSIZE
 INDEXGROUP_MEMORYSIZE = 0x4025  #: size of the memory area in bytes
 # PLCADS_IGR_RWRB

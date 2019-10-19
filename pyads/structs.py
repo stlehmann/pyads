@@ -56,7 +56,7 @@ class SAmsAddr(Structure):
 
 
 class AmsAddr(object):
-    """Wrapper for SAmsAddr-structure to adress an ADS device.
+    """Wrapper for SAmsAddr-structure to address an ADS device.
 
     :type _ams_addr: SAmsAddr
     :ivar _ams_addr: ctypes-structure SAmsAddr
@@ -83,7 +83,7 @@ class AmsAddr(object):
         """Textual representation of the AMS address.
 
         :rtype: string
-        :return:  textual representation of the AMS adress
+        :return:  textual representation of the AMS address
         """
         return self.netid + ": " + str(self._ams_addr.port)
 
@@ -140,7 +140,7 @@ class AmsAddr(object):
 
     def setAdr(self, adrString):
         # type: (str) -> None
-        """Set the AMS-adress according to the given IP-address.
+        """Set the AMS-address according to the given IP-address.
 
         :type adrString: string
         :param adrString: ip-address of an ADS device

@@ -337,7 +337,7 @@ def callbackString(adr, notification, user):
 
 To make the handling of notifications more pythonic a notification decorator has
 been introduced in version 2.2.4. This decorator takes care of converting the
-ctype values transfered via ADS to python datatypes.
+ctype values transferred via ADS to python datatypes.
 
 ```python
 >>> import pyads
