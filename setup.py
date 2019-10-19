@@ -160,7 +160,7 @@ setup(
     packages=["pyads", "pyads.testserver_ex"],
     package_data={'pyads': ['adslib.so']},
     requires=[],
-    install_requires=['typing'],
+    install_requires=['typing;python_version<"3.5"'],
     provides=['pyads'],
     url='https://github.com/MrLeeh/pyads',
     classifiers=[
