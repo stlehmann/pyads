@@ -581,7 +581,7 @@ class Connection(object):
     :ivar int ams_net_port: port of the remote device
     :ivar str ip_address: the ip address of the device
 
-    :note: If no IP Adress is given the ip address is automatically set
+    :note: If no IP address is given the ip address is automatically set
         to first 4 parts of the Ams net id.
 
     """
