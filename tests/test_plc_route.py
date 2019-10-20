@@ -24,7 +24,7 @@ class PLCRouteTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def plc_route_reciever(self):
+    def plc_route_receiver(self):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
             # Listen on 48899 for communication
             sock.bind(("", 48899))
@@ -153,7 +153,7 @@ class PLCRouteTestCase(unittest.TestCase):
     def test_correct_route(self):
         if platform_is_linux():
             # Start receiving listener
-            route_thread = threading.Thread(target=self.plc_route_reciever)
+            route_thread = threading.Thread(target=self.plc_route_receiver)
             route_thread.setDaemon(True)
             route_thread.start()
 
@@ -176,7 +176,7 @@ class PLCRouteTestCase(unittest.TestCase):
     def test_incorrect_route(self):
         if platform_is_linux():
             # Start receiving listener
-            route_thread = threading.Thread(target=self.plc_route_reciever)
+            route_thread = threading.Thread(target=self.plc_route_receiver)
             route_thread.setDaemon(True)
             route_thread.start()
 

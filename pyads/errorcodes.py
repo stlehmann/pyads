@@ -89,7 +89,7 @@ ERROR_CODES = {
     1826: "symbol not active. Onlinechange. Release handle and get a new one",
     1827: "access denied",
     1828: "missing license. Activate license for TwinCAT 3 function",
-    1836: "exception occured during system start. Check each device transistions",
+    1836: "exception occurred during system start. Check each device transistions",
     1856: "Error class <client error>",
     1857: "invalid parameter at service",
     1858: "polling list is empty",
