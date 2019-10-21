@@ -980,8 +980,8 @@ class Connection(object):
         """Set Timeout."""
         if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
-
-    def notification(self, plc_datatype=None):
+    
+    def notification(self, plc_datatype=None, pyqtSignal=None):
         # type: (Optional[Type[Any]]) -> Callable
         """Decorate a callback function.
 
@@ -1023,6 +1023,39 @@ class Connection(object):
             >>>    while True:
             >>>        pass
 
+         **Usage with pyqtSignal**:
+            >>> from PyQt5 import QtCore        
+            >>> import pyads        
+            >>>
+            >>> class MyQtSignals(QtCore.QObject):
+            >>>     a = QtCore.pyqtSignal(int)
+            >>>
+            >>>     def __init__(self):
+            >>>         super(QObject, self).__init__()
+            >>>
+            >>> signals = MyQtSignals()
+            >>>
+            >>> plc = pyads.Connection('172.18.3.25.1.1', 851)
+            >>>
+            >>>
+            >>> @plc.notification(pyads.PLCTYPE_DINT, signals.a)
+            >>> def callback(handle, name, timestamp, value):
+            >>>     pass
+            >>> 
+            >>> @QtCore.pyqtSlot(int)
+            >>> def onSignal(value):
+            >>>     print('signals.a = ' + value)
+            >>>
+            >>> signals.a.connect(onSignal)
+            >>>
+            >>> with plc:
+            >>>    attr = pyads.NotificationAttrib(4)
+            >>>
+            >>>    handles = plc.add_device_notification('GVL.test', attr,
+            >>>                                          callback)
+            >>>    while True:
+            >>>        pass
+
         """
 
         def notification_decorator(func):
@@ -1055,6 +1088,9 @@ class Connection(object):
                     ]
 
                 dt = filetime_to_dt(contents.nTimeStamp)
+
+                # Emit signal to pyqtSignal passed in decorator arguement
+                pyqtSignal.emit(value)
 
                 return func(contents.hNotification, data_name, dt, value)
 
