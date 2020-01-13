@@ -6,12 +6,15 @@
 :created on: 2018-06-11 18:15:58
 
 """
+import ctypes
+from ctypes import addressof, memmove, resize, sizeof, pointer
+import datetime
 import time
 import unittest
 import pyads
 import struct
 from pyads.testserver import AdsTestServer, AmsPacket
-from pyads import constants
+from pyads import constants, structs
 from collections import OrderedDict
 
 
@@ -492,6 +495,77 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Assert that ADDDEVICENOTIFICATION was used to add device notification
         self.assert_command_id(requests[2], constants.ADSCOMMAND_DELDEVICENOTE)
+
+    def create_notification_struct(self, payload):
+        # type: (bytes) -> structs.SAdsNotificationHeader
+        buf = b"\x00" * 12  # hNotification, nTimeStamp
+        buf += struct.pack("<i", len(payload))
+        buf += payload
+        notification = structs.SAdsNotificationHeader()
+        resize(notification, len(buf))
+        memmove(
+            pointer(notification),
+            (ctypes.c_ubyte * len(buf)).from_buffer_copy(buf),
+            sizeof(notification),
+        )
+        return notification
+
+    def test_notification_decorator(self):
+        # type: () -> None
+        """Test decoding of header by notification decorator"""
+
+        @self.plc.notification()
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(handle, 1234)
+            self.assertEqual(name, "TestName")
+            self.assertEqual(timestamp, datetime.datetime(2020, 1, 1))
+            self.assertEqual(value, bytearray((5,)))
+
+        notification = structs.SAdsNotificationHeader()
+        notification.hNotification = 1234
+        notification.nTimeStamp = 132223104000000000
+        notification.cbSampleSize = 1
+        notification.data = 5
+        callback(pointer(notification), "TestName")
+
+    def test_notification_decorator_string(self):
+        # type: () -> None
+        """Test decoding of STRING value by notification decorator"""
+
+        @self.plc.notification(constants.PLCTYPE_STRING)
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(value, "Hello world!")
+
+        notification = self.create_notification_struct(b"Hello world!\x00\x00\x00\x00")
+        callback(pointer(notification), "")
+
+    def test_notification_decorator_lreal(self):
+        # type: () -> None
+        """Test decoding of LREAL value by notification decorator"""
+
+        @self.plc.notification(constants.PLCTYPE_LREAL)
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(value, 1234.56789012345)
+
+        notification = self.create_notification_struct(
+            struct.pack("<d", 1234.56789012345)
+        )
+        callback(pointer(notification), "")
+
+    def test_notification_decorator_struct(self):
+        # type: () -> None
+        """Test decoding of structure value by notification decorator"""
+
+        @self.plc.notification(structs.SAdsVersion)
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(value.version, 3)
+            self.assertEqual(value.revision, 1)
+            self.assertEqual(value.build, 3040)
+
+        notification = self.create_notification_struct(
+            bytes(structs.SAdsVersion(version=3, revision=1, build=3040))
+        )
+        callback(pointer(notification), "")
 
     def test_multiple_connect(self):
         """
