@@ -1041,7 +1041,7 @@ class Connection(object):
                     # read only until null-termination character
                     value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
 
-                elif issubclass(plc_datatype, Structure):
+                elif plc_datatype is not None and issubclass(plc_datatype, Structure):
                     value = plc_datatype()
                     fit_size = min(data_size, sizeof(value))
                     memmove(addressof(value), addressof(data), fit_size)
