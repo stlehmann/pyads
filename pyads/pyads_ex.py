@@ -34,7 +34,7 @@ from .constants import (
     PLCTYPE_UDINT,
     ADSIGRP_SYM_VALBYHND,
     ADSIGRP_SYM_RELEASEHND,
-    PORT_SYSTEMSERVICE
+    PORT_SYSTEMSERVICE,
 )
 from .errorcodes import ERROR_CODES
 
@@ -150,8 +150,17 @@ def adsAddRoute(net_id, ip_address):
     if error_code:
         raise ADSError(error_code)
 
+
 @router_function
-def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, password, route_name=None, added_net_id=None):
+def adsAddRouteToPLC(
+    sending_net_id,
+    adding_host_name,
+    ip_address,
+    username,
+    password,
+    route_name=None,
+    added_net_id=None,
+):
     # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
     """Embed a new route in the PLC.
 
@@ -167,40 +176,50 @@ def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, pas
     import socket
     import struct
     from contextlib import closing
-    # ALL SENT STRINGS MUST BE NULL TERMINATED
-    adding_host_name += '\0'
-    added_net_id = added_net_id if added_net_id else sending_net_id
-    route_name = route_name + '\0' if route_name else adding_host_name
 
-    username = username + '\0'
-    password = password + '\0'
+    # ALL SENT STRINGS MUST BE NULL TERMINATED
+    adding_host_name += "\0"
+    added_net_id = added_net_id if added_net_id else sending_net_id
+    route_name = route_name + "\0" if route_name else adding_host_name
+
+    username = username + "\0"
+    password = password + "\0"
 
     # The head of the UDP AMS packet containing host routing information
-    data_header = struct.pack('>12s', b'\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x00')
-    data_header += struct.pack('>6B', *map(int, sending_net_id.split('.')))		# Sending net ID
-    data_header += struct.pack('<H', PORT_SYSTEMSERVICE)			# Internal communication port
-    data_header += struct.pack('>2s', b'\x05\x00')					# Write command
-    data_header += struct.pack('>4s', b'\x00\x00\x0c\x00')			# Block of unknown
-    data_header += struct.pack('<H', len(adding_host_name))			# Length of sender host name
-    data_header += adding_host_name.encode('utf-8')					# Sender host name
-    data_header += struct.pack('>2s', b'\x07\x00')					# Block of unknown
+    data_header = struct.pack(
+        ">12s", b"\x03\x66\x14\x71\x00\x00\x00\x00\x06\x00\x00\x00"
+    )
+    data_header += struct.pack(
+        ">6B", *map(int, sending_net_id.split("."))
+    )  # Sending net ID
+    data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
+    data_header += struct.pack(">2s", b"\x05\x00")  # Write command
+    data_header += struct.pack(">4s", b"\x00\x00\x0c\x00")  # Block of unknown
+    data_header += struct.pack(
+        "<H", len(adding_host_name)
+    )  # Length of sender host name
+    data_header += adding_host_name.encode("utf-8")  # Sender host name
+    data_header += struct.pack(">2s", b"\x07\x00")  # Block of unknown
 
+    actual_data = struct.pack("<H", 6)  # Byte length of AMS ID (always 6)
+    actual_data += struct.pack(
+        ">6B", *map(int, added_net_id.split("."))
+    )  # Net ID being added to the PLC
+    actual_data += struct.pack(
+        ">2s", b"\x0d\x00"
+    )  # Block of unknown (maybe encryption?)
+    actual_data += struct.pack("<H", len(username))  # Length of the user name field
+    actual_data += username.encode("utf-8")  # PLC Username
+    actual_data += struct.pack(">2s", b"\x02\x00")  # Block of unknown
+    actual_data += struct.pack("<H", len(password))  # Length of password field
+    actual_data += password.encode("utf-8")  # PLC Password
+    actual_data += struct.pack(">2s", b"\x05\x00")  # Block of unknown
+    actual_data += struct.pack("<H", len(route_name))  # Length of route name
+    actual_data += route_name.encode("utf-8")  # Name of route being added to the PLC
 
-    actual_data = struct.pack('<H', 6)								# Byte length of AMS ID (always 6)
-    actual_data += struct.pack('>6B', *map(int, added_net_id.split('.')))			# Net ID being added to the PLC
-    actual_data += struct.pack('>2s', b'\x0d\x00')					# Block of unknown (maybe encryption?)
-    actual_data += struct.pack('<H', len(username))					# Length of the user name field
-    actual_data += username.encode('utf-8')							# PLC Username
-    actual_data += struct.pack('>2s', b'\x02\x00')					# Block of unknown
-    actual_data += struct.pack('<H', len(password))					# Length of password field
-    actual_data += password.encode('utf-8')							# PLC Password
-    actual_data += struct.pack('>2s', b'\x05\x00')					# Block of unknown
-    actual_data += struct.pack('<H', len(route_name))				# Length of route name
-    actual_data += route_name.encode('utf-8')						# Name of route being added to the PLC
-
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock: # UDP
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on 55189 for the response from the PLC
-        sock.bind(('', 55189))
+        sock.bind(("", 55189))
 
         # Send our data to 48899 on the PLC
         sock.sendto(data_header + actual_data, (ip_address, 48899))
@@ -212,26 +231,35 @@ def adsAddRouteToPLC(sending_net_id, adding_host_name, ip_address, username, pas
         # Keep looping until we get a response from our PLC
         addr = [0]
         while addr[0] != ip_address:
-            data, addr = sock.recvfrom(32) # PLC response is 32 bytes long
+            data, addr = sock.recvfrom(32)  # PLC response is 32 bytes long
 
-    rcvd_packet_header = data[0:12]							# AMS Packet header, seems to define communication type
+    rcvd_packet_header = data[
+        0:12
+    ]  # AMS Packet header, seems to define communication type
     # If the last byte in the header is 0x80, then this is a response to our request
     if struct.unpack(">B", rcvd_packet_header[-1:])[0] == 0x80:
-        rcvd_PLC_AMS_ID = struct.unpack(">6B", data[12:18])[0]	    # AMS ID of PLC
+        rcvd_PLC_AMS_ID = struct.unpack(">6B", data[12:18])[0]  # AMS ID of PLC
         # Convert to a String AMS ID
-        #rcvd_PLC_AMS_ID = '.'.join([str(int.from_bytes(rcvd_PLC_AMS_ID[i:i+1], 'big')) for i in range(0, len(rcvd_PLC_AMS_ID), 1)])
-        rcvd_AMS_port = struct.unpack("<H", data[18:20])	        # Some sort of AMS port? Little endian
-        rcvd_command_code = struct.unpack("<2s", data[20:22])       # Command code (should be read) Little endian
-        rcvd_protocol_block = data[22:]						        # Unknown block of protocol
-        rcvd_is_password_correct = rcvd_protocol_block[4:7]	        # 0x040000 when password was correct, 0x000407 when it was incorrect
+        # rcvd_PLC_AMS_ID = '.'.join([str(int.from_bytes(rcvd_PLC_AMS_ID[i:i+1], 'big')) for i in range(0, len(rcvd_PLC_AMS_ID), 1)])
+        rcvd_AMS_port = struct.unpack(
+            "<H", data[18:20]
+        )  # Some sort of AMS port? Little endian
+        rcvd_command_code = struct.unpack(
+            "<2s", data[20:22]
+        )  # Command code (should be read) Little endian
+        rcvd_protocol_block = data[22:]  # Unknown block of protocol
+        rcvd_is_password_correct = rcvd_protocol_block[
+            4:7
+        ]  # 0x040000 when password was correct, 0x000407 when it was incorrect
 
-        if rcvd_is_password_correct == b'\x04\x00\x00':
+        if rcvd_is_password_correct == b"\x04\x00\x00":
             return True
-        elif rcvd_is_password_correct == b'\x00\x04\x07':
+        elif rcvd_is_password_correct == b"\x00\x04\x07":
             return False
 
-	# If we fell through the whole way to the bottom, then we got a weird response
+    # If we fell through the whole way to the bottom, then we got a weird response
     raise RuntimeError("Unexpected response from PLC")
+
 
 @router_function
 def adsDelRoute(net_id):
@@ -707,9 +735,7 @@ def adsSyncReadByNameEx(
     return value
 
 
-def adsSyncWriteByNameEx(
-        port, address, data_name, value, data_type, handle=None
-):
+def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None):
     # type: (int, AmsAddr, str, Any, Type, int) -> None
     """Send data synchronous to an ADS-device from data name.
 

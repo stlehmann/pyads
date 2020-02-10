@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 88
+target-version = ['py27', 'py35', 'py36', 'py37']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs
+    | \.git
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | adslib
+    | pyads.egg-info
+  )/
+  | pyads/__init__.py
+)
+'''

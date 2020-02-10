@@ -9,22 +9,17 @@
 
 """
 import typing
-from ctypes import (c_byte, Structure, c_ubyte, Union, c_uint16, c_uint32,
-                    c_uint64)
+from ctypes import c_byte, Structure, c_ubyte, Union, c_uint16, c_uint32, c_uint64
 from .constants import ADSTRANS_SERVERONCHA
 
 
 class SAdsVersion(Structure):
     """Struct containing ADS version information."""
 
-    _fields_ = [
-        ("version", c_ubyte),
-        ("revision", c_ubyte),
-        ("build", c_uint16)
-    ]
+    _fields_ = [("version", c_ubyte), ("revision", c_ubyte), ("build", c_uint16)]
 
 
-class AdsVersion():
+class AdsVersion:
     """Contains version number, revision number, build number of the ADS-DLL.
 
     :ivar int version: version number
@@ -57,12 +52,11 @@ class SAmsAddr(Structure):
     """Struct containing the netId and port of an ADS device."""
 
     _pack_ = 1
-    _fields_ = [("netId", SAmsNetId),
-                ("port", c_uint16)]
+    _fields_ = [("netId", SAmsNetId), ("port", c_uint16)]
 
 
 class AmsAddr(object):
-    """Wrapper for SAmsAddr-structure to adress an ADS device.
+    """Wrapper for SAmsAddr-structure to address an ADS device.
 
     :type _ams_addr: SAmsAddr
     :ivar _ams_addr: ctypes-structure SAmsAddr
@@ -89,7 +83,7 @@ class AmsAddr(object):
         """Textual representation of the AMS address.
 
         :rtype: string
-        :return:  textual representation of the AMS adress
+        :return:  textual representation of the AMS address
         """
         return self.netid + ": " + str(self._ams_addr.port)
 
@@ -103,7 +97,7 @@ class AmsAddr(object):
         it can be passed as a String or as a SAmsNetId struct.
 
         """
-        return '.'.join(map(str, self._ams_addr.netId.b))
+        return ".".join(map(str, self._ams_addr.netId.b))
 
     @netid.setter
     def netid(self, value):
@@ -114,10 +108,10 @@ class AmsAddr(object):
 
         # Otherwise, attempt to parse the id as a string
         else:
-            id_numbers = list(map(int, value.split('.')))
+            id_numbers = list(map(int, value.split(".")))
 
             if len(id_numbers) != 6:
-                raise ValueError('no valid netid')
+                raise ValueError("no valid netid")
 
             # Fill the netId struct with data
             self._ams_addr.netId.b = (c_ubyte * 6)(*id_numbers)
@@ -146,7 +140,7 @@ class AmsAddr(object):
 
     def setAdr(self, adrString):
         # type: (str) -> None
-        """Set the AMS-adress according to the given IP-address.
+        """Set the AMS-address according to the given IP-address.
 
         :type adrString: string
         :param adrString: ip-address of an ADS device
@@ -157,14 +151,15 @@ class AmsAddr(object):
     def __repr__(self):
         # type: () -> str
         """Return object name."""
-        return '<AmsAddress {}:{}>'.format(self.netid, self.port)
+        return "<AmsAddress {}:{}>".format(self.netid, self.port)
 
 
 class NotificationAttrib(object):
     """Notification Attribute."""
 
-    def __init__(self, length, trans_mode=ADSTRANS_SERVERONCHA,
-                 max_delay=1e-4, cycle_time=1e-4):
+    def __init__(
+        self, length, trans_mode=ADSTRANS_SERVERONCHA, max_delay=1e-4, cycle_time=1e-4
+    ):
         # type: (int, int, float, float) -> None
         """Create a new NotificationAttrib object.
 
@@ -247,9 +242,9 @@ class NotificationAttrib(object):
     def __repr__(self):
         # type: () -> str
         """Return object name."""
-        return ('<NotificationAttrib {} {} {} {}>'
-                .format(self.length, self.trans_mode, self.max_delay,
-                        self.cycle_time))
+        return "<NotificationAttrib {} {} {} {}>".format(
+            self.length, self.trans_mode, self.max_delay, self.cycle_time
+        )
 
 
 class _AttribUnion(Union):
@@ -261,10 +256,12 @@ class SAdsNotificationAttrib(Structure):
 
     _pack_ = 1
     _anonymous_ = ("AttribUnion",)
-    _fields_ = [("cbLength", c_uint32),
-                ("nTransMode", c_uint32),
-                ("nMaxDelay", c_uint32),
-                ("AttribUnion", _AttribUnion), ]
+    _fields_ = [
+        ("cbLength", c_uint32),
+        ("nTransMode", c_uint32),
+        ("nMaxDelay", c_uint32),
+        ("AttribUnion", _AttribUnion),
+    ]
 
 
 class SAdsNotificationHeader(Structure):
@@ -278,18 +275,19 @@ class SAdsNotificationHeader(Structure):
     """
 
     _pack_ = 1
-    _fields_ = [("hNotification", c_uint32),
-                ("nTimeStamp", c_uint64),
-                ("cbSampleSize", c_uint32),
-                ("data", c_ubyte)]
+    _fields_ = [
+        ("hNotification", c_uint32),
+        ("nTimeStamp", c_uint64),
+        ("cbSampleSize", c_uint32),
+        ("data", c_ubyte),
+    ]
 
 
 class SAdsSymbolUploadInfo(Structure):
     """C structure representation of AdsSymbolUploadInfo."""
 
     _pack_ = 1
-    _fields_ = [("nSymbols", c_uint32),
-                ("nSymSize", c_uint32)]
+    _fields_ = [("nSymbols", c_uint32), ("nSymSize", c_uint32)]
 
 
 class SAdsSymbolEntry(Structure):
@@ -308,15 +306,16 @@ class SAdsSymbolEntry(Structure):
     """
 
     _pack_ = 1
-    _fields_ = [("entryLength", c_uint32),
-                ("iGroup", c_uint32),
-                ("iOffs", c_uint32),
-                ("size", c_uint32),
-                ("dataType", c_uint32),
-                ("flags", c_uint32),
-                ("nameLength", c_uint16),
-                ("typeLength", c_uint16),
-                ("commentLength", c_uint16),
-                ("stringBuffer", c_ubyte * (256 * 3)),
-                # 3 strings contained, with max length 256
-                ]
+    _fields_ = [
+        ("entryLength", c_uint32),
+        ("iGroup", c_uint32),
+        ("iOffs", c_uint32),
+        ("size", c_uint32),
+        ("dataType", c_uint32),
+        ("flags", c_uint32),
+        ("nameLength", c_uint16),
+        ("typeLength", c_uint16),
+        ("commentLength", c_uint16),
+        ("stringBuffer", c_ubyte * (256 * 3)),
+        # 3 strings contained, with max length 256
+    ]

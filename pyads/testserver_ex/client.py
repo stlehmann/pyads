@@ -3,8 +3,14 @@ import threading
 import atexit
 import logging
 import select
-from .structs import AmsPacket, AdsNotificationStream, AdsStampHeader, \
-    AdsNotificationSample, AmsHeader, AmsTcpHeader
+from .structs import (
+    AmsPacket,
+    AdsNotificationStream,
+    AdsStampHeader,
+    AdsNotificationSample,
+    AmsHeader,
+    AmsTcpHeader,
+)
 from .. import constants
 from ..filetimes import dt_to_filetime
 
@@ -13,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class AdsClientConnection(threading.Thread):
-
     def __init__(self, handler, client, address, server):
         self.handler = handler
         self.server = server
@@ -34,8 +39,7 @@ class AdsClientConnection(threading.Thread):
         if self._run:
             self._run = False
             logger.info(
-                'Closing client connection {0}:{1}.'
-                .format(*self.client_address)
+                "Closing client connection {0}:{1}.".format(*self.client_address)
             )
 
     def close(self):
@@ -74,23 +78,18 @@ class AdsClientConnection(threading.Thread):
             self.client.send(response_packet.to_bytes())
 
             for notification, length, handle in self.pending_notifications:
-                packet = self.create_notification_packet(
-                    notification, length, handle
-                )
+                packet = self.create_notification_packet(notification, length, handle)
 
                 logger.info(packet)
                 self.client.send(packet.to_bytes())
 
     def create_notification_packet(self, notification, length, handle):
         sample = AdsNotificationSample(
-            handle=handle,
-            sample_size=length,
-            data=notification.value[:length],
+            handle=handle, sample_size=length, data=notification.value[:length]
         )
 
         stamp = AdsStampHeader(
-            timestamp=dt_to_filetime(datetime.datetime.utcnow()),
-            samples=[sample]
+            timestamp=dt_to_filetime(datetime.datetime.utcnow()), samples=[sample]
         )
 
         stream = AdsNotificationStream(stamps=[stamp])
@@ -108,9 +107,7 @@ class AdsClientConnection(threading.Thread):
         )
 
         return AmsPacket(
-            amstcp_header=AmsTcpHeader(
-                length=ams_header.length + stream.length,
-            ),
+            amstcp_header=AmsTcpHeader(length=ams_header.length + stream.length),
             ams_header=ams_header,
             ads_data=stream.to_bytes(),
         )

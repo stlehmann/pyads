@@ -5,8 +5,6 @@
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-07-30 17:18:43
 
 """
 from .structs import AmsAddr, NotificationAttrib
@@ -15,7 +13,7 @@ from .ads import open_port, close_port, get_local_address, read_state, \
     write_control, read_device_info, write, read_write, read, \
     read_by_name, write_by_name, add_route, add_route_to_plc, delete_route, \
     add_device_notification, del_device_notification, Connection, \
-    set_local_address, set_timeout
+    set_local_address, set_timeout, size_of_structure, dict_from_bytes
 
 from .pyads_ex import ADSError
 
@@ -24,7 +22,7 @@ from .constants import PLCTYPE_BOOL, PLCTYPE_BYTE, PLCTYPE_DATE, \
     PLCTYPE_REAL, PLCTYPE_SINT, PLCTYPE_STRING, PLCTYPE_TIME, PLCTYPE_TOD, \
     PLCTYPE_UDINT, PLCTYPE_UINT, PLCTYPE_USINT, PLCTYPE_WORD, \
     PLCTYPE_ARR_DINT, PLCTYPE_ARR_INT, PLCTYPE_ARR_LREAL, PLCTYPE_ARR_REAL, \
-    PLCTYPE_ARR_SHORT
+    PLCTYPE_ARR_SHORT, PLC_DEFAULT_STRING_SIZE, DATATYPE_MAP
 
 from .constants import PORT_EVENTLOGGER, PORT_IO, PORT_LOGGER, PORT_NC, \
     PORT_NOCKE, PORT_SCOPE, PORT_SPECIALTASK1, PORT_SPECIALTASK2, PORT_SPS1, \
@@ -44,4 +42,4 @@ from .constants import ADSSTATE_INVALID, ADSSTATE_IDLE, ADSSTATE_RESET, \
 from .constants import ADSTRANS_NOTRANS, ADSTRANS_CLIENTCYCLE, \
     ADSTRANS_CLIENT1REQ, ADSTRANS_SERVERCYCLE, ADSTRANS_SERVERONCHA
 
-__version__ = '3.1.1'
+__version__ = '3.1.2'

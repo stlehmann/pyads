@@ -1,5 +1,5 @@
 language: python
-dist: trusty
+dist: xenial
 
 addons:
   apt:
@@ -10,6 +10,8 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
+  - "3.8"
 
 # command to install dependencies
 install:

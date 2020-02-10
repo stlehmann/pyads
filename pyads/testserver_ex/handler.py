@@ -8,7 +8,7 @@ from .structs import AmsPacket, AmsTcpHeader, AmsHeader
 logger = logging.getLogger(__name__)
 
 
-NotifyClient = namedtuple('NotifyClient', 'length client handle')
+NotifyClient = namedtuple("NotifyClient", "length client handle")
 
 
 class PLCVariable:
@@ -33,40 +33,38 @@ class PLCVariable:
 
 
 class AdvancedHandler:
-
     def __init__(self):
         self._data = defaultdict(lambda: bytearray(16))
         self._named_data = []
         self.notification_count = 0
 
     def handle_request(self, request, client):
-
         def handle_read_device_info():
             """
             Create dummy response: version 1.2.3, device name 'TestServer'
 
             """
-            logger.info('Command received: READ_DEVICE_INFO')
+            logger.info("Command received: READ_DEVICE_INFO")
 
-            major_version = '\x01'.encode('utf-8')
-            minor_version = '\x02'.encode('utf-8')
-            version_build = '\x03\x00'.encode('utf-8')
-            device_name = 'TestServer\x00'.encode('utf-8')
-            result = b'\x00' * 4
+            major_version = "\x01".encode("utf-8")
+            minor_version = "\x02".encode("utf-8")
+            version_build = "\x03\x00".encode("utf-8")
+            device_name = "TestServer\x00".encode("utf-8")
+            result = b"\x00" * 4
 
-            return (result + major_version + minor_version +
-                    version_build + device_name)
+            return result + major_version + minor_version + version_build + device_name
 
         def handle_read():
             data = request.ads_data
-            index_group = struct.unpack('<I', data[:4])[0]
-            index_offset = struct.unpack('<I', data[4:8])[0]
-            plc_datatype = struct.unpack('<I', data[8:12])[0]
+            index_group = struct.unpack("<I", data[:4])[0]
+            index_offset = struct.unpack("<I", data[4:8])[0]
+            plc_datatype = struct.unpack("<I", data[8:12])[0]
 
             logger.info(
-                ('Command received: READ (index group={}, index offset={}, '
-                 'data length={})').format(index_group, index_offset,
-                                           plc_datatype)
+                (
+                    "Command received: READ (index group={}, index offset={}, "
+                    "data length={})"
+                ).format(index_group, index_offset, plc_datatype)
             )
 
             # value by handle is demanded return from named data store
@@ -77,56 +75,56 @@ class AdvancedHandler:
             else:
                 # Create response of repeated 0x0F with a null
                 # terminator for strings
-                response_value = (
-                    self._data[(index_group, index_offset)][:plc_datatype]
-                )
+                response_value = self._data[(index_group, index_offset)][:plc_datatype]
 
-            result = b'\x00' * 4
+            result = b"\x00" * 4
 
-            return (result + struct.pack('<I', len(response_value)) +
-                    response_value)
+            return result + struct.pack("<I", len(response_value)) + response_value
 
         def handle_write():
             data = request.ads_data
 
-            index_group = struct.unpack('<I', data[:4])[0]
-            index_offset = struct.unpack('<I', data[4:8])[0]
-            plc_datatype = struct.unpack('<I', data[8:12])[0]
-            value = data[12:(12 + plc_datatype)]
+            index_group = struct.unpack("<I", data[:4])[0]
+            index_offset = struct.unpack("<I", data[4:8])[0]
+            plc_datatype = struct.unpack("<I", data[8:12])[0]
+            value = data[12 : (12 + plc_datatype)]
 
             logger.info(
-                ('Command received: WRITE (index group={0}, index offset={1}, '
-                 'length={2}, value={3})')
-                .format(index_group, index_offset, plc_datatype, value)
+                (
+                    "Command received: WRITE (index group={0}, index offset={1}, "
+                    "length={2}, value={3})"
+                ).format(index_group, index_offset, plc_datatype, value)
             )
 
             if index_group == constants.ADSIGRP_SYM_RELEASEHND:
-                return b''
+                return b""
 
             elif index_group == constants.ADSIGRP_SYM_VALBYHND:
                 self._named_data[index_offset].value = value
-                return b''
+                return b""
 
             self._data[(index_group, index_offset)] = value
 
             # no return value needed
-            return b''
+            return b""
 
         def handle_read_write():
             data = request.ads_data
 
-            index_group = struct.unpack('<I', data[:4])[0]
-            index_offset = struct.unpack('<I', data[4:8])[0]
-            read_length = struct.unpack('<I', data[8:12])[0]
-            write_length = struct.unpack('<I', data[12:16])[0]
-            write_data = data[16:(16 + write_length)]
+            index_group = struct.unpack("<I", data[:4])[0]
+            index_offset = struct.unpack("<I", data[4:8])[0]
+            read_length = struct.unpack("<I", data[8:12])[0]
+            write_length = struct.unpack("<I", data[12:16])[0]
+            write_data = data[16 : (16 + write_length)]
 
             logger.info(
-                ('Command received: READWRITE '
-                 '(index group={}, index offset={}, read length={}, '
-                 'write length={}, write data={})')
-                .format(index_group, index_offset, read_length, write_length,
-                        write_data)
+                (
+                    "Command received: READWRITE "
+                    "(index group={}, index offset={}, read length={}, "
+                    "write length={}, write data={})"
+                ).format(
+                    index_group, index_offset, read_length, write_length, write_data
+                )
             )
 
             # Get variable handle by name if  demanded
@@ -146,7 +144,7 @@ class AdvancedHandler:
                     )
                     handle = len(self._named_data) - 1
 
-                read_data = struct.pack('<I', handle)
+                read_data = struct.pack("<I", handle)
 
             else:
 
@@ -156,54 +154,53 @@ class AdvancedHandler:
                 # store write data
                 self._data[(index_group, index_offset)] = write_data
 
-            result = b'\x00' * 4
-            return result + struct.pack('<I', len(read_data)) + read_data
+            result = b"\x00" * 4
+            return result + struct.pack("<I", len(read_data)) + read_data
 
         def handle_read_state():
-            logger.info('Command received: READ_STATE')
-            ads_state = struct.pack('<H', constants.ADSSTATE_RUN)
+            logger.info("Command received: READ_STATE")
+            ads_state = struct.pack("<H", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
             # I suspect it may be unsued..
-            device_state = struct.pack('<H', 0)
-            result = b'\x00' * 4
+            device_state = struct.pack("<H", 0)
+            result = b"\x00" * 4
             return result + ads_state + device_state
 
         def handle_writectrl():
-            logger.info('Command received: WRITE_CONTROL')
+            logger.info("Command received: WRITE_CONTROL")
             # No response data required
-            result = b'\x00' * 4
+            result = b"\x00" * 4
             return result
 
         def handle_add_devicenote():
             data = request.ads_data
-            index_group = struct.unpack('<I', data[:4])[0]
-            index_offset = struct.unpack('<I', data[4:8])[0]
-            length = struct.unpack('<I', data[8:12])[0]
+            index_group = struct.unpack("<I", data[:4])[0]
+            index_offset = struct.unpack("<I", data[4:8])[0]
+            length = struct.unpack("<I", data[8:12])[0]
 
             if index_group == constants.ADSIGRP_SYM_VALBYHND:
                 plc_var = self._named_data[index_offset]
                 plc_var.notify_clients.append(
-                    NotifyClient(length, client,
-                                 handle=self.notification_count)
+                    NotifyClient(length, client, handle=self.notification_count)
                 )
 
-            logger.info('Command received: ADD_DEVICE_NOTIFICATION')
+            logger.info("Command received: ADD_DEVICE_NOTIFICATION")
 
-            handle = struct.pack('<I', self.notification_count)
-            result = b'\x00' * 4
+            handle = struct.pack("<I", self.notification_count)
+            result = b"\x00" * 4
             self.notification_count += 1
             return result + handle
 
         def handle_delete_devicenote():
-            logger.info('Command received: DELETE_DEVICE_NOTIFICATION')
+            logger.info("Command received: DELETE_DEVICE_NOTIFICATION")
             # No response data required
-            result = b'\x00' * 4
+            result = b"\x00" * 4
             return result
 
         def handle_devicenote():
-            logger.info('Command received: DEVICE_NOTIFICATION')
+            logger.info("Command received: DEVICE_NOTIFICATION")
             # No response data required
-            result = b'\x00' * 4
+            result = b"\x00" * 4
             return result
 
         function_map = {
@@ -236,5 +233,5 @@ class AdvancedHandler:
                 error_code=0,
                 invoke_id=request.ams_header.invoke_id,
             ),
-            ads_data=response_content
+            ads_data=response_content,
         )
