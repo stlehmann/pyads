@@ -474,6 +474,8 @@ def adsSyncWriteReqEx(port, address, index_group, index_offset, value, plc_data_
     else:
         if type(plc_data_type).__name__ == "PyCArrayType":
             data = plc_data_type(*value)
+        elif type(value) is plc_data_type:
+            data = value
         else:
             data = plc_data_type(value)
 
@@ -549,6 +551,8 @@ def adsSyncReadWriteReqEx2(
     else:
         if type(write_data_type).__name__ == "PyCArrayType":
             write_data = write_data_type(*value)
+        elif type(value) is write_data_type:
+            write_data = value
         else:
             write_data = write_data_type(value)
         write_data_pointer = ctypes.pointer(write_data)
