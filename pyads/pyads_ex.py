@@ -502,8 +502,9 @@ def adsSyncReadWriteReqEx2(
     value,
     write_data_type,
     return_ctypes=False,
+    check_length=True,
 ):
-    # type: (int, AmsAddr, int, int, Type, Any, Type, bool) -> Any
+    # type: (int, AmsAddr, int, int, Type, Any, Type, bool, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -518,6 +519,8 @@ def adsSyncReadWriteReqEx2(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: read_data_type
     :return: value: value read from PLC
 
@@ -571,7 +574,11 @@ def adsSyncReadWriteReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if read_data_type != PLCTYPE_STRING and bytes_read.value != read_length.value:
+    if (
+        check_length
+        and read_data_type != PLCTYPE_STRING
+        and bytes_read.value != read_length.value
+    ):
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 read_length.value, bytes_read.value
@@ -594,9 +601,15 @@ def adsSyncReadWriteReqEx2(
 
 
 def adsSyncReadReqEx2(
-    port, address, index_group, index_offset, data_type, return_ctypes=False
+    port,
+    address,
+    index_group,
+    index_offset,
+    data_type,
+    return_ctypes=False,
+    check_length=True,
 ):
-    # type: (int, AmsAddr, int, int, Type, bool) -> Any
+    # type: (int, AmsAddr, int, int, Type, bool, bool) -> Any
     """Read data synchronous from an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -608,6 +621,8 @@ def adsSyncReadReqEx2(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: data_type
     :return: value: **value**
 
@@ -644,7 +659,11 @@ def adsSyncReadReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if data_type != PLCTYPE_STRING and bytes_read.value != data_length.value:
+    if (
+        check_length
+        and data_type != PLCTYPE_STRING
+        and bytes_read.value != data_length.value
+    ):
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 data_length.value, bytes_read.value
@@ -701,9 +720,15 @@ def adsReleaseHandle(port, address, handle):
 
 
 def adsSyncReadByNameEx(
-    port, address, data_name, data_type, return_ctypes=False, handle=None
+    port,
+    address,
+    data_name,
+    data_type,
+    return_ctypes=False,
+    handle=None,
+    check_length=True,
 ):
-    # type: (int, AmsAddr, str, Type, bool, int) -> Any
+    # type: (int, AmsAddr, str, Type, bool, int, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -714,6 +739,8 @@ def adsSyncReadByNameEx(
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
     :param int handle: PLC-variable handle (default: None)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: data_type
     :return: value: **value**
 
@@ -726,7 +753,13 @@ def adsSyncReadByNameEx(
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
-        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type, return_ctypes
+        port,
+        address,
+        ADSIGRP_SYM_VALBYHND,
+        handle,
+        data_type,
+        return_ctypes,
+        check_length,
     )
 
     if no_handle is True:
