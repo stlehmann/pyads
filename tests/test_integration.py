@@ -4,6 +4,7 @@ Integration testing for the pyads module.
 Author: David Browne <davidabrowne@gmail.com>
 
 """
+import ctypes
 import time
 import unittest
 from unittest import TestCase
@@ -21,6 +22,10 @@ from pyads.testserver import AdsTestServer
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
 TEST_SERVER_IP_ADDRESS = "127.0.0.1"
 TEST_SERVER_AMS_PORT = constants.PORT_SPS1
+
+
+class _Struct(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_int32), ("y", ctypes.c_int32)]
 
 
 class AdsApiTestCase(TestCase):
@@ -272,6 +277,25 @@ class AdsApiTestCase(TestCase):
 
         self.assertEqual(sent_value, received_value)
 
+    def test_write_struct(self):
+        write_value = _Struct(-123, 456)
+
+        ads.write(
+            self.endpoint,
+            index_group=constants.INDEXGROUP_DATA,
+            index_offset=1,
+            value=write_value,
+            plc_datatype=_Struct,
+        )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Check the value received by the server
+        received_value = _Struct.from_buffer_copy(requests[0].ams_header.data[12:])
+        self.assertEqual(write_value.x, received_value.x)
+        self.assertEqual(write_value.y, received_value.y)
+
     def test_write_array(self):
         write_value = tuple(range(5))
 
@@ -376,6 +400,26 @@ class AdsApiTestCase(TestCase):
         # Check the value received by the server
         received_value = struct.unpack("<IIIII", requests[0].ams_header.data[16:])
         self.assertEqual(write_value, received_value)
+
+    def test_read_write_struct(self):
+        write_value = _Struct(-123, 456)
+
+        ads.read_write(
+            self.endpoint,
+            index_group=constants.INDEXGROUP_DATA,
+            index_offset=1,
+            plc_read_datatype=_Struct,
+            value=write_value,
+            plc_write_datatype=_Struct,
+        )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Check the value received by the server
+        received_value = _Struct.from_buffer_copy(requests[0].ams_header.data[16:])
+        self.assertEqual(write_value.x, received_value.x)
+        self.assertEqual(write_value.y, received_value.y)
 
     def test_read_by_name(self):
         handle_name = "TestHandle"
