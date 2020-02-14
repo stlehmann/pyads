@@ -248,8 +248,9 @@ def read_write(
     value,
     plc_write_datatype,
     return_ctypes=False,
+    check_length=True,
 ):
-    # type: (AmsAddr, int, int, Type, Any, Type, bool) -> Any
+    # type: (AmsAddr, int, int, Type, Any, Type, bool, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
@@ -263,6 +264,8 @@ def read_write(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: PLCTYPE
     :return: value: **value**
 
@@ -277,13 +280,16 @@ def read_write(
             value,
             plc_write_datatype,
             return_ctypes,
+            check_length,
         )
 
     return None
 
 
-def read(adr, index_group, index_offset, plc_datatype, return_ctypes=False):
-    # type: (AmsAddr, int, int, Type, bool) -> Any
+def read(
+    adr, index_group, index_offset, plc_datatype, return_ctypes=False, check_length=True
+):
+    # type: (AmsAddr, int, int, Type, bool, bool) -> Any
     """Read data synchronous from an ADS-device.
 
         :param AmsAddr adr: local or remote AmsAddr
@@ -294,18 +300,26 @@ def read(adr, index_group, index_offset, plc_datatype, return_ctypes=False):
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :return: value: **value**
 
     """
     if port is not None:
         return adsSyncReadReqEx2(
-            port, adr, index_group, index_offset, plc_datatype, return_ctypes
+            port,
+            adr,
+            index_group,
+            index_offset,
+            plc_datatype,
+            return_ctypes,
+            check_length,
         )
 
     return None
 
 
-def read_by_name(adr, data_name, plc_datatype, return_ctypes=False):
+def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length=True):
     # type: (AmsAddr, str, Type, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
@@ -315,11 +329,15 @@ def read_by_name(adr, data_name, plc_datatype, return_ctypes=False):
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :return: value: **value**
 
     """
     if port is not None:
-        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype, return_ctypes)
+        return adsSyncReadByNameEx(
+            port, adr, data_name, plc_datatype, return_ctypes, check_length=check_length
+        )
 
     return None
 
@@ -724,8 +742,9 @@ class Connection(object):
         value,
         plc_write_datatype,
         return_ctypes=False,
+        check_length=True,
     ):
-        # type: (int, int, Type, Any, Type, bool) -> Any
+        # type: (int, int, Type, Any, Type, bool, bool) -> Any
         """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -739,6 +758,8 @@ class Connection(object):
             :rtype: PLCTYPE
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+        :param bool check_length: check whether the amount of bytes read matches the size
+            of the read data type (default: True)
         :return: value: **value**
 
         """
@@ -752,12 +773,20 @@ class Connection(object):
                 value,
                 plc_write_datatype,
                 return_ctypes,
+                check_length,
             )
 
         return None
 
-    def read(self, index_group, index_offset, plc_datatype, return_ctypes=False):
-        # type: (int, int, Type, bool) -> Any
+    def read(
+        self,
+        index_group,
+        index_offset,
+        plc_datatype,
+        return_ctypes=False,
+        check_length=True,
+    ):
+        # type: (int, int, Type, bool, bool) -> Any
         """Read data synchronous from an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -768,6 +797,8 @@ class Connection(object):
             :return: value: **value**
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
+        :param bool check_length: check whether the amount of bytes read matches the size
+            of the read data type (default: True)
 
         """
         if self._port is not None:
@@ -778,6 +809,7 @@ class Connection(object):
                 index_offset,
                 plc_datatype,
                 return_ctypes,
+                check_length,
             )
 
         return None
@@ -806,7 +838,14 @@ class Connection(object):
         if self._port is not None:
             adsReleaseHandle(self._port, self._adr, handle)
 
-    def read_by_name(self, data_name, plc_datatype, return_ctypes=False, handle=None):
+    def read_by_name(
+        self,
+        data_name,
+        plc_datatype,
+        return_ctypes=False,
+        handle=None,
+        check_length=True,
+    ):
         # type: (str, Type, bool, int) -> Any
         """Read data synchronous from an ADS-device from data name.
 
@@ -818,6 +857,8 @@ class Connection(object):
             (default: False)
         :param int handle: PLC-variable handle, pass in handle if previously
             obtained to speed up reading (default: None)
+        :param bool check_length: check whether the amount of bytes read matches the size
+            of the read data type (default: True)
 
         """
         if self._port:
@@ -828,6 +869,7 @@ class Connection(object):
                 plc_datatype,
                 return_ctypes=return_ctypes,
                 handle=handle,
+                check_length=check_length,
             )
 
         return None
@@ -1041,7 +1083,7 @@ class Connection(object):
                     # read only until null-termination character
                     value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
 
-                elif plc_datatype is not None and issubclass(plc_datatype, Structure):
+                elif issubclass(plc_datatype, Structure):
                     value = plc_datatype()
                     fit_size = min(data_size, sizeof(value))
                     memmove(addressof(value), addressof(data), fit_size)
