@@ -486,6 +486,10 @@ class AdvancedHandler(AbstractHandler):
 
     def __init__(self):
         # type: () -> None
+        self.reset()
+
+    def reset(self):
+        # type: () -> None
         self._data = defaultdict(
             lambda: bytes(16)
         )  # type: DefaultDict[Tuple[int, int], bytes]  # noqa: E501
