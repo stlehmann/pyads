@@ -9,7 +9,7 @@
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
 from datetime import datetime
 import struct
-from ctypes import memmove, addressof, c_ubyte, Structure, sizeof
+from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof
 from collections import OrderedDict
 
 from .utils import platform_is_linux
@@ -1087,6 +1087,13 @@ class Connection(object):
                     value = plc_datatype()
                     fit_size = min(data_size, sizeof(value))
                     memmove(addressof(value), addressof(data), fit_size)
+
+                elif plc_datatype is not None and issubclass(plc_datatype, Array):
+                    if data_size == sizeof(plc_datatype):
+                        value = list(plc_datatype.from_buffer_copy(bytes(data)))
+                    else:
+                        # invalid size
+                        value = None
 
                 elif plc_datatype not in DATATYPE_MAP:
                     value = bytearray(data)

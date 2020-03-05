@@ -567,6 +567,39 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         )
         callback(pointer(notification), "")
 
+    def test_notification_decorator_array(self):
+        # type: () -> None
+        """Test decoding of array value by notification decorator"""
+
+        @self.plc.notification(constants.PLCTYPE_ARR_INT(5))
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(value, [0, 1, 2, 3, 4])
+
+        notification = self.create_notification_struct(
+            b"\x00\x00\x01\x00\x02\x00\x03\x00\x04\x00"
+        )
+        callback(pointer(notification), "")
+
+    def test_notification_decorator_struct_array(self):
+        # type: () -> None
+        """Test decoding of array of structs value by notification decorator"""
+
+        arr_type = structs.SAdsVersion * 4
+
+        @self.plc.notification(arr_type)
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(len(value), 4)
+            for i in range(4):
+                self.assertEqual(value[i].version, i)
+                self.assertEqual(value[i].revision, 1)
+                self.assertEqual(value[i].build, 3040)
+
+        data = b""
+        for i in range(4):
+            data += bytes(structs.SAdsVersion(version=i, revision=1, build=3040))
+        notification = self.create_notification_struct(data)
+        callback(pointer(notification), "")
+
     def test_multiple_connect(self):
         """
         Using context manager multiple times after each other for
