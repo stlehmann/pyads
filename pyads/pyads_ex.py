@@ -519,8 +519,9 @@ def adsSyncReadWriteReqEx2(
     value,
     write_data_type,
     return_ctypes=False,
+    check_length=True,
 ):
-    # type: (int, AmsAddr, int, int, Type, Any, Type, bool) -> Any
+    # type: (int, AmsAddr, int, int, Optional[Type], Any, Optional[Type], bool, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -529,12 +530,14 @@ def adsSyncReadWriteReqEx2(
         constants
     :param int index_offset: PLC storage address
     :param Type read_data_type: type of the data given to the PLC to respond to,
-        according to PLCTYPE constants
+        according to PLCTYPE constants, or None to not read anything
     :param value: value to write to the storage address of the PLC
     :param Type write_data_type: type of the data given to the PLC, according to
-        PLCTYPE constants
+        PLCTYPE constants, or None to not write anything
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: read_data_type
     :return: value: value read from PLC
 
@@ -545,18 +548,26 @@ def adsSyncReadWriteReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if read_data_type == PLCTYPE_STRING:
-        read_data = (STRING_BUFFER * PLCTYPE_STRING)()
+    if read_data_type is None:
+        read_data = None
+        read_data_pointer = None
+        read_length = ctypes.c_ulong(0)
     else:
-        read_data = read_data_type()
+        if read_data_type == PLCTYPE_STRING:
+            read_data = (STRING_BUFFER * PLCTYPE_STRING)()
+        else:
+            read_data = read_data_type()
 
-    read_data_pointer = ctypes.pointer(read_data)
-    read_length = ctypes.c_ulong(ctypes.sizeof(read_data))
+        read_data_pointer = ctypes.pointer(read_data)
+        read_length = ctypes.c_ulong(ctypes.sizeof(read_data))
 
     bytes_read = ctypes.c_ulong()
     bytes_read_pointer = ctypes.pointer(bytes_read)
 
-    if write_data_type == PLCTYPE_STRING:
+    if write_data_type is None:
+        write_data_pointer = None
+        write_length = ctypes.c_ulong(0)
+    elif write_data_type == PLCTYPE_STRING:
         # Get pointer to string
         write_data_pointer = ctypes.c_char_p(
             value.encode("utf-8")
@@ -590,7 +601,11 @@ def adsSyncReadWriteReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if read_data_type != PLCTYPE_STRING and bytes_read.value != read_length.value:
+    if (
+        check_length
+        and read_data_type != PLCTYPE_STRING
+        and bytes_read.value != read_length.value
+    ):
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 read_length.value, bytes_read.value
@@ -606,16 +621,22 @@ def adsSyncReadWriteReqEx2(
     if type(read_data_type).__name__ == "PyCArrayType":
         return [i for i in read_data]
 
-    if hasattr(read_data, "value"):
+    if read_data is not None and hasattr(read_data, "value"):
         return read_data.value
 
     return read_data
 
 
 def adsSyncReadReqEx2(
-    port, address, index_group, index_offset, data_type, return_ctypes=False
+    port,
+    address,
+    index_group,
+    index_offset,
+    data_type,
+    return_ctypes=False,
+    check_length=True,
 ):
-    # type: (int, AmsAddr, int, int, Type, bool) -> Any
+    # type: (int, AmsAddr, int, int, Type, bool, bool) -> Any
     """Read data synchronous from an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -627,6 +648,8 @@ def adsSyncReadReqEx2(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: data_type
     :return: value: **value**
 
@@ -663,7 +686,11 @@ def adsSyncReadReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if data_type != PLCTYPE_STRING and bytes_read.value != data_length.value:
+    if (
+        check_length
+        and data_type != PLCTYPE_STRING
+        and bytes_read.value != data_length.value
+    ):
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 data_length.value, bytes_read.value
@@ -720,9 +747,15 @@ def adsReleaseHandle(port, address, handle):
 
 
 def adsSyncReadByNameEx(
-    port, address, data_name, data_type, return_ctypes=False, handle=None
+    port,
+    address,
+    data_name,
+    data_type,
+    return_ctypes=False,
+    handle=None,
+    check_length=True,
 ):
-    # type: (int, AmsAddr, str, Type, bool, int) -> Any
+    # type: (int, AmsAddr, str, Type, bool, int, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -733,6 +766,8 @@ def adsSyncReadByNameEx(
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
     :param int handle: PLC-variable handle (default: None)
+    :param bool check_length: check whether the amount of bytes read matches the size
+        of the read data type (default: True)
     :rtype: data_type
     :return: value: **value**
 
@@ -745,7 +780,13 @@ def adsSyncReadByNameEx(
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
-        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type, return_ctypes
+        port,
+        address,
+        ADSIGRP_SYM_VALBYHND,
+        handle,
+        data_type,
+        return_ctypes,
+        check_length,
     )
 
     if no_handle is True:

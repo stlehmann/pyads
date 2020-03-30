@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Added
+* [#130](https://github.com/stlehmann/pyads/pull/130) Allow read_write with NULL read/write data
+
 ## 3.2.0
 
 ### Added
