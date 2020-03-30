@@ -318,6 +318,52 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         expected_result = struct.unpack("<I", "\x0F\x0F\x0F\x00".encode("utf-8"))[0]
         self.assertEqual(read_value, expected_result)
 
+    def test_read_write_read_none(self):
+        write_value = 100
+
+        with self.plc:
+            read_value = self.plc.read_write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1,
+                plc_read_datatype=None,
+                value=write_value,
+                plc_write_datatype=constants.PLCTYPE_UDINT,
+            )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Check the value received by the server
+        received_value = struct.unpack("<I", requests[0].ams_header.data[16:])[0]
+        self.assertEqual(write_value, received_value)
+        # Check nothing was to be read
+        read_size = struct.unpack("<I", requests[0].ams_header.data[8:12])[0]
+        self.assertEqual(read_size, 0)
+        # Check return value
+        self.assertIsNone(read_value)
+
+    def test_read_write_write_none(self):
+        with self.plc:
+            read_value = self.plc.read_write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1,
+                plc_read_datatype=constants.PLCTYPE_UDINT,
+                value=None,
+                plc_write_datatype=None,
+            )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Check nothing was to be written
+        write_size = struct.unpack("<I", requests[0].ams_header.data[12:16])[0]
+        self.assertEqual(write_size, 0)
+
+        # Check read value returned by server:
+        # Test server just returns repeated bytes of 0x0F terminated with 0x00
+        expected_result = struct.unpack("<I", "\x0F\x0F\x0F\x00".encode("utf-8"))[0]
+        self.assertEqual(read_value, expected_result)
+
     def test_read_by_name(self):
         handle_name = "TestHandle"
 
