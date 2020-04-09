@@ -1,1 +1,3 @@
 include adslib/*
+include LICENSE
+include README.rst
