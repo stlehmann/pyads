@@ -1,5 +1,10 @@
 # Changelog
 
+## unreleased
+
+* [#120](https://github.com/stlehmann/pyads/pull/120) Allow to write ctypes directly
+* [#123](https://github.com/stlehmann/pyads/pull/123) Add ULINT data type
+
 ## 3.1.2
 * new function read_structure_by_name to read a structure with multiple 
 datatypes from the plc (issue #82, many thanks to @chrisbeardy)
