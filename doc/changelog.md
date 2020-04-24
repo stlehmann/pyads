@@ -1,7 +1,9 @@
 # Changelog
 
-## unreleased
+## 3.2 [unreleased]
+* drop support for Python 2.7
 
+## 3.1.3 [unreleased]
 * [#120](https://github.com/stlehmann/pyads/pull/120) Allow to write ctypes directly
 * [#123](https://github.com/stlehmann/pyads/pull/123) Add ULINT data type
 
