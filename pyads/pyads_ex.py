@@ -519,9 +519,8 @@ def adsSyncReadWriteReqEx2(
     value,
     write_data_type,
     return_ctypes=False,
-    check_length=True,
 ):
-    # type: (int, AmsAddr, int, int, Type, Any, Type, bool, bool) -> Any
+    # type: (int, AmsAddr, int, int, Type, Any, Type, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -536,8 +535,6 @@ def adsSyncReadWriteReqEx2(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
     :rtype: read_data_type
     :return: value: value read from PLC
 
@@ -593,11 +590,7 @@ def adsSyncReadWriteReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if (
-        check_length
-        and read_data_type != PLCTYPE_STRING
-        and bytes_read.value != read_length.value
-    ):
+    if read_data_type != PLCTYPE_STRING and bytes_read.value != read_length.value:
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 read_length.value, bytes_read.value
@@ -620,15 +613,9 @@ def adsSyncReadWriteReqEx2(
 
 
 def adsSyncReadReqEx2(
-    port,
-    address,
-    index_group,
-    index_offset,
-    data_type,
-    return_ctypes=False,
-    check_length=True,
+    port, address, index_group, index_offset, data_type, return_ctypes=False
 ):
-    # type: (int, AmsAddr, int, int, Type, bool, bool) -> Any
+    # type: (int, AmsAddr, int, int, Type, bool) -> Any
     """Read data synchronous from an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -640,8 +627,6 @@ def adsSyncReadReqEx2(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
     :rtype: data_type
     :return: value: **value**
 
@@ -678,11 +663,7 @@ def adsSyncReadReqEx2(
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
-    if (
-        check_length
-        and data_type != PLCTYPE_STRING
-        and bytes_read.value != data_length.value
-    ):
+    if data_type != PLCTYPE_STRING and bytes_read.value != data_length.value:
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 data_length.value, bytes_read.value
@@ -739,15 +720,9 @@ def adsReleaseHandle(port, address, handle):
 
 
 def adsSyncReadByNameEx(
-    port,
-    address,
-    data_name,
-    data_type,
-    return_ctypes=False,
-    handle=None,
-    check_length=True,
+    port, address, data_name, data_type, return_ctypes=False, handle=None
 ):
-    # type: (int, AmsAddr, str, Type, bool, int, bool) -> Any
+    # type: (int, AmsAddr, str, Type, bool, int) -> Any
     """Read data synchronous from an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -758,8 +733,6 @@ def adsSyncReadByNameEx(
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
     :param int handle: PLC-variable handle (default: None)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
     :rtype: data_type
     :return: value: **value**
 
@@ -772,13 +745,7 @@ def adsSyncReadByNameEx(
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
-        port,
-        address,
-        ADSIGRP_SYM_VALBYHND,
-        handle,
-        data_type,
-        return_ctypes,
-        check_length,
+        port, address, ADSIGRP_SYM_VALBYHND, handle, data_type, return_ctypes
     )
 
     if no_handle is True:
@@ -793,7 +760,7 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
-    :param string data_name: PLC storage address
+    :param string data_name: PLC storage name
     :param value: value to write to the storage address of the PLC
     :param Type data_type: type of the data given to the PLC,
         according to PLCTYPE constants
@@ -836,16 +803,36 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    hnl = adsSyncReadWriteReqEx2(
-        port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data_name, PLCTYPE_STRING
-    )
+    if isinstance(data_name, str):
+        hnl = adsSyncReadWriteReqEx2(
+            port,
+            adr,
+            ADSIGRP_SYM_HNDBYNAME,
+            0x0,
+            PLCTYPE_UDINT,
+            data_name,
+            PLCTYPE_STRING,
+        )
 
-    nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
-    nIndexOffset = ctypes.c_ulong(hnl)
+        nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
+        nIndexOffset = ctypes.c_ulong(hnl)
+    elif isinstance(data_name, tuple):
+        nIndexGroup = data_name[0]
+        nIndexOffset = data_name[1]
+        hnl = None
+    elif isinstance(data_name, dict):
+        nIndexGroup = data_name["index_group"]
+        nIndexOffset = data_name["index_offset"]
+        hnl = None
+    else:
+        raise TypeError("Object data_name has the wrong type %s" % (type(data_name)))
+
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
 
-    nHUser = ctypes.c_ulong(hnl)
+    nHUser = ctypes.c_ulong(0)
+    if hnl is not None:
+        nHUser = ctypes.c_ulong(hnl)
     if user_handle is not None:
         nHUser = ctypes.c_ulong(user_handle)
 
