@@ -780,14 +780,14 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
 
 
 def adsSyncAddDeviceNotificationReqEx(
-    port, adr, data_name, pNoteAttrib, callback, user_handle=None
+    port, adr, data, pNoteAttrib, callback, user_handle=None
 ):
-    # type: (int, AmsAddr, str, NotificationAttrib, Callable, int) -> Tuple[int, int]
+    # type: (int, AmsAddr, Union[str, Tuple, Dict[str, int]], NotificationAttrib, Callable, int) -> Tuple[int, int]
     """Add a device notification.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
-    :param string data_name: PLC storage address
+    :param Union[str, Tuple[int, int], Dict[str, int]] data: PLC storage address by name or index group and offset
     :param pyads.structs.NotificationAttrib pNoteAttrib: notification attributes
     :param callback: Callback function to handle notification
     :param user_handle: User Handle
@@ -803,29 +803,29 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    if isinstance(data_name, str):
+    if isinstance(data, str):
         hnl = adsSyncReadWriteReqEx2(
             port,
             adr,
             ADSIGRP_SYM_HNDBYNAME,
             0x0,
             PLCTYPE_UDINT,
-            data_name,
+            data,
             PLCTYPE_STRING,
         )
 
         nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
         nIndexOffset = ctypes.c_ulong(hnl)
-    elif isinstance(data_name, tuple):
-        nIndexGroup = data_name[0]
-        nIndexOffset = data_name[1]
+    elif isinstance(data, tuple):
+        nIndexGroup = data[0]
+        nIndexOffset = data[1]
         hnl = None
-    elif isinstance(data_name, dict):
-        nIndexGroup = data_name["index_group"]
-        nIndexOffset = data_name["index_offset"]
+    elif isinstance(data, dict):
+        nIndexGroup = data["index_group"]
+        nIndexOffset = data["index_offset"]
         hnl = None
     else:
-        raise TypeError("Object data_name has the wrong type %s" % (type(data_name)))
+        raise TypeError("Object data_name has the wrong type %s" % (type(data)))
 
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
@@ -850,7 +850,7 @@ def adsSyncAddDeviceNotificationReqEx(
 
     def wrapper(addr, notification, user):
         # type: (AmsAddr, SAdsNotificationHeader, int) -> Callable[[SAdsNotificationHeader, str], None]
-        return callback(notification, data_name)
+        return callback(notification, data)
 
     c_callback = NOTEFUNC(wrapper)
     err_code = adsSyncAddDeviceNotificationReqFct(
