@@ -782,12 +782,12 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
 def adsSyncAddDeviceNotificationReqEx(
     port, adr, data, pNoteAttrib, callback, user_handle=None
 ):
-    # type: (int, AmsAddr, Union[str, Tuple, Dict[str, int]], NotificationAttrib, Callable, int) -> Tuple[int, int]
+    # type: (int, AmsAddr, Union[str, Tuple[int, int]], NotificationAttrib, Callable, int) -> Tuple[int, int]
     """Add a device notification.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
-    :param Union[str, Tuple[int, int], Dict[str, int]] data: PLC storage address by name or index group and offset
+    :param Union[str, Tuple[int, int]] data: PLC storage address by name or index group and offset
     :param pyads.structs.NotificationAttrib pNoteAttrib: notification attributes
     :param callback: Callback function to handle notification
     :param user_handle: User Handle
@@ -819,10 +819,6 @@ def adsSyncAddDeviceNotificationReqEx(
     elif isinstance(data, tuple):
         nIndexGroup = data[0]
         nIndexOffset = data[1]
-        hnl = None
-    elif isinstance(data, dict):
-        nIndexGroup = data["index_group"]
-        nIndexOffset = data["index_offset"]
         hnl = None
     else:
         raise TypeError("Object data_name has the wrong type %s" % (type(data)))
