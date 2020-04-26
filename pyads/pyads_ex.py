@@ -760,7 +760,7 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
-    :param string data_name: PLC storage address
+    :param string data_name: PLC storage name
     :param value: value to write to the storage address of the PLC
     :param Type data_type: type of the data given to the PLC,
         according to PLCTYPE constants
@@ -803,16 +803,29 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    hnl = adsSyncReadWriteReqEx2(
-        port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data_name, PLCTYPE_STRING
-    )
+    if isinstance(data_name, str):
+        hnl = adsSyncReadWriteReqEx2(port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0,
+                                     PLCTYPE_UDINT, data_name, PLCTYPE_STRING)
 
-    nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
-    nIndexOffset = ctypes.c_ulong(hnl)
+        nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
+        nIndexOffset = ctypes.c_ulong(hnl)
+    elif isinstance(data_name, tuple):
+        nIndexGroup  = data_name[0]
+        nIndexOffset = data_name[1]
+        hnl          = None
+    elif isinstance(data_name, dict):
+        nIndexGroup  = data_name["index_group"]
+        nIndexOffset = data_name["index_offset"]
+        hnl          = None
+    else:
+        raise TypeError("Object data_name has the wrong type %s"%(type(data_name)))
+        
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
 
-    nHUser = ctypes.c_ulong(hnl)
+    nHUser = ctypes.c_ulong(0)
+    if hnl is not None:
+        nHUser = ctypes.c_ulong(hnl)
     if user_handle is not None:
         nHUser = ctypes.c_ulong(user_handle)
 
