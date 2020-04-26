@@ -248,9 +248,8 @@ def read_write(
     value,
     plc_write_datatype,
     return_ctypes=False,
-    check_length=True,
 ):
-    # type: (AmsAddr, int, int, Type, Any, Type, bool, bool) -> Any
+    # type: (AmsAddr, int, int, Type, Any, Type, bool) -> Any
     """Read and write data synchronous from/to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
@@ -264,8 +263,6 @@ def read_write(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
     :rtype: PLCTYPE
     :return: value: **value**
 
@@ -280,16 +277,13 @@ def read_write(
             value,
             plc_write_datatype,
             return_ctypes,
-            check_length,
         )
 
     return None
 
 
-def read(
-    adr, index_group, index_offset, plc_datatype, return_ctypes=False, check_length=True
-):
-    # type: (AmsAddr, int, int, Type, bool, bool) -> Any
+def read(adr, index_group, index_offset, plc_datatype, return_ctypes=False):
+    # type: (AmsAddr, int, int, Type, bool) -> Any
     """Read data synchronous from an ADS-device.
 
         :param AmsAddr adr: local or remote AmsAddr
@@ -300,26 +294,18 @@ def read(
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
     :return: value: **value**
 
     """
     if port is not None:
         return adsSyncReadReqEx2(
-            port,
-            adr,
-            index_group,
-            index_offset,
-            plc_datatype,
-            return_ctypes,
-            check_length,
+            port, adr, index_group, index_offset, plc_datatype, return_ctypes
         )
 
     return None
 
 
-def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length=True):
+def read_by_name(adr, data_name, plc_datatype, return_ctypes=False):
     # type: (AmsAddr, str, Type, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
 
@@ -329,15 +315,11 @@ def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length
         PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
     :return: value: **value**
 
     """
     if port is not None:
-        return adsSyncReadByNameEx(
-            port, adr, data_name, plc_datatype, return_ctypes, check_length=check_length
-        )
+        return adsSyncReadByNameEx(port, adr, data_name, plc_datatype, return_ctypes)
 
     return None
 
@@ -412,13 +394,13 @@ def delete_route(adr):
     return adsDelRoute(adr.netIdStruct())
 
 
-def add_device_notification(adr, data_name, attr, callback, user_handle=None):
-    # type: (AmsAddr, str, NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]  # noqa: E501
+def add_device_notification(adr, data, attr, callback, user_handle=None):
+    # type: (AmsAddr, Union[str, Tuple[int, int], NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]  # noqa: E501
     """Add a device notification.
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
         entry which is to be removed from the router.
-    :param str data_name: PLC storage address
+    :param Union[str, Tuple[int, int] data: PLC storage address as string or Tuple with index group and offset
     :param pyads.structs.NotificationAttrib attr: object that contains
         all the attributes for the definition of a notification
     :param callback: callback function that gets executed on in the event
@@ -434,7 +416,7 @@ def add_device_notification(adr, data_name, attr, callback, user_handle=None):
     """
     if port is not None:
         return adsSyncAddDeviceNotificationReqEx(
-            port, adr, data_name, attr, callback, user_handle
+            port, adr, data, attr, callback, user_handle
         )
 
     return None
@@ -742,9 +724,8 @@ class Connection(object):
         value,
         plc_write_datatype,
         return_ctypes=False,
-        check_length=True,
     ):
-        # type: (int, int, Type, Any, Type, bool, bool) -> Any
+        # type: (int, int, Type, Any, Type, bool) -> Any
         """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -758,8 +739,6 @@ class Connection(object):
             :rtype: PLCTYPE
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
-        :param bool check_length: check whether the amount of bytes read matches the size
-            of the read data type (default: True)
         :return: value: **value**
 
         """
@@ -773,20 +752,12 @@ class Connection(object):
                 value,
                 plc_write_datatype,
                 return_ctypes,
-                check_length,
             )
 
         return None
 
-    def read(
-        self,
-        index_group,
-        index_offset,
-        plc_datatype,
-        return_ctypes=False,
-        check_length=True,
-    ):
-        # type: (int, int, Type, bool, bool) -> Any
+    def read(self, index_group, index_offset, plc_datatype, return_ctypes=False):
+        # type: (int, int, Type, bool) -> Any
         """Read data synchronous from an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -797,8 +768,6 @@ class Connection(object):
             :return: value: **value**
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
-        :param bool check_length: check whether the amount of bytes read matches the size
-            of the read data type (default: True)
 
         """
         if self._port is not None:
@@ -809,7 +778,6 @@ class Connection(object):
                 index_offset,
                 plc_datatype,
                 return_ctypes,
-                check_length,
             )
 
         return None
@@ -838,14 +806,7 @@ class Connection(object):
         if self._port is not None:
             adsReleaseHandle(self._port, self._adr, handle)
 
-    def read_by_name(
-        self,
-        data_name,
-        plc_datatype,
-        return_ctypes=False,
-        handle=None,
-        check_length=True,
-    ):
+    def read_by_name(self, data_name, plc_datatype, return_ctypes=False, handle=None):
         # type: (str, Type, bool, int) -> Any
         """Read data synchronous from an ADS-device from data name.
 
@@ -857,8 +818,6 @@ class Connection(object):
             (default: False)
         :param int handle: PLC-variable handle, pass in handle if previously
             obtained to speed up reading (default: None)
-        :param bool check_length: check whether the amount of bytes read matches the size
-            of the read data type (default: True)
 
         """
         if self._port:
@@ -869,7 +828,6 @@ class Connection(object):
                 plc_datatype,
                 return_ctypes=return_ctypes,
                 handle=handle,
-                check_length=check_length,
             )
 
         return None
@@ -940,11 +898,11 @@ class Connection(object):
                 self._port, self._adr, data_name, value, plc_datatype, handle=handle
             )
 
-    def add_device_notification(self, data_name, attr, callback, user_handle=None):
-        # type: (str, NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]
+    def add_device_notification(self, data, attr, callback, user_handle=None):
+        # type: (Union[str, Tuple[int, int]], NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]
         """Add a device notification.
 
-        :param str data_name: PLC storage address
+        :param Union[str, Tuple[int, int] data: PLC storage address as string or Tuple with index group and offset
         :param pyads.structs.NotificationAttrib attr: object that contains
             all the attributes for the definition of a notification
         :param callback: callback function that gets executed on in the event
@@ -987,7 +945,7 @@ class Connection(object):
         """
         if self._port is not None:
             notification_handle, user_handle = adsSyncAddDeviceNotificationReqEx(
-                self._port, self._adr, data_name, attr, callback, user_handle
+                self._port, self._adr, data, attr, callback, user_handle
             )
             return notification_handle, user_handle
 
