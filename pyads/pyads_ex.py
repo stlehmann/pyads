@@ -760,7 +760,7 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
-    :param string data_name: PLC storage address
+    :param string data_name: PLC storage name
     :param value: value to write to the storage address of the PLC
     :param Type data_type: type of the data given to the PLC,
         according to PLCTYPE constants
@@ -780,14 +780,14 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
 
 
 def adsSyncAddDeviceNotificationReqEx(
-    port, adr, data_name, pNoteAttrib, callback, user_handle=None
+    port, adr, data, pNoteAttrib, callback, user_handle=None
 ):
-    # type: (int, AmsAddr, str, NotificationAttrib, Callable, int) -> Tuple[int, int]
+    # type: (int, AmsAddr, Union[str, Tuple[int, int]], NotificationAttrib, Callable, int) -> Tuple[int, int]
     """Add a device notification.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
-    :param string data_name: PLC storage address
+    :param Union[str, Tuple[int, int]] data: PLC storage address by name or index group and offset
     :param pyads.structs.NotificationAttrib pNoteAttrib: notification attributes
     :param callback: Callback function to handle notification
     :param user_handle: User Handle
@@ -803,16 +803,32 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
-    hnl = adsSyncReadWriteReqEx2(
-        port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data_name, PLCTYPE_STRING
-    )
+    if isinstance(data, str):
+        hnl = adsSyncReadWriteReqEx2(
+            port,
+            adr,
+            ADSIGRP_SYM_HNDBYNAME,
+            0x0,
+            PLCTYPE_UDINT,
+            data,
+            PLCTYPE_STRING,
+        )
 
-    nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
-    nIndexOffset = ctypes.c_ulong(hnl)
+        nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
+        nIndexOffset = ctypes.c_ulong(hnl)
+    elif isinstance(data, tuple):
+        nIndexGroup = data[0]
+        nIndexOffset = data[1]
+        hnl = None
+    else:
+        raise TypeError("Parameter data has the wrong type %s. Allowed types are: str, Tuple[int, int]." % (type(data)))
+
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
 
-    nHUser = ctypes.c_ulong(hnl)
+    nHUser = ctypes.c_ulong(0)
+    if hnl is not None:
+        nHUser = ctypes.c_ulong(hnl)
     if user_handle is not None:
         nHUser = ctypes.c_ulong(user_handle)
 
@@ -830,7 +846,7 @@ def adsSyncAddDeviceNotificationReqEx(
 
     def wrapper(addr, notification, user):
         # type: (AmsAddr, SAdsNotificationHeader, int) -> Callable[[SAdsNotificationHeader, str], None]
-        return callback(notification, data_name)
+        return callback(notification, data)
 
     c_callback = NOTEFUNC(wrapper)
     err_code = adsSyncAddDeviceNotificationReqFct(
@@ -869,7 +885,8 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle, user_handl
     if err_code:
         raise ADSError(err_code)
 
-    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
+    if user_handle is not None:
+        adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
 
 
 def adsSyncSetTimeoutEx(port, nMs):

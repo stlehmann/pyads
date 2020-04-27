@@ -4,9 +4,17 @@
 * drop support for Python 2.7
 
 ## 3.1.3 [unreleased]
+
+### Added
 * [#120](https://github.com/stlehmann/pyads/pull/120) Allow to write ctypes directly
+
+### Changed
+* [#125](https://github.com/stlehmann/pyads/pull/125) Add notifications by address. The `data_name
+` parameter changed to `data` as now not only strings can be passed but also a tuple with index group and offset.
 * [#123](https://github.com/stlehmann/pyads/pull/123) Add ULINT data type
 * [#106](https://github.com/stlehmann/pyads/pull/106) Store notification callbacks per AmsAddr 
+
+### Removed
 
 ## 3.1.2
 * new function read_structure_by_name to read a structure with multiple 

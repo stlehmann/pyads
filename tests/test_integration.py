@@ -477,7 +477,7 @@ class AdsApiTestCase(TestCase):
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
 
-    def test_device_notification(self):
+    def test_device_notification_by_name(self):
         def callback(adr, notification, user):
             pass
 
@@ -498,6 +498,45 @@ class AdsApiTestCase(TestCase):
 
         # Assert that ADDDEVICENOTIFICATION was used to add device notification
         self.assert_command_id(requests[2], constants.ADSCOMMAND_DELDEVICENOTE)
+
+    def test_device_notification_by_tuple(self):
+        def callback(adr, notification, user):
+            pass
+
+        n_index_group = 1
+        n_index_offset = 0
+        attr = NotificationAttrib(length=4)
+        requests = self.test_server.request_history
+
+        notification, user_hnl = ads.add_device_notification(
+            self.endpoint, (n_index_group, n_index_offset), attr, callback
+        )
+
+        # Assert that ADDDEVICENOTIFICATION was used to add device notification
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_ADDDEVICENOTE)
+        # Delete notification without user-handle
+        ads.del_device_notification(self.endpoint, notification, None)
+
+        # Create notification with user_handle
+        notification, new_user_hnl = ads.add_device_notification(
+            self.endpoint, (n_index_group, n_index_offset), attr, callback, user_handle=user_hnl
+        )
+        self.assertEqual(new_user_hnl, user_hnl)
+
+        # Assert that ADDDEVICENOTIFICATION was used to add device notification
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_DELDEVICENOTE)
+
+    def test_device_notification_data_error(self):
+        def callback(adr, notification, user):
+            pass
+
+        attr = NotificationAttrib(length=4)
+
+        with self.assertRaises(TypeError):
+            ads.add_device_notification(self.endpoint, 0, attr, callback)
+
+        with self.assertRaises(TypeError):
+            ads.add_device_notification(self.endpoint, None, attr, callback)
 
     def test_decorated_device_notification(self):
 
