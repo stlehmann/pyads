@@ -15,7 +15,7 @@ import pyads
 from pyads import ads, constants
 from pyads.utils import platform_is_linux
 from pyads.structs import AmsAddr, NotificationAttrib
-from pyads.testserver import AdsTestServer
+from pyads.testserver import AdsTestServer, AdvancedHandler
 
 
 # These are pretty arbitrary
@@ -549,6 +549,75 @@ class AdsApiTestCase(TestCase):
         with plc:
             plc.add_device_notification("a", pyads.NotificationAttrib(20), callback)
             plc.write_by_name("a", 1, pyads.PLCTYPE_INT)
+
+
+class AdsApiTestCaseAdvanced(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Start dummy ADS Endpoint
+        cls.test_server = AdsTestServer(AdvancedHandler(), logging=False)
+        cls.test_server.start()
+
+        # Endpoint AMS Address
+        cls.endpoint = AmsAddr(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+
+        # Open AMS Port
+        ads.open_port()
+
+        # wait a bit otherwise error might occur
+        time.sleep(1)
+
+        # NOTE: On a Windows machine, this route needs to be configured
+        # within the router service for the tests to work.
+        if platform_is_linux():
+            ads.add_route(cls.endpoint, TEST_SERVER_IP_ADDRESS)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.test_server.stop()
+
+        # wait a bit for server to shutdown
+        time.sleep(1)
+
+        ads.close_port()
+
+        if platform_is_linux():
+            ads.delete_route(cls.endpoint)
+
+    def setUp(self):
+        # Clear request history before each test
+        self.test_server.request_history = []
+        self.test_server.handler.reset()
+
+    def test_read_check_length(self):
+        # Write data shorter than what should be read
+        ads.write(
+            self.endpoint,
+            value=1,
+            index_group=constants.INDEXGROUP_DATA,
+            index_offset=1,
+            plc_datatype=constants.PLCTYPE_USINT,
+        )
+
+        with self.assertRaises(RuntimeError):
+            # Since the length is checked, this must give an error
+            ads.read(
+                self.endpoint,
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1,
+                plc_datatype=constants.PLCTYPE_UINT,
+                check_length=True,
+            )
+
+        # If the length is not checked, no error should be raised
+        value = ads.read(
+            self.endpoint,
+            index_group=constants.INDEXGROUP_DATA,
+            index_offset=1,
+            plc_datatype=constants.PLCTYPE_UINT,
+            check_length=False,
+        )
+        self.assertEqual(value, 1)
 
 
 if __name__ == "__main__":
