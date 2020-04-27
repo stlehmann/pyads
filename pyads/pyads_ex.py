@@ -885,7 +885,8 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle, user_handl
     if err_code:
         raise ADSError(err_code)
 
-    adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
+    if user_handle is not None:
+        adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
 
 
 def adsSyncSetTimeoutEx(port, nMs):
