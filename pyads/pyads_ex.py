@@ -821,7 +821,7 @@ def adsSyncAddDeviceNotificationReqEx(
         nIndexOffset = data[1]
         hnl = None
     else:
-        raise TypeError("Object data_name has the wrong type %s" % (type(data)))
+        raise TypeError("Parameter data has the wrong type %s. Allowed types are: str, Tuple[int, int]." % (type(data)))
 
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
