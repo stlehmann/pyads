@@ -3,7 +3,7 @@
 ## 3.2 [unreleased]
 * drop support for Python 2.7
 
-## 3.1.3 [unreleased]
+## 3.1.3
 
 ### Added
 * [#120](https://github.com/stlehmann/pyads/pull/120) Allow to write ctypes directly
