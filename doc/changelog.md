@@ -1,7 +1,14 @@
 # Changelog
 
 ## 3.2 [unreleased]
-* drop support for Python 2.7
+
+### Added
+* [#111](https://github.com/stlehmann/pyads/pull/111) test cases for notification decorators
+
+### Changed
+
+### Removed
+* [#127](https://github.com/stlehmann/pyads/pull/127) Drop support for Python 2
 
 ## 3.1.3
 
