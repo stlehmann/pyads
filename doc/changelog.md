@@ -4,6 +4,7 @@
 
 ### Added
 * [#111](https://github.com/stlehmann/pyads/pull/111) test cases for notification decorators
+* [#113](https://github.com/stlehmann/pyads/pull/113) Add option not to check for data size
 
 ### Changed
 
