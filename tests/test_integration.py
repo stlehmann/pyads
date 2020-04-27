@@ -508,17 +508,35 @@ class AdsApiTestCase(TestCase):
         attr = NotificationAttrib(length=4)
         requests = self.test_server.request_history
 
-        notification, user = ads.add_device_notification(
+        notification, user_hnl = ads.add_device_notification(
             self.endpoint, (n_index_group, n_index_offset), attr, callback
         )
 
         # Assert that ADDDEVICENOTIFICATION was used to add device notification
         self.assert_command_id(requests[0], constants.ADSCOMMAND_ADDDEVICENOTE)
+        # Delete notification without user-handle
+        ads.del_device_notification(self.endpoint, notification, None)
 
-        ads.del_device_notification(self.endpoint, notification, user)
+        # Create notification with user_handle
+        notification, new_user_hnl = ads.add_device_notification(
+            self.endpoint, (n_index_group, n_index_offset), attr, callback, user_handle=user_hnl
+        )
+        self.assertEqual(new_user_hnl, user_hnl)
 
         # Assert that ADDDEVICENOTIFICATION was used to add device notification
         self.assert_command_id(requests[1], constants.ADSCOMMAND_DELDEVICENOTE)
+
+    def test_device_notification_data_error(self):
+        def callback(adr, notification, user):
+            pass
+
+        attr = NotificationAttrib(length=4)
+
+        with self.assertRaises(TypeError):
+            ads.add_device_notification(self.endpoint, 0, attr, callback)
+
+        with self.assertRaises(TypeError):
+            ads.add_device_notification(self.endpoint, None, attr, callback)
 
     def test_decorated_device_notification(self):
 
