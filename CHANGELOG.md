@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 * [#111](https://github.com/stlehmann/pyads/pull/111) test cases for notification decorators
 * [#113](https://github.com/stlehmann/pyads/pull/113) Add option not to check for data size
+* [#118](https://github.com/stlehmann/pyads/pull/118) Add support for arrays in notification decorator
 
 ### Changed
 
