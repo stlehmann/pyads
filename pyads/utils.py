@@ -27,13 +27,15 @@ def platform_is_windows():
     return sys.platform == "win32" or sys.platform == "cli"
 
 
-def deprecated(message):
+def deprecated(message=None):
     """Decorator for deprecated functions.
 
     Shows a deprecation warning with the given message if the
     decorated function is called.
 
     """
+    if message is None:
+        message = "Deprecated. This function will not be available in future versions."
 
     def decorator(func):
         @functools.wraps(func)
