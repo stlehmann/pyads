@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#118](https://github.com/stlehmann/pyads/pull/118) Add support for arrays in notification decorator
 
 ### Changed
+* [#128](https://github.com/stlehmann/pyads/pull/128) Deprecation warning for older non-class functions. In
+future versions only methods of the Connection class are supported.
 
 ### Removed
 * [#127](https://github.com/stlehmann/pyads/pull/127) Drop support for Python 2
