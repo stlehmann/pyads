@@ -12,7 +12,7 @@ import struct
 from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof
 from collections import OrderedDict
 
-from .utils import platform_is_linux
+from .utils import platform_is_linux, deprecated
 from .filetimes import filetime_to_dt
 
 from .pyads_ex import (
@@ -162,6 +162,7 @@ def set_local_address(ams_netid):
         )  # pragma: no cover
 
 
+@deprecated()
 def read_state(adr):
     # type: (AmsAddr) -> Optional[Tuple[int, int]]
     """Read the current ADS-state and the machine-state.
@@ -180,6 +181,7 @@ def read_state(adr):
     return None
 
 
+@deprecated()
 def write_control(adr, ads_state, device_state, data, plc_datatype):
     # type: (AmsAddr, int, int, Any, Type) -> None
     """Change the ADS state and the machine-state of the ADS-server.
@@ -206,6 +208,7 @@ def write_control(adr, ads_state, device_state, data, plc_datatype):
         )
 
 
+@deprecated()
 def read_device_info(adr):
     # type: (AmsAddr) -> Optional[Tuple[str, AdsVersion]]
     """Read the name and the version number of the ADS-server.
@@ -221,6 +224,7 @@ def read_device_info(adr):
     return None
 
 
+@deprecated()
 def write(adr, index_group, index_offset, value, plc_datatype):
     # type: (AmsAddr, int, int, Any, Type) -> None
     """Send data synchronous to an ADS-device.
@@ -240,6 +244,7 @@ def write(adr, index_group, index_offset, value, plc_datatype):
         )
 
 
+@deprecated()
 def read_write(
     adr,
     index_group,
@@ -286,6 +291,7 @@ def read_write(
     return None
 
 
+@deprecated()
 def read(
     adr, index_group, index_offset, plc_datatype, return_ctypes=False, check_length=True
 ):
@@ -319,6 +325,7 @@ def read(
     return None
 
 
+@deprecated()
 def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length=True):
     # type: (AmsAddr, str, Type, bool) -> Any
     """Read data synchronous from an ADS-device from data name.
@@ -342,6 +349,7 @@ def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length
     return None
 
 
+@deprecated()
 def write_by_name(adr, data_name, value, plc_datatype):
     # type: (AmsAddr, str, Any, Type) -> None
     """Send data synchronous to an ADS-device from data name.
@@ -412,8 +420,9 @@ def delete_route(adr):
     return adsDelRoute(adr.netIdStruct())
 
 
+@deprecated()
 def add_device_notification(adr, data, attr, callback, user_handle=None):
-    # type: (AmsAddr, Union[str, Tuple[int, int], NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]  # noqa: E501
+    # type: (AmsAddr, Union[str, Tuple[int, int]], NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]  # noqa: E501
     """Add a device notification.
 
     :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
@@ -440,6 +449,7 @@ def add_device_notification(adr, data, attr, callback, user_handle=None):
     return None
 
 
+@deprecated()
 def del_device_notification(adr, notification_handle, user_handle):
     # type: (AmsAddr, int, int) -> None
     """Remove a device notification.
