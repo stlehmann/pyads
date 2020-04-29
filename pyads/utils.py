@@ -12,7 +12,6 @@
 import functools
 import sys
 import warnings
-from ctypes import c_ubyte
 
 
 def platform_is_linux():
@@ -35,12 +34,13 @@ def deprecated(message):
     decorated function is called.
 
     """
-    def decorator(func):
 
+    def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             warnings.warn(message, DeprecationWarning)
             return func(*args, **kwargs)
 
         return wrapper
+
     return decorator
