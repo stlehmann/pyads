@@ -625,6 +625,30 @@ class Connection(object):
         self._open = False
         self._notifications = {}  # type: Dict[int, str]
 
+    @property
+    def ams_netid(self):
+        # type: () -> str
+        return self._adr.netid
+
+    @ams_netid.setter
+    def ams_netid(self, netid):
+        # type: (str) -> None
+        if self._open:
+            raise AttributeError("Setting netid is not allowed while connection is open.")
+        self._adr.netid = netid
+
+    @property
+    def ams_port(self):
+        # type: () -> int
+        return self._adr.port
+
+    @ams_port.setter
+    def ams_port(self, port):
+        # type: (int) -> None
+        if self._open:
+            raise AttributeError("Setting port is not allowed while connection is open.")
+        self._adr.port = port
+
     def __enter__(self):
         # type: () -> Connection
         """Open on entering with-block."""

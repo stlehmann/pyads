@@ -95,6 +95,24 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # connection should now be closed
         self.assertFalse(self.plc.is_open)
 
+    def test_netid_port(self):
+        self.assertEqual(self.plc.ams_netid, TEST_SERVER_AMS_NET_ID)
+        self.assertEqual(self.plc.ams_port, TEST_SERVER_AMS_PORT)
+        with self.assertRaises(ValueError):
+            self.plc.ams_netid = "1.1.1.1.1.1.1"
+        self.plc.ams_netid = "1.1.1.1.1.1"
+        self.assertEqual(self.plc.ams_netid, "1.1.1.1.1.1")
+        self.plc.ams_port = 1
+        self.assertEqual(self.plc.ams_port, 1)
+
+        # test for AttributeError when trying to set netid or port
+        # for an open connection
+        self.plc._open = True
+        with self.assertRaises(AttributeError):
+            self.plc.ams_netid = "1.1.1.1.1.2"
+        with self.assertRaises(AttributeError):
+            self.plc.ams_port = 2
+
     def test_read_device_info(self):
         with self.plc:
             name, version = self.plc.read_device_info()
