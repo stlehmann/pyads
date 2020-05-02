@@ -633,6 +633,8 @@ class Connection(object):
     @ams_netid.setter
     def ams_netid(self, netid):
         # type: (str) -> None
+        if self._open:
+            raise AttributeError("Setting netid is not allowed while connection is open.")
         self._adr.netid = netid
 
     @property
@@ -643,6 +645,8 @@ class Connection(object):
     @ams_port.setter
     def ams_port(self, port):
         # type: (int) -> None
+        if self._open:
+            raise AttributeError("Setting port is not allowed while connection is open.")
         self._adr.port = port
 
     def __enter__(self):
