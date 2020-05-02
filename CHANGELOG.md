@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#111](https://github.com/stlehmann/pyads/pull/111) test cases for notification decorators
 * [#113](https://github.com/stlehmann/pyads/pull/113) Add option not to check for data size
 * [#118](https://github.com/stlehmann/pyads/pull/118) Add support for arrays in notification decorator
+* [#112](https://github.com/stlehmann/pyads/pull/112) Add getters/setters for connection netid and port 
 
 ### Changed
 * [#128](https://github.com/stlehmann/pyads/pull/128) Deprecation warning for older non-class functions. In
