@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## 3.2 [unreleased]
+## 3.2.0
 
 ### Added
 * [#111](https://github.com/stlehmann/pyads/pull/111) test cases for notification decorators
