@@ -546,6 +546,20 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         notification.data = 5
         callback(pointer(notification), "TestName")
 
+    def test_notification_decorator_filetime(self):
+        # type: () -> None
+        """Test passthrough of FILETIME value by notification decorator"""
+
+        @self.plc.notification(timestamp_as_filetime=True)
+        def callback(handle, name, timestamp, value):
+            self.assertEqual(timestamp, 132223104000000000)
+
+        notification = structs.SAdsNotificationHeader()
+        notification.nTimeStamp = 132223104000000000
+        notification.cbSampleSize = 1
+        notification.data = 5
+        callback(pointer(notification), "TestName")
+
     def test_notification_decorator_string(self):
         # type: () -> None
         """Test decoding of STRING value by notification decorator"""
