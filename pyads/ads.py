@@ -778,19 +778,18 @@ class Connection(object):
         return_ctypes=False,
         check_length=True,
     ):
-        # type: (int, int, Type, Any, Type, bool, bool) -> Any
+        # type: (int, int, Optional[Type], Any, Optional[Type], bool, bool) -> Any
         """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
-        :param int plc_read_datatype: type of the data given to the PLC to
-            respond to, according to PLCTYPE constants
+        :param Type plc_read_datatype: type of the data given to the PLC to respond to,
+            according to PLCTYPE constants, or None to not read anything
         :param value: value to write to the storage address of the PLC
-        :param plc_write_datatype: type of the data given to the PLC,
-            according to PLCTYPE constants
-            :rtype: PLCTYPE
-    :param bool return_ctypes: return ctypes instead of python types if True
+        :param Type plc_write_datatype: type of the data given to the PLC, according to
+            PLCTYPE constants, or None to not write anything
+        :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)
