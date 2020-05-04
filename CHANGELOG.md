@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## 3.2.1 [unreleased]
 
 ### Added
 * [#130](https://github.com/stlehmann/pyads/pull/130) Allow read_write with NULL read/write data
+* [#131](https://github.com/stlehmann/pyads/pull/131) Add FILETIME passthrough to notification decorator
+
+### Changed
+
+### Removed
 
 ## 3.2.0
 
