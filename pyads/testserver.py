@@ -448,8 +448,14 @@ class BasicHandler(AbstractHandler):
             logger.info("Command received: READ_WRITE")
             # Parse requested data length
             response_length = struct.unpack("<I", request.ams_header.data[8:12])[0]
-            # Create response of repeated 0x0F with a null terminator for strings
-            response_value = (("\x0F" * (response_length - 1)) + "\x00").encode("utf-8")
+            if response_length > 0:
+                # Create response of repeated 0x0F with a null terminator for strings
+                response_value = (("\x0F" * (response_length - 1)) + "\x00").encode(
+                    "utf-8"
+                )
+            else:
+                response_value = b""
+
             response_content = struct.pack("<I", len(response_value)) + response_value
 
         else:
