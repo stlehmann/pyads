@@ -1069,7 +1069,7 @@ class Connection(object):
 
         :param plc_datatype: The PLC datatype that needs to be converted. This can
         be any basic PLC datatype or a `ctypes.Structure`.
-        :param timestamp_as_filetim: Whether the notification timestamp should be returned
+        :param timestamp_as_filetime: Whether the notification timestamp should be returned
         as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
         via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
         microseconds, while FILETIME allows for 100 ns. This may be relevant when using
