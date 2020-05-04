@@ -1056,8 +1056,8 @@ class Connection(object):
         if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
 
-    def notification(self, plc_datatype=None):
-        # type: (Optional[Type[Any]]) -> Callable
+    def notification(self, plc_datatype=None, timestamp_as_filetime=False):
+        # type: (Optional[Type], bool) -> Callable
         """Decorate a callback function.
 
         **Decorator**.
@@ -1068,6 +1068,11 @@ class Connection(object):
 
         :param plc_datatype: The PLC datatype that needs to be converted. This can
         be any basic PLC datatype or a `ctypes.Structure`.
+        :param timestamp_as_filetime: Whether the notification timestamp should be returned
+        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+        task cycle times such as 62.5 µs. Default: False.
 
         The callback functions need to be of the following type:
 
@@ -1101,7 +1106,7 @@ class Connection(object):
         """
 
         def notification_decorator(func):
-            # type: (Callable[[int, str, datetime, Any], None]) -> Callable[[Any, str], None] # noqa: E501
+            # type: (Union[Callable[[int, str, datetime, Any], None], Callable[[int, str, int, Any], None]]) -> Callable[[Any, str], None] # noqa: E501
 
             def func_wrapper(notification, data_name):
                 # type: (Any, str) -> None
@@ -1136,9 +1141,12 @@ class Connection(object):
                         0
                     ]
 
-                dt = filetime_to_dt(contents.nTimeStamp)
+                if timestamp_as_filetime:
+                    timestamp = contents.nTimeStamp
+                else:
+                    timestamp = filetime_to_dt(contents.nTimeStamp)
 
-                return func(contents.hNotification, data_name, dt, value)
+                return func(contents.hNotification, data_name, timestamp, value)
 
             return func_wrapper
 
