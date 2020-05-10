@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#131](https://github.com/stlehmann/pyads/pull/131) Add FILETIME passthrough to notification decorator
 
 ### Changed
+* [#134](https://github.com/stlehmann/pyads/pull/134)  Bug fix for setting up remote route from linux
 
 ### Removed
 
