@@ -387,15 +387,15 @@ def add_route_to_plc(
     route_name=None,
     added_net_id=None,
 ):
-    # type: (AmsAddr, str, str, str, str, str, AmsAddr) -> None
+    # type: (str, str, str, str, str, str, str) -> bool
     """Embed a new route in the PLC.
 
     :param pyads.structs.SAmsNetId sending_net_id: sending net id
-    :param str adding_host_name: host name (or IP) of the PC being added, defaults to hostname of this PC
-    :param str ip_address: ip address of the routing endpoint
+    :param str adding_host_name: host name (or IP) of the PC being added
+    :param str ip_address: ip address of the PLC
     :param str username: username for PLC
     :param str password: password for PLC
-    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostename of this PC
+    :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
 
     """
