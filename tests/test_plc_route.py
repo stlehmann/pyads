@@ -53,13 +53,13 @@ class PLCRouteTestCase(unittest.TestCase):
 
             data = data[4:]  # Remove protocol bytes
 
-            len_route_name = struct.unpack("<H", data[:2])[0]  # Length of route name
+            len_sending_host = struct.unpack("<H", data[:2])[0]  # Length of host name
             data = data[2:]
 
-            route_name = data[:len_route_name].decode(
+            hostname = data[:len_sending_host].decode(
                 "utf-8"
-            )  # Null terminated username
-            data = data[len_route_name:]
+            )  # Null terminated hostname
+            data = data[len_sending_host:]
 
             data = data[2:]  # Remove protocol bytes
 
@@ -90,13 +90,13 @@ class PLCRouteTestCase(unittest.TestCase):
 
             data = data[2:]  # Remove protocol bytes
 
-            len_sending_host = struct.unpack("<H", data[:2])[0]  # Length of host name
+            len_route_name = struct.unpack("<H", data[:2])[0]  # Length of PLC password
             data = data[2:]
 
-            hostname = data[:len_sending_host].decode(
+            route_name = data[:len_route_name].decode(
                 "utf-8"
-            )  # Null terminated hostname
-            data = data[len_sending_host:]
+            )  # Null terminated username
+            data = data[len_route_name:]
 
             self.assertEqual(len(data), 0)  # We should have popped everything from data
             self.assertEqual(sending_ams, self.SENDER_AMS)

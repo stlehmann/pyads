@@ -17,17 +17,14 @@ Open a port and create an AmsAddr object for the remote machine.
 >>> pyads.open_port()
 32828
 ```
-
 Add a route to the remote machine (Linux only - Windows routes must be
 added in the TwinCat Router UI).
 
 ```python
 >>> pyads.add_route("192.168.0.100.1.1", "192.168.0.100")
 ```
-
-A better option is to use the Connection class.
+Another option is to use the Connection class.
 ```python
->>> import pyads
 >>> remote_ip = '192.168.0.100'
 >>> remote_ads = '5.12.82.20.1.1'
 >>> with pyads.Connection(remote_ads, pyads.PORT_SPS1, remote_ip) as plc:
@@ -39,30 +36,21 @@ the routing table of the remote machine.
 **NOTE: On Linux machines at least one route must be added before the call
 to `get_local_address()` will function properly.**
 
-Optionally, a local AmsNetId can be manually set before adding a route.
-Set this to match the expected AMS ID in the remote machine's routing table.
-```python
->>> import pyads
->>> pyads.open_port()
->>> pyads.set_local_address('1.2.3.4.1.1')
->>> pyads.close_port()
-```
-
 ### Adding routes to a PLC on Linux
-Beckhoff PLCs require that a route be added to the routing table of the PLC. On Windows this is handled in the TwinCAT router, but on Linux there is no such option.
+Beckhoff PLCs require that a route be added to the routing table of the PLC. Normally this is handled in the TwinCAT router on Windows, but on Linux there is no such option.
 This only needs to be done once when initially setting up a connection to a remote PLC.
 
 Adding a route to a remote PLC to allow connections to a PC with the Hostname "MyPC"
-```python
+``` python
 >>> import pyads
 >>> SENDER_AMS = '1.2.3.4.1.1'
 >>> PLC_IP = '192.168.0.100'
->>> PLC_USERNAME = 'plc_username'
->>> PLC_PASSWORD = 'plc_password'
+>>> USERNAME = 'user'
+>>> PASSWORD = 'password'
 >>> ROUTE_NAME = 'RouteToMyPC'
->>> HOSTNAME = 'MyPC'  # or IP
+>>> HOSTNAME = 'MyPC'
 >>> PLC_AMS_ID = '11.22.33.44.1.1'
->>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, PLC_USERNAME, PLC_PASSWORD, route_name=ROUTE_NAME)
+>>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, USERNAME, PASSWORD, route_name=ROUTE_NAME)
 ```
 
 ### Creating routes on Windows
