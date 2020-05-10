@@ -4,14 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## 3.2.1 [unreleased]
+## 3.2.1
 
 ### Added
 * [#130](https://github.com/stlehmann/pyads/pull/130) Allow read_write with NULL read/write data
 * [#131](https://github.com/stlehmann/pyads/pull/131) Add FILETIME passthrough to notification decorator
 
 ### Changed
-* [#135](https://github.com/stlehmann/pyads/pull/135)  Bug fix for setting up remote route from linux
+* [#135](https://github.com/stlehmann/pyads/pull/135) Bug fix for setting up remote route from linux
+* [#137](https://github.com/stlehmann/pyads/pull/137) Update adslib from upstream
 
 ### Removed
 
