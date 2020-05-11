@@ -478,7 +478,7 @@ class AdsApiTestCase(TestCase):
         self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
 
     def test_device_notification_by_name(self):
-        def callback(adr, notification, user):
+        def callback(notification, data):
             pass
 
         handle_name = "TestHandle"
@@ -500,7 +500,7 @@ class AdsApiTestCase(TestCase):
         self.assert_command_id(requests[2], constants.ADSCOMMAND_DELDEVICENOTE)
 
     def test_device_notification_by_tuple(self):
-        def callback(adr, notification, user):
+        def callback(notification, data):
             pass
 
         n_index_group = 1
@@ -527,7 +527,7 @@ class AdsApiTestCase(TestCase):
         self.assert_command_id(requests[1], constants.ADSCOMMAND_DELDEVICENOTE)
 
     def test_device_notification_data_error(self):
-        def callback(adr, notification, user):
+        def callback(notification, data):
             pass
 
         attr = NotificationAttrib(length=4)
