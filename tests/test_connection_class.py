@@ -538,7 +538,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             self.plc.release_handle(handle)
 
     def test_device_notification(self):
-        def callback(adr, notification, user):
+        def callback(notification, data):
             pass
 
         handle_name = "test"

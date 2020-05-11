@@ -286,7 +286,7 @@ can be seen here:
 >>> from ctypes import sizeof
 >>>
 >>> # define the callback which extracts the value of the variable
->>> def callback(addr, notification, user_handle):
+>>> def callback(notification, data):
 >>>     contents = notification.contents
 >>>     var = next(map(int, bytearray(contents.data)[0:contents.cbSampleSize]))
 >>>
@@ -325,15 +325,15 @@ For more information about the NotificationAttrib settings have a look at
 **Here are some examples of callbacks for other datatypes:**
 
 ```python
-def callbackBool(adr, notification, user):
+def callbackBool(notification, data):
         contents = notification.contents
         var = map(bool, bytearray(contents.data)[0:contents.cbSampleSize])[0]
 
-def callbackInt(adr, notification, user):
+def callbackInt(notification, data):
         contents = notification.contents
         var = map(int, bytearray(contents.data)[0:contents.cbSampleSize])[0]
 
-def callbackString(adr, notification, user):
+def callbackString(notification, data):
         dest = (c_ubyte * contents.cbSampleSize)()
         memmove(addressof(dest), addressof(contents.data), contents.cbSampleSize)
         # Remove nullbytes
