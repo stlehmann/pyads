@@ -1,1 +1,6 @@
 pyads/_version.py export-subst
+
+#CRLF handling
+# Default is "auto"
+
+* text=auto
