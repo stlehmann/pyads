@@ -430,8 +430,7 @@ def add_device_notification(adr, data, attr, callback, user_handle=None):
     :param Union[str, Tuple[int, int] data: PLC storage address as string or Tuple with index group and offset
     :param pyads.structs.NotificationAttrib attr: object that contains
         all the attributes for the definition of a notification
-    :param callback: callback function that gets executed on in the event
-        of a notification
+    :param callback: callback function that gets executed in the event of a notification
 
     :rtype: (int, int)
     :returns: notification handle, user handle
@@ -980,8 +979,7 @@ class Connection(object):
         :param Union[str, Tuple[int, int] data: PLC storage address as string or Tuple with index group and offset
         :param pyads.structs.NotificationAttrib attr: object that contains
             all the attributes for the definition of a notification
-        :param callback: callback function that gets executed on in the event
-            of a notification
+        :param callback: callback function that gets executed in the event of a notification
 
         :rtype: (int, int)
         :returns: notification handle, user handle
@@ -999,7 +997,7 @@ class Connection(object):
             >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
             >>>
             >>> # Create callback function that prints the value
-            >>> def mycallback(adr, notification, user):
+            >>> def mycallback(notification, data):
             >>>     contents = notification.contents
             >>>     value = next(
             >>>         map(int,
@@ -1011,11 +1009,10 @@ class Connection(object):
             >>>     # Add notification with default settings
             >>>     attr = pyads.NotificationAttrib(size_of(pyads.PLCTYPE_INT))
             >>>
-            >>>     hnotification, huser = plc.add_device_notification(
-            >>>         adr, attr, mycallback)
+            >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
             >>>
             >>>     # Remove notification
-            >>>     plc.del_device_notification(hnotification, huser)
+            >>>     plc.del_device_notification(handles)
 
         """
         if self._port is not None:
