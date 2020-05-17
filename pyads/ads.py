@@ -69,12 +69,15 @@ from .structs import (
     SAdsNotificationHeader,
 )
 
-linux = platform_is_linux()
-port = None  # type: int
+# custom types
+StructureDef: Tuple[Tuple[str, Type, int]]
+
+# global variables
+linux: bool = platform_is_linux()
+port: Optional[int] = None
 
 
-def _parse_ams_netid(ams_netid):
-    # type: (str) -> SAmsNetId
+def _parse_ams_netid(ams_netid: str) -> SAmsNetId:
     """Parse an AmsNetId from *str* to *SAmsNetId*.
 
     :param str ams_netid: NetId as a string
@@ -96,8 +99,7 @@ def _parse_ams_netid(ams_netid):
     return ams_netid_st
 
 
-def open_port():
-    # type: () -> int
+def open_port() -> int:
     """Connect to the TwinCAT message router.
 
     :rtype: int
@@ -110,8 +112,7 @@ def open_port():
     return port
 
 
-def close_port():
-    # type: () -> None
+def close_port() -> None:
     """Close the connection to the TwinCAT message router."""
     global port
 
@@ -120,8 +121,7 @@ def close_port():
         port = None
 
 
-def get_local_address():
-    # type: () -> Optional[AmsAddr]
+def get_local_address() -> Optional[AmsAddr]:
     """Return the local AMS-address and the port number.
 
     :rtype: AmsAddr
@@ -133,11 +133,10 @@ def get_local_address():
     return None
 
 
-def set_local_address(ams_netid):
-    # type: (Union[str, SAmsNetId]) -> None
+def set_local_address(ams_netid: Union[str, SAmsNetId]) -> None:
     """Set the local NetID (**Linux only**).
 
-    :param str: new AmsNetID
+    :param str ams_netid: new AmsNetID
     :rtype: None
 
     **Usage:**
@@ -163,8 +162,7 @@ def set_local_address(ams_netid):
 
 
 @deprecated()
-def read_state(adr):
-    # type: (AmsAddr) -> Optional[Tuple[int, int]]
+def read_state(adr: AmsAddr) -> Optional[Tuple[int, int]]:
     """Read the current ADS-state and the machine-state.
 
     Read the current ADS-state and the machine-state from the
@@ -182,15 +180,14 @@ def read_state(adr):
 
 
 @deprecated()
-def write_control(adr, ads_state, device_state, data, plc_datatype):
-    # type: (AmsAddr, int, int, Any, Type) -> None
+def write_control(adr: AmsAddr, ads_state: int, device_state: int, data: Any, plc_datatype: Type) -> None:
     """Change the ADS state and the machine-state of the ADS-server.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int ads_state: new ADS-state, according to ADSTATE constants
     :param int device_state: new machine-state
-    :param data: additional data
-    :param int plc_datatype: datatype, according to PLCTYPE constants
+    :param Any data: additional data
+    :param Type plc_datatype: datatype, according to PLCTYPE constants
 
     :note: Despite changing the ADS-state and the machine-state it is possible
            to send additional data to the ADS-server. For current ADS-devices
@@ -209,8 +206,7 @@ def write_control(adr, ads_state, device_state, data, plc_datatype):
 
 
 @deprecated()
-def read_device_info(adr):
-    # type: (AmsAddr) -> Optional[Tuple[str, AdsVersion]]
+def read_device_info(adr: AmsAddr) -> Optional[Tuple[str, AdsVersion]]:
     """Read the name and the version number of the ADS-server.
 
     :param AmsAddr adr: local or remote AmsAddr
@@ -225,15 +221,14 @@ def read_device_info(adr):
 
 
 @deprecated()
-def write(adr, index_group, index_offset, value, plc_datatype):
-    # type: (AmsAddr, int, int, Any, Type) -> None
+def write(adr: AmsAddr, index_group: int, index_offset: int, value: Any, plc_datatype: Type) -> None:
     """Send data synchronous to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
-    :param value: value to write to the storage address of the PLC
+    :param Any value: value to write to the storage address of the PLC
     :param Type plc_datatype: type of the data given to the PLC,
         according to PLCTYPE constants
 
@@ -246,32 +241,26 @@ def write(adr, index_group, index_offset, value, plc_datatype):
 
 @deprecated()
 def read_write(
-    adr,
-    index_group,
-    index_offset,
-    plc_read_datatype,
-    value,
-    plc_write_datatype,
-    return_ctypes=False,
-    check_length=True,
-):
-    # type: (AmsAddr, int, int, Type, Any, Type, bool, bool) -> Any
+    adr: AmsAddr,
+    index_group: int,
+    index_offset: int,
+    plc_read_datatype: Type,
+    value: Any,
+    plc_write_datatype: bool,
+    return_ctypes: bool = False,
+    check_length: bool = True,
+) -> Any:
     """Read and write data synchronous from/to an ADS-device.
 
     :param AmsAddr adr: local or remote AmsAddr
-    :param int index_group: PLC storage area, according to the INDEXGROUP
-        constants
+    :param int index_group: PLC storage area, according to the INDEXGROUP constants
     :param int index_offset: PLC storage address
-    :param Type plc_read_datatype: type of the data given to the PLC to respond
-            to, according to PLCTYPE constants
-        :param value: value to write to the storage address of the PLC
-    :param Type plc_write_datatype: type of the data given to the PLC, according to
-        PLCTYPE constants
-    :param bool return_ctypes: return ctypes instead of python types if True
-        (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
-    :rtype: PLCTYPE
+    :param Type plc_read_datatype: type of the data given to the PLC to respond to, according to PLCTYPE constants
+    :param Any value: value to write to the storage address of the PLC
+    :param Type plc_write_datatype: type of the data given to the PLC, according to PLCTYPE constants
+    :param bool return_ctypes: return ctypes instead of python types if True (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size of the read data type (default: True)
+    :rtype: Any
     :return: value: **value**
 
     """
@@ -293,21 +282,17 @@ def read_write(
 
 @deprecated()
 def read(
-    adr, index_group, index_offset, plc_datatype, return_ctypes=False, check_length=True
-):
-    # type: (AmsAddr, int, int, Type, bool, bool) -> Any
+    adr: AmsAddr, index_group: int, index_offset: int, plc_datatype: Type, return_ctypes: bool = False, check_length: bool = True
+) -> Any:
     """Read data synchronous from an ADS-device.
 
-        :param AmsAddr adr: local or remote AmsAddr
+    :param AmsAddr adr: local or remote AmsAddr
     :param int index_group: PLC storage area, according to the INDEXGROUP
         constants
     :param int index_offset: PLC storage address
-    :param int plc_datatype: type of the data given to the PLC, according to
-        PLCTYPE constants
-    :param bool return_ctypes: return ctypes instead of python types if True
-        (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
+    :param int plc_datatype: type of the data given to the PLC, according to PLCTYPE constants
+    :param bool return_ctypes: return ctypes instead of python types if True (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size of the read data type (default: True)
     :return: value: **value**
 
     """
@@ -326,18 +311,14 @@ def read(
 
 
 @deprecated()
-def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length=True):
-    # type: (AmsAddr, str, Type, bool) -> Any
+def read_by_name(adr: AmsAddr, data_name: str, plc_datatype: Type, return_ctypes: bool = False, check_length: bool = True) -> Any:
     """Read data synchronous from an ADS-device from data name.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: data name
-    :param int plc_datatype: type of the data given to the PLC, according to
-        PLCTYPE constants
-    :param bool return_ctypes: return ctypes instead of python types if True
-        (default: False)
-    :param bool check_length: check whether the amount of bytes read matches the size
-        of the read data type (default: True)
+    :param int plc_datatype: type of the data given to the PLC, according to PLCTYPE constants
+    :param bool return_ctypes: return ctypes instead of python types if True (default: False)
+    :param bool check_length: check whether the amount of bytes read matches the size of the read data type (default: True)
     :return: value: **value**
 
     """
@@ -350,27 +331,25 @@ def read_by_name(adr, data_name, plc_datatype, return_ctypes=False, check_length
 
 
 @deprecated()
-def write_by_name(adr, data_name, value, plc_datatype):
-    # type: (AmsAddr, str, Any, Type) -> None
+def write_by_name(adr: AmsAddr, data_name: str, value: Any, plc_datatype: Type) -> None:
     """Send data synchronous to an ADS-device from data name.
 
     :param AmsAddr adr: local or remote AmsAddr
     :param string data_name: PLC storage address
     :param value: value to write to the storage address of the PLC
-    :param int plc_datatype: type of the data given to the PLC,
-        according to PLCTYPE constants
+    :param int plc_datatype: type of the data given to the PLC, according to PLCTYPE constants
 
     """
     if port is not None:
         return adsSyncWriteByNameEx(port, adr, data_name, value, plc_datatype)
 
 
-def add_route(adr, ip_address):
-    # type: (Union[str, AmsAddr], str) -> None
+def add_route(adr: Union[str, AmsAddr], ip_address: str) -> None:
     """Establish a new route in the AMS Router (linux Only).
 
     :param adr: AMS Address of routing endpoint as str or AmsAddr object
     :param str ip_address: ip address of the routing endpoint
+
     """
     if isinstance(adr, str):
         adr = AmsAddr(adr)
@@ -379,15 +358,14 @@ def add_route(adr, ip_address):
 
 
 def add_route_to_plc(
-    sending_net_id,
-    adding_host_name,
-    ip_address,
-    username,
-    password,
-    route_name=None,
-    added_net_id=None,
-):
-    # type: (str, str, str, str, str, str, str) -> bool
+    sending_net_id: str,
+    adding_host_name: str,
+    ip_address: str,
+    username: str,
+    password: str,
+    route_name: str = None,
+    added_net_id: str = None,
+) -> bool:
     """Embed a new route in the PLC.
 
     :param pyads.structs.SAmsNetId sending_net_id: sending net id
@@ -397,6 +375,8 @@ def add_route_to_plc(
     :param str password: password for PLC
     :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
+    :rtype: bool
+    :return: True if route was added
 
     """
     return adsAddRouteToPLC(
@@ -410,34 +390,28 @@ def add_route_to_plc(
     )
 
 
-def delete_route(adr):
-    # type: (AmsAddr) -> None
+def delete_route(adr: AmsAddr) -> None:
     """Remove existing route from the AMS Router (Linux Only).
 
-    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
-        entry which is to be removed from the router.
+    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing entry which is to be removed from the router.
+
     """
     return adsDelRoute(adr.netIdStruct())
 
 
 @deprecated()
-def add_device_notification(adr, data, attr, callback, user_handle=None):
-    # type: (AmsAddr, Union[str, Tuple[int, int]], NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]  # noqa: E501
+def add_device_notification(adr: AmsAddr, data: Union[str, Tuple[int, int]], attr: NotificationAttrib, callback: Callable, user_handle: int = None) -> Optional[Tuple[int, int]]:
     """Add a device notification.
 
-    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
-        entry which is to be removed from the router.
+    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing entry which is to be removed from the router.
     :param Union[str, Tuple[int, int] data: PLC storage address as string or Tuple with index group and offset
-    :param pyads.structs.NotificationAttrib attr: object that contains
-        all the attributes for the definition of a notification
+    :param pyads.structs.NotificationAttrib attr: object that contains all the attributes for the definition of a notification
     :param callback: callback function that gets executed in the event of a notification
 
     :rtype: (int, int)
     :returns: notification handle, user handle
 
-    Save the notification handle and the user handle on creating a
-    notification if you want to be able to remove the notification
-    later in your code.
+    Save the notification handle and the user handle on creating a notification if you want to be able to remove the notification later in your code.
 
     """
     if port is not None:
@@ -449,14 +423,11 @@ def add_device_notification(adr, data, attr, callback, user_handle=None):
 
 
 @deprecated()
-def del_device_notification(adr, notification_handle, user_handle):
-    # type: (AmsAddr, int, int) -> None
+def del_device_notification(adr: AmsAddr, notification_handle: int, user_handle: int) -> None:
     """Remove a device notification.
 
-    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing
-        entry which is to be removed from the router.
-    :param notification_handle: address of the variable that contains
-        the handle of the notification
+    :param pyads.structs.AmsAddr adr: AMS Address associated with the routing entry which is to be removed from the router.
+    :param notification_handle: address of the variable that contains the handle of the notification
     :param user_handle: user handle
 
     """
@@ -466,14 +437,13 @@ def del_device_notification(adr, notification_handle, user_handle):
         )
 
 
-def set_timeout(ms):
-    # type: (int) -> None
+def set_timeout(ms: int) -> None:
     """Set timeout."""
     if port is not None:
         return adsSyncSetTimeoutEx(port, ms)
 
 
-def size_of_structure(structure_def):
+def size_of_structure(structure_def: StructureDef) -> int:
     """Calculate the size of a structure in number of BYTEs.
 
     :param tuple structure_def: special tuple defining the structure and
@@ -524,7 +494,7 @@ def size_of_structure(structure_def):
     return c_ubyte * num_of_bytes
 
 
-def dict_from_bytes(byte_list, structure_def, array_size=1):
+def dict_from_bytes(byte_list: bytearray, structure_def: StructureDef, array_size: int = 1) -> Dict[str, Any]:
     """Return an ordered dict of PLC values from a list of BYTE values read from PLC.
 
     :param byte_list: list of byte values for an entire structure
@@ -602,7 +572,7 @@ def dict_from_bytes(byte_list, structure_def, array_size=1):
 
 
 class Connection(object):
-    """Class for managing the connection to an ADS device.
+    """Class for managingthe connection to an ADS device.
 
     :ivar str ams_net_id: AMS net id of the remote device
     :ivar int ams_net_port: port of the remote device
