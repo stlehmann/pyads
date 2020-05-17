@@ -991,7 +991,7 @@ class Connection(object):
         **Usage**:
 
             >>> import pyads
-            >>> from ctypes import size_of
+            >>> from ctypes import sizeof
             >>>
             >>> # Connect to the local TwinCAT PLC
             >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
@@ -1007,7 +1007,7 @@ class Connection(object):
             >>>
             >>> with plc:
             >>>     # Add notification with default settings
-            >>>     attr = pyads.NotificationAttrib(size_of(pyads.PLCTYPE_INT))
+            >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
             >>>
             >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
             >>>
