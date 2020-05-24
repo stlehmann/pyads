@@ -70,7 +70,7 @@ from .structs import (
 )
 
 # custom types
-StructureDef: Tuple[Tuple[str, Type, int]]
+StructureDef = Tuple[Tuple[str, Type, int]]
 
 # global variables
 linux: bool = platform_is_linux()
