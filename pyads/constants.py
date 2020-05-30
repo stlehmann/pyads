@@ -62,6 +62,7 @@ DATATYPE_MAP = {
     PLCTYPE_UDINT: "<I",
     PLCTYPE_UINT: "<H",
     PLCTYPE_USINT: "<B",
+    PLCTYPE_ULINT: "<Q",
     PLCTYPE_WORD: "<H",
 }  # type: Dict[Type, str]
 
