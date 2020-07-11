@@ -633,9 +633,7 @@ class Connection(object):
     def ams_netid(self, netid):
         # type: (str) -> None
         if self._open:
-            raise AttributeError(
-                "Setting netid is not allowed while connection is open."
-            )
+            raise AttributeError("Setting netid is not allowed while connection is open.")
         self._adr.netid = netid
 
     @property
@@ -647,9 +645,7 @@ class Connection(object):
     def ams_port(self, port):
         # type: (int) -> None
         if self._open:
-            raise AttributeError(
-                "Setting port is not allowed while connection is open."
-            )
+            raise AttributeError("Setting port is not allowed while connection is open.")
         self._adr.port = port
 
     def __enter__(self):
@@ -1111,7 +1107,7 @@ class Connection(object):
 
             def func_wrapper(notification, data_name):
                 # type: (Any, str) -> None
-                hNotification, timestamp, value = self.notification_parser(
+                hNotification, timestamp, value = self.parse_notification(
                     notification, plc_datatype, timestamp_as_filetime
                 )
                 return func(hNotification, data_name, timestamp, value)
@@ -1120,7 +1116,7 @@ class Connection(object):
 
         return notification_decorator
 
-    def notification_parser(
+    def parse_notification(
         self, notification, plc_datatype, timestamp_as_filetime=False
     ):
         # type: (Any, Type, bool) -> (int, int, Any)
