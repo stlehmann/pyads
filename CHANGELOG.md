@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#111](https://github.com/stlehmann/pyads/pull/111) test cases for notification decorators
 * [#113](https://github.com/stlehmann/pyads/pull/113) Add option not to check for data size
 * [#118](https://github.com/stlehmann/pyads/pull/118) Add support for arrays in notification decorator
-* [#112](https://github.com/stlehmann/pyads/pull/112) Add getters/setters for connection netid and port
+* [#112](https://github.com/stlehmann/pyads/pull/112) Add getters/setters for connection netid and port 
 
 ### Changed
 * [#128](https://github.com/stlehmann/pyads/pull/128) Deprecation warning for older non-class functions. In
@@ -52,12 +52,12 @@ future versions only methods of the Connection class are supported.
 * [#125](https://github.com/stlehmann/pyads/pull/125) Add notifications by address. The `data_name
 ` parameter changed to `data` as now not only strings can be passed but also a tuple with index group and offset.
 * [#123](https://github.com/stlehmann/pyads/pull/123) Add ULINT data type
-* [#106](https://github.com/stlehmann/pyads/pull/106) Store notification callbacks per AmsAddr
+* [#106](https://github.com/stlehmann/pyads/pull/106) Store notification callbacks per AmsAddr 
 
 ### Removed
 
 ## 3.1.2
-* new function read_structure_by_name to read a structure with multiple
+* new function read_structure_by_name to read a structure with multiple 
 datatypes from the plc (issue #82, many thanks to @chrisbeardy)
 * simplify pyads.add_route, now the ams address can be supplied by a string
 instead of an AmsAddr object
