@@ -1107,44 +1107,92 @@ class Connection(object):
 
             def func_wrapper(notification, data_name):
                 # type: (Any, str) -> None
-                contents = notification.contents
-                data_size = contents.cbSampleSize
-                # Get dynamically sized data array
-                data = (c_ubyte * data_size).from_address(
-                    addressof(contents) + SAdsNotificationHeader.data.offset
+                hNotification, timestamp, value = self.parse_notification(
+                    notification, plc_datatype, timestamp_as_filetime
                 )
-
-                if plc_datatype == PLCTYPE_STRING:
-                    # read only until null-termination character
-                    value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
-
-                elif plc_datatype is not None and issubclass(plc_datatype, Structure):
-                    value = plc_datatype()
-                    fit_size = min(data_size, sizeof(value))
-                    memmove(addressof(value), addressof(data), fit_size)
-
-                elif plc_datatype is not None and issubclass(plc_datatype, Array):
-                    if data_size == sizeof(plc_datatype):
-                        value = list(plc_datatype.from_buffer_copy(bytes(data)))
-                    else:
-                        # invalid size
-                        value = None
-
-                elif plc_datatype not in DATATYPE_MAP:
-                    value = bytearray(data)
-
-                else:
-                    value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[
-                        0
-                    ]
-
-                if timestamp_as_filetime:
-                    timestamp = contents.nTimeStamp
-                else:
-                    timestamp = filetime_to_dt(contents.nTimeStamp)
-
-                return func(contents.hNotification, data_name, timestamp, value)
+                return func(hNotification, data_name, timestamp, value)
 
             return func_wrapper
 
         return notification_decorator
+
+    def parse_notification(
+        self, notification, plc_datatype, timestamp_as_filetime=False
+    ):
+        # type: (Any, Type, bool) -> (int, int, Any)
+        """Parse a notification.
+
+        Convert the data of the NotificationHeader into the fitting Python type.
+
+        :param notification: The notification we recieve from PLC datatype to be
+        converted. This can be any basic PLC datatype or a `ctypes.Structure`.
+        :param plc_datatype: The PLC datatype that needs to be converted. This can
+        be any basic PLC datatype or a `ctypes.Structure`.
+        :param timestamp_as_filetime: Whether the notification timestamp should be returned
+        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+        task cycle times such as 62.5 µs. Default: False.
+
+        :rtype: (int, int, Any)
+        :returns: notification handle, timestamp, value
+
+        **Usage**:
+
+        >>> import pyads
+        >>> from ctypes import size_of
+        >>>
+        >>> # Connect to the local TwinCAT PLC
+        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
+        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
+        >>>
+        >>> # Create callback function that prints the value
+        >>> def mycallback(notification, data):
+        >>>     data_type = tag[data]
+        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
+        >>>     print(value)
+        >>>
+        >>> with plc:
+        >>>     # Add notification with default settings
+        >>>     attr = pyads.NotificationAttrib(size_of(pyads.PLCTYPE_INT))
+        >>>
+        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+        >>>
+        >>>     # Remove notification
+        >>>     plc.del_device_notification(handles)
+        """
+        contents = notification.contents
+        data_size = contents.cbSampleSize
+        # Get dynamically sized data array
+        data = (c_ubyte * data_size).from_address(
+            addressof(contents) + SAdsNotificationHeader.data.offset
+        )
+
+        if plc_datatype == PLCTYPE_STRING:
+            # read only until null-termination character
+            value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
+
+        elif plc_datatype is not None and issubclass(plc_datatype, Structure):
+            value = plc_datatype()
+            fit_size = min(data_size, sizeof(value))
+            memmove(addressof(value), addressof(data), fit_size)
+
+        elif plc_datatype is not None and issubclass(plc_datatype, Array):
+            if data_size == sizeof(plc_datatype):
+                value = list(plc_datatype.from_buffer_copy(bytes(data)))
+            else:
+                # invalid size
+                value = None
+
+        elif plc_datatype not in DATATYPE_MAP:
+            value = bytearray(data)
+
+        else:
+            value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+
+        if timestamp_as_filetime:
+            timestamp = contents.nTimeStamp
+        else:
+            timestamp = filetime_to_dt(contents.nTimeStamp)
+
+        return contents.hNotification, timestamp, value
