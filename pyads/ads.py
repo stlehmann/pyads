@@ -1149,7 +1149,7 @@ class Connection(object):
         >>> # Create callback function that prints the value
         >>> def mycallback(notification, data):
         >>>     data_type = tag[data]
-        >>>     handle, timestamp, value = plc.notification_parser(notification, data_type)
+        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
         >>>     print(value)
         >>>
         >>> with plc:
