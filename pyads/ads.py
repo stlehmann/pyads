@@ -67,6 +67,7 @@ from .structs import (
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
+    SAdsSumRequest,
 )
 
 linux = platform_is_linux()

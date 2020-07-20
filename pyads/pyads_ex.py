@@ -36,6 +36,8 @@ from .constants import (
     ADSIGRP_SYM_VALBYHND,
     ADSIGRP_SYM_RELEASEHND,
     PORT_SYSTEMSERVICE,
+    ADISGRP_SUMUP_READ,
+    ADISGRP_SUMUP_WRITE,
 )
 from .errorcodes import ERROR_CODES
 
@@ -548,7 +550,14 @@ def adsSyncReadWriteReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if read_data_type is None:
+    if index_group == ADISGRP_SUMUP_READ or index_group == ADISGRP_SUMUP_WRITE:
+        response_size = ctypes.sizeof(ctypes.c_uint32)
+        for _ in value:
+            response_size += _.size
+        read_data = bytearray(response_size)
+        read_data_pointer = ctypes.pointer(read_data)
+
+    elif read_data_type is None:
         read_data = None
         read_data_pointer = None
         read_length = ctypes.c_ulong(0)
@@ -564,7 +573,11 @@ def adsSyncReadWriteReqEx2(
     bytes_read = ctypes.c_ulong()
     bytes_read_pointer = ctypes.pointer(bytes_read)
 
-    if write_data_type is None:
+    if index_group == ADISGRP_SUMUP_READ or index_group == ADISGRP_SUMUP_WRITE:
+        write_data_pointer = ctypes.pointer(value)
+        write_length = ctypes.sizeof(value)
+
+    elif write_data_type is None:
         write_data_pointer = None
         write_length = ctypes.c_ulong(0)
     elif write_data_type == PLCTYPE_STRING:

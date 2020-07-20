@@ -319,3 +319,17 @@ class SAdsSymbolEntry(Structure):
         ("stringBuffer", c_ubyte * (256 * 3)),
         # 3 strings contained, with max length 256
     ]
+
+class SAdsSumRequest(Structure):
+    """ADS sum request structure.
+    
+    :ivar iGroup: indexGroup of request
+    :ivar iOffs: indexOffset of request
+    :ivar size: size of request
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("iGroup", c_uint32),
+        ("iOffset", c_uint32),
+        ("size", c_uint32),
+    ]
