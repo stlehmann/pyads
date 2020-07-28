@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 * [#140](https://github.com/stlehmann/pyads/pull/140) Fix lineendings to LF in the repository
 * [#139](https://github.com/stlehmann/pyads/pull/139) Fix documentation and test issues with DeviceNotifications
+* [ea707](https://github.com/stlehmann/pyads/tree/ea7073d93feac75c1864d1fe8ab2e14a2068b552) Fix documentation on
+ ReadTheDocs
 
 ### Removed
 
