@@ -321,23 +321,25 @@ class SAdsSymbolEntry(Structure):
     ]
 
     def _get_string(self, offset, length):
-        return bytes(self.stringBuffer[offset:offset + length]).decode('utf-8')
+        return bytes(self.stringBuffer[offset : offset + length]).decode("utf-8")
 
     @property
     def name(self):
-        'The symbol name'
+        "The symbol name"
         return self._get_string(0, self.nameLength)
 
     @property
     def type_name(self):
-        'The qualified type name, including the namespace'
+        "The qualified type name, including the namespace"
         return self._get_string(self.nameLength + 1, self.typeLength)
 
     @property
     def comment(self):
-        'User-defined comment'
-        return self._get_string(self.nameLength + self.typeLength + 2,
-                                self.commentLength)
+        "User-defined comment"
+        return self._get_string(
+            self.nameLength + self.typeLength + 2, self.commentLength
+        )
+
 
 class SAdsSumRequest(Structure):
     """ADS sum request structure.
@@ -346,10 +348,10 @@ class SAdsSumRequest(Structure):
     :ivar iOffs: indexOffset of request
     :ivar size: size of request
     """
+
     _pack_ = 1
     _fields_ = [
         ("iGroup", c_uint32),
         ("iOffset", c_uint32),
         ("size", c_uint32),
     ]
-    

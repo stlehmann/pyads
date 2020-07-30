@@ -106,6 +106,7 @@ ads_type_to_ctype = {
     ADST_BIT: PLCTYPE_BOOL,
 }
 
+
 def PLCTYPE_ARR_REAL(n):
     # type: (int) -> Type[Array[c_float]]
     """Return an array with n float values."""
@@ -140,9 +141,7 @@ def PLCTYPE_ARR_SHORT(n):
 # READ_M - WRITE_M
 INDEXGROUP_MEMORYBYTE = 0x4020  #: plc memory area (%M), offset means byte-offset
 # READ_MX - WRITE_MX
-INDEXGROUP_MEMORYBIT = (
-    0x4021
-)  #: plc memory area (%MX), offset means the bit address, calculatedb by bytenumber * 8 + bitnumber  # noqa: E501
+INDEXGROUP_MEMORYBIT = 0x4021  #: plc memory area (%MX), offset means the bit address, calculatedb by bytenumber * 8 + bitnumber  # noqa: E501
 # PLCADS_IGR_RMSIZE
 INDEXGROUP_MEMORYSIZE = 0x4025  #: size of the memory area in bytes
 # PLCADS_IGR_RWRB
@@ -179,8 +178,8 @@ ADSIGRP_IOIMAGE_RWOX = 0xF031  #: read/write output bit
 ADSIGRP_IOIMAGE_CLEARI = 0xF040  #: write inputs to null
 ADSIGRP_IOIMAGE_CLEARO = 0xF050  #: write outputs to null
 
-ADISGRP_SUMUP_READ = 0xF080 #: ADS Sum Read Request
-ADISGRP_SUMUP_WRITE = 0xF081 #: ADS Sum Write Request 
+ADISGRP_SUMUP_READ = 0xF080  #: ADS Sum Read Request
+ADISGRP_SUMUP_WRITE = 0xF081  #: ADS Sum Write Request
 
 ADSIGRP_DEVICE_DATA = 0xF100  #: state, name, etc...
 ADSIOFFS_DEVDATA_ADSSTATE = 0x0000  #: ads state of device

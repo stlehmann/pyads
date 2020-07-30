@@ -640,7 +640,9 @@ class Connection(object):
     def ams_netid(self, netid):
         # type: (str) -> None
         if self._open:
-            raise AttributeError("Setting netid is not allowed while connection is open.")
+            raise AttributeError(
+                "Setting netid is not allowed while connection is open."
+            )
         self._adr.netid = netid
 
     @property
@@ -652,7 +654,9 @@ class Connection(object):
     def ams_port(self, port):
         # type: (int) -> None
         if self._open:
-            raise AttributeError("Setting port is not allowed while connection is open.")
+            raise AttributeError(
+                "Setting port is not allowed while connection is open."
+            )
         self._adr.port = port
 
     def __enter__(self):
@@ -927,11 +931,15 @@ class Connection(object):
         """
         if cache_symbol_info:
             new_items = [i for i in data_names if i not in self._symbol_info_cache]
-            new_cache = { i : adsGetSymbolInfo(self._port, self._adr, i) for i in new_items }
+            new_cache = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+            }
             self._symbol_info_cache.update(new_cache)
-            data_symbols = { i : self._symbol_info_cache[i] for i in data_names} 
+            data_symbols = {i: self._symbol_info_cache[i] for i in data_names}
         else:
-            data_symbols = { i : adsGetSymbolInfo(self._port, self._adr, i) for i in data_names }
+            data_symbols = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
+            }
 
         return adsSumRead(self._port, self._adr, data_names, data_symbols)
 
@@ -948,15 +956,25 @@ class Connection(object):
 
         """
         if cache_symbol_info:
-            new_items = [i for i in data_names_and_values.keys() if i not in self._symbol_info_cache]
-            new_cache = { i : adsGetSymbolInfo(self._port, self._adr, i) for i in new_items }
+            new_items = [
+                i
+                for i in data_names_and_values.keys()
+                if i not in self._symbol_info_cache
+            ]
+            new_cache = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+            }
             self._symbol_info_cache.update(new_cache)
-            data_symbols = { i : self._symbol_info_cache[i] for i in data_names_and_values }
+            data_symbols = {
+                i: self._symbol_info_cache[i] for i in data_names_and_values
+            }
         else:
-            data_symbols = { i : adsGetSymbolInfo(self._port, self._adr, i) for i in data_names_and_values.keys() }
+            data_symbols = {
+                i: adsGetSymbolInfo(self._port, self._adr, i)
+                for i in data_names_and_values.keys()
+            }
 
         return adsSumWrite(self._port, self._adr, data_names_and_values, data_symbols)
-
 
     def read_structure_by_name(
         self, data_name, structure_def, array_size=1, structure_size=None, handle=None

@@ -220,9 +220,7 @@ def adsAddRouteToPLC(
     data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
     data_header += struct.pack(">2s", b"\x05\x00")  # Write command
     data_header += struct.pack(">4s", b"\x00\x00\x0c\x00")  # Block of unknown
-    data_header += struct.pack(
-        "<H", len(route_name)
-    )  # Length of sender host name
+    data_header += struct.pack("<H", len(route_name))  # Length of sender host name
     data_header += route_name.encode("utf-8")  # Sender host name
     data_header += struct.pack(">2s", b"\x07\x00")  # Block of unknown
 
@@ -240,7 +238,9 @@ def adsAddRouteToPLC(
     actual_data += password.encode("utf-8")  # PLC Password
     actual_data += struct.pack(">2s", b"\x05\x00")  # Block of unknown
     actual_data += struct.pack("<H", len(adding_host_name))  # Length of route name
-    actual_data += adding_host_name.encode("utf-8")  # Name of route being added to the PLC
+    actual_data += adding_host_name.encode(
+        "utf-8"
+    )  # Name of route being added to the PLC
 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on 55189 for the response from the PLC
@@ -563,14 +563,16 @@ def adsSyncReadWriteReqEx2(
         for _ in value:
             response_size += _.size
         read_data_buf = bytearray(response_size)
-        read_data = (ctypes.c_byte*len(read_data_buf)).from_buffer(read_data_buf)
+        read_data = (ctypes.c_byte * len(read_data_buf)).from_buffer(read_data_buf)
         read_data_pointer = ctypes.pointer(read_data)
         read_length = response_size
 
     elif index_group == ADISGRP_SUMUP_WRITE:
-        response_size = index_offset * 4 #expect 4 bytes back for every value written (error data)
+        response_size = (
+            index_offset * 4
+        )  # expect 4 bytes back for every value written (error data)
         read_data_buf = bytearray(response_size)
-        read_data = (ctypes.c_byte*len(read_data_buf)).from_buffer(read_data_buf)
+        read_data = (ctypes.c_byte * len(read_data_buf)).from_buffer(read_data_buf)
         read_data_pointer = ctypes.pointer(read_data)
         read_length = response_size
 
@@ -594,7 +596,7 @@ def adsSyncReadWriteReqEx2(
         write_data_pointer = ctypes.pointer(value)
         write_length = ctypes.sizeof(value)
     elif index_group == ADISGRP_SUMUP_WRITE:
-        write_data = (ctypes.c_byte*len(value)).from_buffer(value)
+        write_data = (ctypes.c_byte * len(value)).from_buffer(value)
         write_data_pointer = ctypes.pointer(write_data)
         write_length = ctypes.sizeof(write_data)
     elif write_data_type is None:
@@ -635,10 +637,11 @@ def adsSyncReadWriteReqEx2(
     if index_group == ADISGRP_SUMUP_READ or index_group == ADISGRP_SUMUP_WRITE:
         expected_length = response_size
     else:
-        expected_length = (read_data.entryLength
-                            if isinstance(read_data, SAdsSymbolEntry)
-                            else read_length.value
-                            )
+        expected_length = (
+            read_data.entryLength
+            if isinstance(read_data, SAdsSymbolEntry)
+            else read_length.value
+        )
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
@@ -775,6 +778,7 @@ def adsGetHandle(port, address, data_name):
 
     return handle
 
+
 def adsGetSymbolInfo(port, address, data_name):
     # type: (int, AmsAddr, str) -> SAdsSymbolInfo
     """Get the handle of the PLC-variable.
@@ -786,16 +790,17 @@ def adsGetSymbolInfo(port, address, data_name):
     :return: symbol_info: PLC Symbol info
     """
     symbol_info = adsSyncReadWriteReqEx2(
-            port,
-            address,
-            ADSIGRP_SYM_INFOBYNAMEEX,
-            0x0,
-            SAdsSymbolEntry,
-            data_name,
-            PLCTYPE_STRING,
-        )
-    
+        port,
+        address,
+        ADSIGRP_SYM_INFOBYNAMEEX,
+        0x0,
+        SAdsSymbolEntry,
+        data_name,
+        PLCTYPE_STRING,
+    )
+
     return symbol_info
+
 
 def adsSumRead(port, address, data_names, data_symbols):
     # type: (int, AmsAddr, List(str), dict[str, SAdsSymbolInfo]) -> dict[str, Any]
@@ -810,7 +815,7 @@ def adsSumRead(port, address, data_names, data_symbols):
     :return: result: dict of variable names and values
     :rtype: dict[str, Any]
     """
-    result = { i : None for i in data_names}
+    result = {i: None for i in data_names}
 
     num_requests = len(data_names)
     sum_req_array_type = SAdsSumRequest * num_requests
@@ -822,34 +827,49 @@ def adsSumRead(port, address, data_names, data_symbols):
         sum_req_array[i].size = data_symbols[value].size
 
     sum_response = adsSyncReadWriteReqEx2(
-            port,
-            address,
-            ADISGRP_SUMUP_READ,
-            num_requests,
-            None,
-            sum_req_array,
-            None,
-            return_ctypes=False,
-            check_length=False,
-        )
+        port,
+        address,
+        ADISGRP_SUMUP_READ,
+        num_requests,
+        None,
+        sum_req_array,
+        None,
+        return_ctypes=False,
+        check_length=False,
+    )
 
     offset = 0
     data_start = 4 * num_requests
 
     for i, data_name in enumerate(data_names):
-        error = struct.unpack_from("<I", sum_response, offset=i*4)[0]
+        error = struct.unpack_from("<I", sum_response, offset=i * 4)[0]
         if error:
             result[data_name] = ERROR_CODES[error]
         else:
-            if data_symbols[data_name].dataType != ADST_STRING and data_symbols[data_name].dataType != ADST_WSTRING:
-                value = struct.unpack_from(DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]], sum_response, offset=data_start+offset)[0]
+            if (
+                data_symbols[data_name].dataType != ADST_STRING
+                and data_symbols[data_name].dataType != ADST_WSTRING
+            ):
+                value = struct.unpack_from(
+                    DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
+                    sum_response,
+                    offset=data_start + offset,
+                )[0]
             else:
-                null_idx = sum_response[data_start + offset : data_start + offset + data_symbols[data_name].size].index(0)
-                value = bytearray(sum_response[data_start + offset : data_start + offset + null_idx]).decode("utf-8")
+                null_idx = sum_response[
+                    data_start
+                    + offset : data_start
+                    + offset
+                    + data_symbols[data_name].size
+                ].index(0)
+                value = bytearray(
+                    sum_response[data_start + offset : data_start + offset + null_idx]
+                ).decode("utf-8")
             result[data_name] = value
         offset += data_symbols[data_name].size
 
     return result
+
 
 def adsSumWrite(port, address, data_names_and_values, data_symbols):
     # type: (int, AmsAddr, List(str), dict[str, SAdsSymbolInfo]) -> dict[str, Any]
@@ -866,13 +886,13 @@ def adsSumWrite(port, address, data_names_and_values, data_symbols):
     """
     offset = 0
     num_requests = len(data_names_and_values)
-    total_request_size = num_requests * 3 * 4 #iGroup, iOffset & size
+    total_request_size = num_requests * 3 * 4  # iGroup, iOffset & size
 
     for data_name in data_names_and_values.keys():
         total_request_size += data_symbols[data_name].size
 
     buf = bytearray(total_request_size)
-    
+
     for data_name in data_names_and_values.keys():
         struct.pack_into("<I", buf, offset, data_symbols[data_name].iGroup)
         struct.pack_into("<I", buf, offset + 4, data_symbols[data_name].iOffs)
@@ -880,23 +900,31 @@ def adsSumWrite(port, address, data_names_and_values, data_symbols):
         offset += 12
 
     for data_name, value in data_names_and_values.items():
-        if data_symbols[data_name].dataType != ADST_STRING and data_symbols[data_name].dataType != ADST_WSTRING:
-            struct.pack_into(DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]], buf, offset, value)
+        if (
+            data_symbols[data_name].dataType != ADST_STRING
+            and data_symbols[data_name].dataType != ADST_WSTRING
+        ):
+            struct.pack_into(
+                DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
+                buf,
+                offset,
+                value,
+            )
         else:
-            buf[offset : offset + len(value)] = value.encode('utf-8')
+            buf[offset : offset + len(value)] = value.encode("utf-8")
         offset += data_symbols[data_name].size
 
     sum_response = adsSyncReadWriteReqEx2(
-            port,
-            address,
-            ADISGRP_SUMUP_WRITE,
-            num_requests,
-            None,
-            buf,
-            None,
-            return_ctypes=False,
-            check_length=False,
-        )
+        port,
+        address,
+        ADISGRP_SUMUP_WRITE,
+        num_requests,
+        None,
+        buf,
+        None,
+        return_ctypes=False,
+        check_length=False,
+    )
 
     errors = list(struct.iter_unpack("<I", sum_response))
     error_descriptions = [ERROR_CODES[i[0]] for i in errors]
@@ -967,9 +995,13 @@ def adsSyncReadByNameEx(
             data_type = ads_type_to_ctype[symbol_info.type_name]
         else:
             raise ValueError(
-                'Unsupported data type {!r} (number={} size={} comment={!r})'
-                ''.format(symbol_info.type_name, symbol_info.dataType,
-                          symbol_info.size, symbol_info.comment)
+                "Unsupported data type {!r} (number={} size={} comment={!r})"
+                "".format(
+                    symbol_info.type_name,
+                    symbol_info.dataType,
+                    symbol_info.size,
+                    symbol_info.comment,
+                )
             )
 
         if data_type is not PLCTYPE_STRING:
@@ -1048,13 +1080,7 @@ def adsSyncAddDeviceNotificationReqEx(
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     if isinstance(data, str):
         hnl = adsSyncReadWriteReqEx2(
-            port,
-            adr,
-            ADSIGRP_SYM_HNDBYNAME,
-            0x0,
-            PLCTYPE_UDINT,
-            data,
-            PLCTYPE_STRING,
+            port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data, PLCTYPE_STRING,
         )
 
         nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
@@ -1064,7 +1090,10 @@ def adsSyncAddDeviceNotificationReqEx(
         nIndexOffset = data[1]
         hnl = None
     else:
-        raise TypeError("Parameter data has the wrong type %s. Allowed types are: str, Tuple[int, int]." % (type(data)))
+        raise TypeError(
+            "Parameter data has the wrong type %s. Allowed types are: str, Tuple[int, int]."
+            % (type(data))
+        )
 
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
@@ -1129,7 +1158,9 @@ def adsSyncDelDeviceNotificationReqEx(port, adr, notification_handle, user_handl
         raise ADSError(err_code)
 
     if user_handle is not None:
-        adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
+        adsSyncWriteReqEx(
+            port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT
+        )
 
 
 def adsSyncSetTimeoutEx(port, nMs):
