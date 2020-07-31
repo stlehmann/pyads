@@ -9,7 +9,6 @@
 import pyads
 from pyads import AmsAddr
 from pyads.utils import platform_is_linux
-from ctypes import c_ubyte
 from collections import OrderedDict
 import unittest
 
@@ -129,13 +128,13 @@ class AdsTest(unittest.TestCase):
             ("iVar7", pyads.PLCTYPE_WORD, 1),
             ("iVar8", pyads.PLCTYPE_DWORD, 1),
         )
-        self.assertEqual(pyads.size_of_structure(structure_def), c_ubyte * 173)
+        self.assertEqual(pyads.size_of_structure(structure_def), 173)
 
         # test for PLC_DEFAULT_STRING_SIZE
         structure_def = (("sVar", pyads.PLCTYPE_STRING, 4),)
         self.assertEqual(
             pyads.size_of_structure(structure_def),
-            c_ubyte * ((pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4),
+            (pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4,
         )
 
         # tests for incorrect definitions
@@ -173,7 +172,7 @@ class AdsTest(unittest.TestCase):
             ("iVar1", pyads.PLCTYPE_INT, 3),
             ("bVar1", pyads.PLCTYPE_BOOL, 4),
         )
-        self.assertEqual(pyads.size_of_structure(structure_def * 5), c_ubyte * 1185)
+        self.assertEqual(pyads.size_of_structure(structure_def * 5), 1185)
 
     def test_dict_from_bytes(self):
         # type: () -> None
