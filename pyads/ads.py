@@ -6,7 +6,7 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
 from datetime import datetime
 import struct
 from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof
@@ -39,6 +39,7 @@ from .pyads_ex import (
     ADSError,
 )
 
+# noinspection PyUnresolvedReferences
 from .constants import (
     PLCTYPE_BOOL,
     PLCTYPE_BYTE,
@@ -70,7 +71,7 @@ from .structs import (
 )
 
 # custom types
-StructureDef = Tuple[Tuple[str, Type, int]]
+StructureDef = Tuple[Union[Tuple[str, Type, int], Tuple[str, Type, int, Optional[int]]], ...]
 
 # global variables
 linux: bool = platform_is_linux()
@@ -246,7 +247,7 @@ def read_write(
     index_offset: int,
     plc_read_datatype: Type,
     value: Any,
-    plc_write_datatype: bool,
+    plc_write_datatype: Type,
     return_ctypes: bool = False,
     check_length: bool = True,
 ) -> Any:
@@ -471,15 +472,16 @@ def size_of_structure(structure_def: StructureDef) -> int:
 
             If array of structure multiply structure_def input by array size
 
-    :return: c_ubyte_Array: data size required to read/write a structure of multiple types
+    :return: data size required to read/write a structure of multiple types
+    :rtype: int
     """
     num_of_bytes = 0
     for item in structure_def:
         try:
-            var, plc_datatype, size = item
+            var, plc_datatype, size = item  # type: ignore
             str_len = None
         except ValueError:
-            var, plc_datatype, size, str_len = item
+            var, plc_datatype, size, str_len = item  # type: ignore
 
         if plc_datatype == PLCTYPE_STRING:
             if str_len is not None:
@@ -491,10 +493,10 @@ def size_of_structure(structure_def: StructureDef) -> int:
         else:
             num_of_bytes += sizeof(plc_datatype) * size
 
-    return c_ubyte * num_of_bytes
+    return  num_of_bytes
 
 
-def dict_from_bytes(byte_list: bytearray, structure_def: StructureDef, array_size: int = 1) -> Dict[str, Any]:
+def dict_from_bytes(byte_list: bytearray, structure_def: StructureDef, array_size: int = 1) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     """Return an ordered dict of PLC values from a list of BYTE values read from PLC.
 
     :param byte_list: list of byte values for an entire structure
@@ -526,16 +528,16 @@ def dict_from_bytes(byte_list: bytearray, structure_def: StructureDef, array_siz
 
     :return: ordered dictionary of values for each variable type in order of structure
     """
-    values_list = []
+    values_list: List[Dict[str, Any]] = []
     index = 0
     for structure in range(0, array_size):
-        values = OrderedDict()
+        values: Dict[str, Any] = OrderedDict()
         for item in structure_def:
             try:
-                var, plc_datatype, size = item
+                var, plc_datatype, size = item  # type: ignore
                 str_len = None
             except ValueError:
-                var, plc_datatype, size, str_len = item
+                var, plc_datatype, size, str_len = item  # type: ignore
 
             var_array = []
             for i in range(size):
@@ -572,7 +574,7 @@ def dict_from_bytes(byte_list: bytearray, structure_def: StructureDef, array_siz
 
 
 class Connection(object):
-    """Class for managingthe connection to an ADS device.
+    """Class for managing the connection to an ADS device.
 
     :ivar str ams_net_id: AMS net id of the remote device
     :ivar int ams_net_port: port of the remote device
@@ -583,8 +585,7 @@ class Connection(object):
 
     """
 
-    def __init__(self, ams_net_id, ams_net_port, ip_address=None):
-        # type: (str, int, str) -> None
+    def __init__(self, ams_net_id: str, ams_net_port: int, ip_address: str = None) -> None:
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
         if ip_address is None:
@@ -595,42 +596,35 @@ class Connection(object):
         self._notifications = {}  # type: Dict[int, str]
 
     @property
-    def ams_netid(self):
-        # type: () -> str
+    def ams_netid(self) -> str:
         return self._adr.netid
 
     @ams_netid.setter
-    def ams_netid(self, netid):
-        # type: (str) -> None
+    def ams_netid(self, netid: str) -> None:
         if self._open:
             raise AttributeError("Setting netid is not allowed while connection is open.")
         self._adr.netid = netid
 
     @property
-    def ams_port(self):
-        # type: () -> int
+    def ams_port(self) -> int:
         return self._adr.port
 
     @ams_port.setter
-    def ams_port(self, port):
-        # type: (int) -> None
+    def ams_port(self, port: int) -> None:
         if self._open:
             raise AttributeError("Setting port is not allowed while connection is open.")
         self._adr.port = port
 
-    def __enter__(self):
-        # type: () -> Connection
+    def __enter__(self) -> "Connection":
         """Open on entering with-block."""
         self.open()
         return self
 
-    def __exit__(self, _type, _val, _traceback):
-        # type: (Type, Any, Any) -> None
+    def __exit__(self, _type: Type, _val: Any, _traceback: Any) -> None:
         """Close on leaving with-block."""
         self.close()
 
-    def open(self):
-        # type: () -> None
+    def open(self) -> None:
         """Connect to the TwinCAT message router."""
         if self._open:
             return
@@ -642,8 +636,7 @@ class Connection(object):
 
         self._open = True
 
-    def close(self):
-        # type: () -> None
+    def close(self) -> None:
         """:summary: Close the connection to the TwinCAT message router."""
         if not self._open:
             return
@@ -657,8 +650,7 @@ class Connection(object):
 
         self._open = False
 
-    def get_local_address(self):
-        # type: () -> Optional[AmsAddr]
+    def get_local_address(self) -> Optional[AmsAddr]:
         """Return the local AMS-address and the port number.
 
         :rtype: AmsAddr
@@ -669,8 +661,7 @@ class Connection(object):
 
         return None
 
-    def read_state(self):
-        # type: () -> Optional[Tuple[int, int]]
+    def read_state(self) -> Optional[Tuple[int, int]]:
         """Read the current ADS-state and the machine-state.
 
         Read the current ADS-state and the machine-state from the ADS-server.
@@ -684,8 +675,7 @@ class Connection(object):
 
         return None
 
-    def write_control(self, ads_state, device_state, data, plc_datatype):
-        # type: (int, int, Any, Type) -> None
+    def write_control(self, ads_state: int, device_state: int, data: Any, plc_datatype: Type) -> None:
         """Change the ADS state and the machine-state of the ADS-server.
 
         :param int ads_state: new ADS-state, according to ADSTATE constants
@@ -707,8 +697,7 @@ class Connection(object):
                 self._port, self._adr, ads_state, device_state, data, plc_datatype
             )
 
-    def read_device_info(self):
-        # type: () -> Optional[Tuple[str, AdsVersion]]
+    def read_device_info(self) -> Optional[Tuple[str, AdsVersion]]:
         """Read the name and the version number of the ADS-server.
 
         :rtype: string, AdsVersion
@@ -720,8 +709,7 @@ class Connection(object):
 
         return None
 
-    def write(self, index_group, index_offset, value, plc_datatype):
-        # type: (int, int, Any, Type) -> None
+    def write(self, index_group: int, index_offset: int, value: Any, plc_datatype: Type) -> None:
         """Send data synchronous to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -739,15 +727,14 @@ class Connection(object):
 
     def read_write(
         self,
-        index_group,
-        index_offset,
-        plc_read_datatype,
-        value,
-        plc_write_datatype,
-        return_ctypes=False,
-        check_length=True,
-    ):
-        # type: (int, int, Optional[Type], Any, Optional[Type], bool, bool) -> Any
+        index_group: int,
+        index_offset: int,
+        plc_read_datatype: Optional[Type],
+        value: Any,
+        plc_write_datatype: Optional[Type],
+        return_ctypes: bool = False,
+        check_length: bool = True,
+    ) -> Any:
         """Read and write data synchronous from/to an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -782,13 +769,12 @@ class Connection(object):
 
     def read(
         self,
-        index_group,
-        index_offset,
-        plc_datatype,
-        return_ctypes=False,
-        check_length=True,
-    ):
-        # type: (int, int, Type, bool, bool) -> Any
+        index_group: int,
+        index_offset: int,
+        plc_datatype: Type,
+        return_ctypes: bool = False,
+        check_length: bool = True,
+    ) -> Any:
         """Read data synchronous from an ADS-device.
 
         :param int index_group: PLC storage area, according to the INDEXGROUP
@@ -816,8 +802,7 @@ class Connection(object):
 
         return None
 
-    def get_handle(self, data_name):
-        # type: (str) -> int
+    def get_handle(self, data_name: str) -> Optional[int]:
         """Get the handle of the PLC-variable, handles obtained using this
          method should be released using method 'release_handle'.
 
@@ -831,8 +816,7 @@ class Connection(object):
 
         return None
 
-    def release_handle(self, handle):
-        # type: (int) -> None
+    def release_handle(self, handle: int) -> None:
         """ Release handle of a PLC-variable.
 
         :param int handle: handle of PLC-variable to be released
@@ -842,13 +826,12 @@ class Connection(object):
 
     def read_by_name(
         self,
-        data_name,
-        plc_datatype,
-        return_ctypes=False,
-        handle=None,
-        check_length=True,
-    ):
-        # type: (str, Type, bool, int) -> Any
+        data_name: str,
+        plc_datatype: Type,
+        return_ctypes: bool = False,
+        handle: Optional[int] = None,
+        check_length: bool = True,
+    ) -> Any:
         """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name,  can be empty string if handle is used
@@ -877,8 +860,8 @@ class Connection(object):
         return None
 
     def read_structure_by_name(
-        self, data_name, structure_def, array_size=1, structure_size=None, handle=None
-    ):
+        self, data_name: str, structure_def: StructureDef, array_size: int = 1, structure_size: Optional[int] = None, handle: Optional[int] = None
+    ) -> Any:
         """Read a structure of multiple types.
 
         :param string data_name: data name
@@ -910,7 +893,7 @@ class Connection(object):
         :type array_size: int, optional
         :param structure_size: size of structure if known by previous use of
             size_of_structure, defaults to None
-        :type structure_size: , optional
+        :type structure_size: int, optional
         :param handle: PLC-variable handle, pass in handle if previously
             obtained to speed up reading, defaults to None
         :type handle: int, optional
@@ -920,14 +903,13 @@ class Connection(object):
         """
         if structure_size is None:
             structure_size = size_of_structure(structure_def * array_size)
-        values = self.read_by_name(data_name, structure_size, handle=handle)
+        values = self.read_by_name(data_name, c_ubyte * structure_size, handle=handle)
         if values is not None:
             return dict_from_bytes(values, structure_def, array_size=array_size)
 
         return None
 
-    def write_by_name(self, data_name, value, plc_datatype, handle=None):
-        # type: (str, Any, Type, int) -> None
+    def write_by_name(self, data_name: str, value: Any, plc_datatype: Type, handle: Optional[int] = None) -> None:
         """Send data synchronous to an ADS-device from data name.
 
         :param string data_name: data name, can be empty string if handle is used
@@ -942,8 +924,7 @@ class Connection(object):
                 self._port, self._adr, data_name, value, plc_datatype, handle=handle
             )
 
-    def add_device_notification(self, data, attr, callback, user_handle=None):
-        # type: (Union[str, Tuple[int, int]], NotificationAttrib, Callable, int) -> Optional[Tuple[int, int]]
+    def add_device_notification(self, data: Union[str, Tuple[int, int]], attr: NotificationAttrib, callback: Callable, user_handle: Optional[int] = None) -> Optional[Tuple[int, int]]:
         """Add a device notification.
 
         :param Union[str, Tuple[int, int] data: PLC storage address as string or Tuple with index group and offset
@@ -993,8 +974,7 @@ class Connection(object):
 
         return None
 
-    def del_device_notification(self, notification_handle, user_handle):
-        # type: (int, int) -> None
+    def del_device_notification(self, notification_handle: int, user_handle: int) -> None:
         """Remove a device notification.
 
         :param notification_handle: address of the variable that contains
@@ -1008,8 +988,7 @@ class Connection(object):
             )
 
     @property
-    def is_open(self):
-        # type: () -> bool
+    def is_open(self) -> bool:
         """Show the current connection state.
 
         :return: True if connection is open
@@ -1017,14 +996,12 @@ class Connection(object):
         """
         return self._open
 
-    def set_timeout(self, ms):
-        # type: (int) -> None
+    def set_timeout(self, ms: int) -> None:
         """Set Timeout."""
         if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
 
-    def notification(self, plc_datatype=None, timestamp_as_filetime=False):
-        # type: (Optional[Type], bool) -> Callable
+    def notification(self, plc_datatype: Optional[Type] = None, timestamp_as_filetime: bool = False) -> Callable:
         """Decorate a callback function.
 
         **Decorator**.
@@ -1072,11 +1049,9 @@ class Connection(object):
 
         """
 
-        def notification_decorator(func):
-            # type: (Union[Callable[[int, str, datetime, Any], None], Callable[[int, str, int, Any], None]]) -> Callable[[Any, str], None] # noqa: E501
+        def notification_decorator(func: Callable[[int, str, Union[datetime, int], Any], None]) -> Callable[[Any, str], None]:
 
-            def func_wrapper(notification, data_name):
-                # type: (Any, str) -> None
+            def func_wrapper(notification: Any, data_name: str) -> None:
                 hNotification, timestamp, value = self.parse_notification(
                     notification, plc_datatype, timestamp_as_filetime
                 )
@@ -1087,9 +1062,8 @@ class Connection(object):
         return notification_decorator
 
     def parse_notification(
-        self, notification, plc_datatype, timestamp_as_filetime=False
-    ):
-        # type: (Any, Type, bool) -> (int, int, Any)
+        self, notification: Any, plc_datatype: Optional[Type], timestamp_as_filetime: bool = False
+    ) -> Tuple[int, Union[datetime, int], Any]:
         """Parse a notification.
 
         Convert the data of the NotificationHeader into the fitting Python type.
@@ -1137,7 +1111,7 @@ class Connection(object):
         data = (c_ubyte * data_size).from_address(
             addressof(contents) + SAdsNotificationHeader.data.offset
         )
-
+        value: Any
         if plc_datatype == PLCTYPE_STRING:
             # read only until null-termination character
             value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
