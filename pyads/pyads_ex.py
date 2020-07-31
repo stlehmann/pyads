@@ -48,7 +48,7 @@ PY3 = sys.version_info[0] == 3
 NOTEFUNC: Optional[Callable] = None
 
 # _adslib can be WinDLL or CDLL depending on OS
-_adsDLL: Union[ctypes.WinDLL, ctypes.CDLL]
+_adsDLL: Union["ctypes.WinDLL", "ctypes.CDLL"]
 
 # load dynamic ADS library
 if platform_is_windows():  # pragma: no cover, skip Windows test
