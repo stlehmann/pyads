@@ -80,28 +80,6 @@ class AdsTest(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 pyads.set_local_address(123)
 
-    def test_functions_with_closed_port(self):
-        # type: () -> None
-        """Test pyads functions with no open port."""
-        pyads.open_port()
-        adr = pyads.get_local_address()
-        pyads.close_port()
-
-        self.assertIsNotNone(adr)
-        self.assertIsNone(pyads.get_local_address())
-        self.assertIsNone(pyads.read_state(adr))
-        self.assertIsNone(pyads.read_device_info(adr))
-        self.assertIsNone(
-            pyads.read_write(adr, 1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT)
-        )
-        self.assertIsNone(pyads.read(adr, 1, 2, pyads.PLCTYPE_INT))
-        self.assertIsNone(pyads.read_by_name(adr, "hello", pyads.PLCTYPE_INT))
-        self.assertIsNone(
-            pyads.add_device_notification(
-                adr, "test", pyads.NotificationAttrib(4), lambda x: x
-            )
-        )
-
     def test_set_timeout(self):
         # type: () -> None
         """Test timeout function."""
