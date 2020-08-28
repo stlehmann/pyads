@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## 3.2.2 [unreleased]
+## 3.2.2
 
 ### Added
 * [#141](https://github.com/stlehmann/pyads/issues/141) Add ULINT support to read_structure_by_name
@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#139](https://github.com/stlehmann/pyads/pull/139) Fix documentation and test issues with DeviceNotifications
 * [ea707](https://github.com/stlehmann/pyads/tree/ea7073d93feac75c1864d1fe8ab2e14a2068b552) Fix documentation on
  ReadTheDocs
+* [45859](https://github.com/stlehmann/pyads/tree/45859d6e9038b55d319efdbda95d3d6eeadd45e3) Fix issue with async handling in adslib
 
 ### Removed
 
