@@ -67,27 +67,27 @@ DATATYPE_MAP: Dict[Type, str] = {
 }
 
 
-def PLCTYPE_ARR_REAL(n: int) -> Type[Array[c_float]]:
+def PLCTYPE_ARR_REAL(n: int) -> Type[Array]:
     """Return an array with n float values."""
     return c_float * n
 
 
-def PLCTYPE_ARR_LREAL(n: int) -> Type[Array[c_double]]:
+def PLCTYPE_ARR_LREAL(n: int) -> Type[Array]:
     """Return an array with n double values."""
     return c_double * n
 
 
-def PLCTYPE_ARR_INT(n: int) -> Type[Array[c_int16]]:
+def PLCTYPE_ARR_INT(n: int) -> Type[Array]:
     """Return an array with n int16 values."""
     return c_int16 * n
 
 
-def PLCTYPE_ARR_DINT(n: int) -> Type[Array[c_int32]]:
+def PLCTYPE_ARR_DINT(n: int) -> Type[Array]:
     """Return an array with n int32 values."""
     return c_int32 * n
 
 
-def PLCTYPE_ARR_SHORT(n: int) -> Type[Array[c_int16]]:
+def PLCTYPE_ARR_SHORT(n: int) -> Type[Array]:
     """Return an array with n short values."""
     return c_int16 * n
 
