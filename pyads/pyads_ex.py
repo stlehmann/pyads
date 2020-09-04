@@ -99,7 +99,9 @@ callback_store = dict()
 class ADSError(Exception):
     """Error class for errors related to ADS communication."""
 
-    def __init__(self, err_code: Optional[int]=None, text: Optional[str]=None) -> None:
+    def __init__(
+        self, err_code: Optional[int] = None, text: Optional[str] = None
+    ) -> None:
         if err_code is not None:
             self.err_code = err_code
             try:
@@ -208,9 +210,7 @@ def adsAddRouteToPLC(
     data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
     data_header += struct.pack(">2s", b"\x05\x00")  # Write command
     data_header += struct.pack(">4s", b"\x00\x00\x0c\x00")  # Block of unknown
-    data_header += struct.pack(
-        "<H", len(route_name)
-    )  # Length of sender host name
+    data_header += struct.pack("<H", len(route_name))  # Length of sender host name
     data_header += route_name.encode("utf-8")  # Sender host name
     data_header += struct.pack(">2s", b"\x07\x00")  # Block of unknown
 
@@ -228,7 +228,9 @@ def adsAddRouteToPLC(
     actual_data += password.encode("utf-8")  # PLC Password
     actual_data += struct.pack(">2s", b"\x05\x00")  # Block of unknown
     actual_data += struct.pack("<H", len(adding_host_name))  # Length of route name
-    actual_data += adding_host_name.encode("utf-8")  # Name of route being added to the PLC
+    actual_data += adding_host_name.encode(
+        "utf-8"
+    )  # Name of route being added to the PLC
 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on 55189 for the response from the PLC
@@ -412,7 +414,12 @@ def adsSyncReadDeviceInfoReqEx(port: int, address: AmsAddr) -> Tuple[str, AdsVer
 
 
 def adsSyncWriteControlReqEx(
-    port: int, address: AmsAddr, ads_state: int, device_state: int, data: Any, plc_data_type: Type
+    port: int,
+    address: AmsAddr,
+    ads_state: int,
+    device_state: int,
+    data: Any,
+    plc_data_type: Type,
 ) -> None:
     """Change the ADS state and the machine-state of the ADS-server.
 
@@ -452,7 +459,14 @@ def adsSyncWriteControlReqEx(
         raise ADSError(error_code)
 
 
-def adsSyncWriteReqEx(port: int, address: AmsAddr, index_group: int, index_offset: int, value: Any, plc_data_type: Type) -> None:
+def adsSyncWriteReqEx(
+    port: int,
+    address: AmsAddr,
+    index_group: int,
+    index_offset: int,
+    value: Any,
+    plc_data_type: Type,
+) -> None:
     """Send data synchronous to an ADS-device.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -560,9 +574,7 @@ def adsSyncReadWriteReqEx2(
         write_length = ctypes.c_ulong(0)
     elif write_data_type == PLCTYPE_STRING:
         # Get pointer to string
-        write_data_pointer = ctypes.c_char_p(
-            value.encode("utf-8")
-        )
+        write_data_pointer = ctypes.c_char_p(value.encode("utf-8"))
         # Add an extra byte to the data length for the null terminator
         write_length = ctypes.c_ulong(len(value) + 1)
     else:
@@ -782,7 +794,14 @@ def adsSyncReadByNameEx(
     return value
 
 
-def adsSyncWriteByNameEx(port: int, address: AmsAddr, data_name: str, value: Any, data_type: Type, handle: int = None) -> None:
+def adsSyncWriteByNameEx(
+    port: int,
+    address: AmsAddr,
+    data_name: str,
+    value: Any,
+    data_type: Type,
+    handle: int = None,
+) -> None:
     """Send data synchronous to an ADS-device from data name.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -807,7 +826,12 @@ def adsSyncWriteByNameEx(port: int, address: AmsAddr, data_name: str, value: Any
 
 
 def adsSyncAddDeviceNotificationReqEx(
-    port: int, adr: AmsAddr, data: Union[str, Tuple[int, int]], pNoteAttrib: NotificationAttrib, callback: Callable, user_handle: Optional[int] = None
+    port: int,
+    adr: AmsAddr,
+    data: Union[str, Tuple[int, int]],
+    pNoteAttrib: NotificationAttrib,
+    callback: Callable,
+    user_handle: Optional[int] = None,
 ) -> Tuple[int, int]:
     """Add a device notification.
 
@@ -831,13 +855,7 @@ def adsSyncAddDeviceNotificationReqEx(
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     if isinstance(data, str):
         hnl = adsSyncReadWriteReqEx2(
-            port,
-            adr,
-            ADSIGRP_SYM_HNDBYNAME,
-            0x0,
-            PLCTYPE_UDINT,
-            data,
-            PLCTYPE_STRING,
+            port, adr, ADSIGRP_SYM_HNDBYNAME, 0x0, PLCTYPE_UDINT, data, PLCTYPE_STRING
         )
 
         nIndexGroup = ctypes.c_ulong(ADSIGRP_SYM_VALBYHND)
@@ -847,7 +865,10 @@ def adsSyncAddDeviceNotificationReqEx(
         nIndexOffset = ctypes.c_ulong(data[1])
         hnl = None
     else:
-        raise TypeError("Parameter data has the wrong type %s. Allowed types are: str, Tuple[int, int]." % (type(data)))
+        raise TypeError(
+            "Parameter data has the wrong type %s. Allowed types are: str, Tuple[int, int]."
+            % (type(data))
+        )
 
     attrib = pNoteAttrib.notificationAttribStruct()
     pNotification = ctypes.c_ulong()
@@ -892,7 +913,9 @@ def adsSyncAddDeviceNotificationReqEx(
     return pNotification.value, hnl
 
 
-def adsSyncDelDeviceNotificationReqEx(port: int, adr: AmsAddr, notification_handle: int, user_handle: int) -> None:
+def adsSyncDelDeviceNotificationReqEx(
+    port: int, adr: AmsAddr, notification_handle: int, user_handle: int
+) -> None:
     """Remove a device notification.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
@@ -911,7 +934,9 @@ def adsSyncDelDeviceNotificationReqEx(port: int, adr: AmsAddr, notification_hand
         raise ADSError(err_code)
 
     if user_handle is not None:
-        adsSyncWriteReqEx(port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT)
+        adsSyncWriteReqEx(
+            port, adr, ADSIGRP_SYM_RELEASEHND, 0, user_handle, PLCTYPE_UDINT
+        )
 
 
 def adsSyncSetTimeoutEx(port: int, nMs: int) -> None:
