@@ -350,6 +350,7 @@ def adsSyncReadStateReqEx(port: int, address: AmsAddr) -> Tuple[int, int]:
     Read the current ADS-state and the machine-state from the
     ADS-server.
 
+    :param port: AMS port
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :rtype: (int, int)
     :return: ads_state, device_state
@@ -605,10 +606,10 @@ def adsSyncReadWriteReqEx2(
     if return_ctypes:
         return read_data
 
-    if read_data_type == PLCTYPE_STRING:
+    if read_data is not None and read_data_type == PLCTYPE_STRING:
         return read_data.value.decode("utf-8")
 
-    if type(read_data_type).__name__ == "PyCArrayType":
+    if read_data is not None and type(read_data_type).__name__ == "PyCArrayType":
         return [i for i in read_data]
 
     if read_data is not None and hasattr(read_data, "value"):
@@ -863,7 +864,7 @@ def adsSyncAddDeviceNotificationReqEx(
         ctypes.c_ulong,
         ctypes.c_ulong,
         ctypes.POINTER(SAdsNotificationAttrib),
-        NOTEFUNC,
+        NOTEFUNC,  # type: ignore
         ctypes.c_ulong,
         ctypes.POINTER(ctypes.c_ulong),
     ]
