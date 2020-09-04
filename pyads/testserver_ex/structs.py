@@ -1,6 +1,6 @@
 import struct
+
 from ..structs import SAmsNetId
-from ..filetimes import filetime_to_dt, dt_to_filetime
 
 
 class AmsTcpHeader:
