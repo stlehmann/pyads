@@ -7,7 +7,7 @@
 :created on 2018-06-11 18:15:53
 
 """
-from typing import Type
+from typing import Type, Dict
 from ctypes import (
     Array,
     c_bool,
@@ -50,7 +50,7 @@ PLCTYPE_LINT = c_int64
 PLCTYPE_ULINT = c_uint64
 
 # Datatype unpacking values
-DATATYPE_MAP = {
+DATATYPE_MAP: Dict[Type, str] = {
     PLCTYPE_BOOL: "<?",
     PLCTYPE_BYTE: "<B",
     PLCTYPE_DINT: "<i",
@@ -64,35 +64,30 @@ DATATYPE_MAP = {
     PLCTYPE_USINT: "<B",
     PLCTYPE_ULINT: "<Q",
     PLCTYPE_WORD: "<H",
-}  # type: Dict[Type, str]
+}
 
 
-def PLCTYPE_ARR_REAL(n):
-    # type: (int) -> Type[Array[c_float]]
+def PLCTYPE_ARR_REAL(n: int) -> Type[Array[c_float]]:
     """Return an array with n float values."""
     return c_float * n
 
 
-def PLCTYPE_ARR_LREAL(n):
-    # type: (int) -> Type[Array[c_double]]
+def PLCTYPE_ARR_LREAL(n: int) -> Type[Array[c_double]]:
     """Return an array with n double values."""
     return c_double * n
 
 
-def PLCTYPE_ARR_INT(n):
-    # type: (int) -> Type[Array[c_int16]]
+def PLCTYPE_ARR_INT(n: int) -> Type[Array[c_int16]]:
     """Return an array with n int16 values."""
     return c_int16 * n
 
 
-def PLCTYPE_ARR_DINT(n):
-    # type: (int) -> Type[Array[c_int32]]
+def PLCTYPE_ARR_DINT(n: int) -> Type[Array[c_int32]]:
     """Return an array with n int32 values."""
     return c_int32 * n
 
 
-def PLCTYPE_ARR_SHORT(n):
-    # type: (int) -> Type[Array[c_int16]]
+def PLCTYPE_ARR_SHORT(n: int) -> Type[Array[c_int16]]:
     """Return an array with n short values."""
     return c_int16 * n
 

@@ -9,7 +9,7 @@
 
 """
 import typing
-from ctypes import c_byte, Structure, c_ubyte, Union, c_uint16, c_uint32, c_uint64
+from ctypes import Structure, c_ubyte, Union, c_uint16, c_uint32, c_uint64
 from .constants import ADSTRANS_SERVERONCHA
 
 
@@ -264,6 +264,7 @@ class SAdsNotificationAttrib(Structure):
     ]
 
 
+# noinspection PyUnresolvedReferences
 class SAdsNotificationHeader(Structure):
     """C structure representation of AdsNotificationHeader.
 
@@ -290,6 +291,7 @@ class SAdsSymbolUploadInfo(Structure):
     _fields_ = [("nSymbols", c_uint32), ("nSymSize", c_uint32)]
 
 
+# noinspection PyUnresolvedReferences
 class SAdsSymbolEntry(Structure):
     """ADS symbol information.
 
