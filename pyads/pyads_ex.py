@@ -376,7 +376,7 @@ def adsSyncReadStateReqEx(port: int, address: AmsAddr) -> Tuple[int, int]:
     if error_code:
         raise ADSError(error_code)
 
-    return (ads_state.value, device_state.value)
+    return ads_state.value, device_state.value
 
 
 def adsSyncReadDeviceInfoReqEx(port: int, address: AmsAddr) -> Tuple[str, AdsVersion]:
@@ -408,7 +408,7 @@ def adsSyncReadDeviceInfoReqEx(port: int, address: AmsAddr) -> Tuple[str, AdsVer
     if error_code:
         raise ADSError(error_code)
 
-    return (device_name_buffer.value.decode(), AdsVersion(ads_version))
+    return device_name_buffer.value.decode(), AdsVersion(ads_version)
 
 
 def adsSyncWriteControlReqEx(
@@ -889,7 +889,7 @@ def adsSyncAddDeviceNotificationReqEx(
     if err_code:
         raise ADSError(err_code)
     callback_store[(adr, pNotification.value)] = c_callback
-    return (pNotification.value, hnl)
+    return pNotification.value, hnl
 
 
 def adsSyncDelDeviceNotificationReqEx(port: int, adr: AmsAddr, notification_handle: int, user_handle: int) -> None:
