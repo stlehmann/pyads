@@ -7,23 +7,23 @@
 :created on 2018-06-11 18:15:53
 
 """
-from typing import Type, Dict
 from ctypes import (
     Array,
     c_bool,
-    c_ubyte,
-    c_int8,
-    c_uint8,
-    c_int16,
-    c_uint16,
-    c_int32,
-    c_uint32,
-    c_float,
-    c_double,
     c_char,
+    c_double,
+    c_float,
+    c_int8,
+    c_int16,
+    c_int32,
     c_int64,
+    c_ubyte,
+    c_uint8,
+    c_uint16,
+    c_uint32,
     c_uint64,
 )
+from typing import Dict, Type
 
 STRING_BUFFER = 1024
 PLC_DEFAULT_STRING_SIZE = 80
@@ -126,6 +126,9 @@ ADSIGRP_SYM_INFOBYNAMEEX = 0xF009
 ADSIGRP_SYM_DOWNLOAD = 0xF00A
 ADSIGRP_SYM_UPLOAD = 0xF00B
 ADSIGRP_SYM_UPLOADINFO = 0xF00C
+ADSIGRP_SYM_DOWNLOAD2 = 0xF00D
+ADSIGRP_SYM_DT_UPLOAD = 0xF00E
+ADSIGRP_SYM_UPLOADINFO2 = 0xF00F
 
 ADSIGRP_SYMNOTE = 0xF010  #: notification of named handle
 ADSIGRP_IOIMAGE_RWIB = 0xF020  #: read/write input byte(s)

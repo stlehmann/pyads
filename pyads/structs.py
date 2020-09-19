@@ -9,7 +9,8 @@
 
 """
 import typing
-from ctypes import Structure, c_ubyte, Union, c_uint16, c_uint32, c_uint64
+from ctypes import Structure, Union, c_ubyte, c_uint16, c_uint32, c_uint64
+
 from .constants import ADSTRANS_SERVERONCHA
 
 
@@ -39,6 +40,27 @@ class AdsVersion:
         self.version = stAdsVersion.version
         self.revision = stAdsVersion.revision
         self.build = stAdsVersion.build
+
+
+class AdsSymbol:
+    """Contains index group, index offset, name, symbol type, comment of ADS 
+    symbol.
+
+    :param index_group: Index group of symbol
+    :param index_offset: Index offset of symbol
+    :param name: Name of symbol
+    :param symtype: String representation of symbol type
+    :param comment: Comment of symbol
+
+    """
+
+    def __init__(self, index_group, index_offset, name, symtype, comment):
+        # type: (int, int, str, str, str) -> None
+        self.index_group = index_group
+        self.index_offset = index_offset
+        self.name = name
+        self.symtype = symtype
+        self.comment = comment
 
 
 class SAmsNetId(Structure):

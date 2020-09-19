@@ -12,8 +12,7 @@
 import functools
 import sys
 import warnings
-
-from typing import Callable, Any, Optional
+from typing import Any, Callable, Optional
 
 
 def platform_is_linux() -> bool:
@@ -46,3 +45,8 @@ def deprecated(message: Optional[str] = None) -> Callable:
         return wrapper
 
     return decorator
+
+
+def decode_ads(message: bytes) -> str:
+    """Decode a string that in encoded in the format used by ADS."""
+    return message.decode("windows-1252").strip(" \t\n\r\0")

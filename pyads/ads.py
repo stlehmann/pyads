@@ -6,41 +6,28 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
-from datetime import datetime
 import struct
-from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof
 from collections import OrderedDict
-
-from .utils import platform_is_linux
-from .filetimes import filetime_to_dt
-
-from .pyads_ex import (
-    adsAddRoute,
-    adsAddRouteToPLC,
-    adsDelRoute,
-    adsPortOpenEx,
-    adsPortCloseEx,
-    adsGetLocalAddressEx,
-    adsSyncReadStateReqEx,
-    adsSyncReadDeviceInfoReqEx,
-    adsSyncWriteControlReqEx,
-    adsSyncWriteReqEx,
-    adsSyncReadWriteReqEx2,
-    adsSyncReadReqEx2,
-    adsGetHandle,
-    adsReleaseHandle,
-    adsSyncReadByNameEx,
-    adsSyncWriteByNameEx,
-    adsSyncAddDeviceNotificationReqEx,
-    adsSyncDelDeviceNotificationReqEx,
-    adsSyncSetTimeoutEx,
-    adsSetLocalAddress,
-    ADSError,
+from ctypes import (
+    Array,
+    Structure,
+    addressof,
+    c_ubyte,
+    create_string_buffer,
+    memmove,
+    sizeof,
 )
+from datetime import datetime
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 # noinspection PyUnresolvedReferences
 from .constants import (
+    ADSIGRP_SYM_UPLOAD,
+    ADSIGRP_SYM_UPLOADINFO2,
+    ADSIOFFS_DEVDATA_ADSSTATE,
+    DATATYPE_MAP,
+    PLC_DEFAULT_STRING_SIZE,
     PLCTYPE_BOOL,
     PLCTYPE_BYTE,
     PLCTYPE_DATE,
@@ -58,17 +45,40 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
-    PLC_DEFAULT_STRING_SIZE,
-    DATATYPE_MAP,
 )
-
+from .filetimes import filetime_to_dt
+from .pyads_ex import (
+    ADSError,
+    adsAddRoute,
+    adsAddRouteToPLC,
+    adsDelRoute,
+    adsGetHandle,
+    adsGetLocalAddressEx,
+    adsPortCloseEx,
+    adsPortOpenEx,
+    adsReleaseHandle,
+    adsSetLocalAddress,
+    adsSyncAddDeviceNotificationReqEx,
+    adsSyncDelDeviceNotificationReqEx,
+    adsSyncReadByNameEx,
+    adsSyncReadDeviceInfoReqEx,
+    adsSyncReadReqEx2,
+    adsSyncReadStateReqEx,
+    adsSyncReadWriteReqEx2,
+    adsSyncSetTimeoutEx,
+    adsSyncWriteByNameEx,
+    adsSyncWriteControlReqEx,
+    adsSyncWriteReqEx,
+)
 from .structs import (
-    AmsAddr,
-    SAmsNetId,
+    AdsSymbol,
     AdsVersion,
+    AmsAddr,
     NotificationAttrib,
     SAdsNotificationHeader,
+    SAmsNetId,
 )
+from .utils import decode_ads, platform_is_linux
 
 # custom types
 StructureDef = Tuple[
@@ -595,6 +605,53 @@ class Connection(object):
             )
 
         return None
+
+    def get_all_symbols(self) -> List[AdsSymbol]:
+        """Read all symbols from an ADS-device."""
+        symbols = []
+        if self._port is not None:
+            symbol_size_msg = self.read(
+                ADSIGRP_SYM_UPLOADINFO2,
+                ADSIOFFS_DEVDATA_ADSSTATE,
+                PLCTYPE_STRING,
+                return_ctypes=True,
+            )
+            sym_count = struct.unpack("I", symbol_size_msg[0:4])[0]
+            sym_list_length = struct.unpack("I", symbol_size_msg[4:8])[0]
+
+            data_type_creation_fn = partial(create_string_buffer, sym_list_length)
+            symbol_list_msg = self.read(
+                ADSIGRP_SYM_UPLOAD,
+                ADSIOFFS_DEVDATA_ADSSTATE,
+                data_type_creation_fn,  # type: ignore
+                return_ctypes=True,
+            )
+
+            ptr = 0
+
+            for idx in range(sym_count):
+                read_length, index_group, index_offset = struct.unpack(
+                    "III", symbol_list_msg[ptr + 0: ptr + 12]
+                )
+                name_length, type_length, comment_length = struct.unpack(
+                    "HHH", symbol_list_msg[ptr + 24: ptr + 30]
+                )
+
+                name_start_ptr = ptr + 30
+                name_end_ptr = name_start_ptr + name_length
+                type_start_ptr = name_end_ptr + 1
+                type_end_ptr = type_start_ptr + type_length
+                comment_start_ptr = type_end_ptr + 1
+                comment_end_ptr = comment_start_ptr + comment_length
+
+                name = decode_ads(symbol_list_msg[name_start_ptr:name_end_ptr])
+                symtype = decode_ads(symbol_list_msg[type_start_ptr:type_end_ptr])
+                comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
+
+                ptr = ptr + read_length
+                symbol = AdsSymbol(index_group, index_offset, name, symtype, comment)
+                symbols.append(symbol)
+        return symbols
 
     def get_handle(self, data_name: str) -> Optional[int]:
         """Get the handle of the PLC-variable, handles obtained using this
