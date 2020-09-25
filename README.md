@@ -37,7 +37,7 @@ $ python setup.py install
 * create routes on Linux devices and on remote plcs
 * supports TwinCAT 2 and TwinCAT 3
 * read and write values by name or address
-* read DUTs (structures) from the plc
+* read and write DUTs (structures) from the plc
 * notification callbacks
 
 ## Basic usage

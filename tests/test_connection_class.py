@@ -661,6 +661,59 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.plc.release_handle(handle)
 
+    def test_write_structure_by_name(self):
+        # type: () -> None
+        """Test write by structure method"""
+
+        handle_name = "TestHandle"
+        value = "Test Value"
+
+        structure_def = (("sVar", pyads.PLCTYPE_STRING, 1),)
+
+        # test with no structure size passed in
+        with self.plc:
+            self.plc.write_structure_by_name(handle_name, value, structure_def)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 3 requests
+        self.assertEqual(len(requests), 3)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that Write command was used to write the value
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
+        # Check the value written matches our value
+        received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
+        self.assertEqual(value, received_value)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+        # Test with structure size passed in
+        structure_size = pyads.size_of_structure(structure_def)
+        with self.plc:
+            self.plc.write_structure_by_name(
+                handle_name, value, structure_def, structure_size=structure_size
+            )
+
+        requests = self.test_server.request_history
+        received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
+        self.assertEqual(value, received_value)
+
+        # Test with handle passed in
+        with self.plc:
+            handle = self.plc.get_handle(handle_name)
+            self.plc.write_structure_by_name("", value, structure_def, handle=handle)
+
+        requests = self.test_server.request_history
+        received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
+        self.assertEqual(value, received_value)
+        with self.plc:
+            self.plc.release_handle(handle)
+
     def test_device_notification(self):
         def callback(notification, data):
             pass
