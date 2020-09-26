@@ -556,10 +556,10 @@ class AdvancedHandler(AbstractHandler):
                 response_value = struct.pack("II", symbol_count, response_length)
 
             elif index_group == constants.ADSIGRP_SYM_UPLOAD:
-                response_value = b''
+                response_value = b""
                 for (group, offset) in self._data.keys():
                     response_value += struct.pack("III", 120, group, offset)
-                    response_value += b'\x00' * 108
+                    response_value += b"\x00" * 108
 
             else:
                 # Create response of repeated 0x0F with a null

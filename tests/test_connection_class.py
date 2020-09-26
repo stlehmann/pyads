@@ -1023,10 +1023,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_get_all_symbols(self):
         with self.plc:
             self.plc.write(
-                value="1",
-                index_group=123,
-                index_offset=0,
-                plc_datatype=constants.PLCTYPE_STRING
+                value="1", index_group=123, index_offset=0, plc_datatype=constants.PLCTYPE_STRING
             )
             symbols = self.plc.get_all_symbols()
             self.assertEqual(len(symbols), 1)
