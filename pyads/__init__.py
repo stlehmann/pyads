@@ -32,6 +32,7 @@ from .constants import (
     PLCTYPE_DT,
     PLCTYPE_DWORD,
     PLCTYPE_INT,
+    PLCTYPE_LINT,
     PLCTYPE_LREAL,
     PLCTYPE_REAL,
     PLCTYPE_SINT,
