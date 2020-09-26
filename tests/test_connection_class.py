@@ -1020,6 +1020,10 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             )
             self.assertEqual(value, 1)
 
+    def test_get_all_symbols_empty(self):
+        with self.plc:
+            self.assertEqual(len(self.plc.get_all_symbols()), 0)
+
     def test_get_all_symbols_single(self):
         with self.plc:
             self.plc.write(
@@ -1028,10 +1032,6 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             symbols = self.plc.get_all_symbols()
             self.assertEqual(len(symbols), 1)
             self.assertEqual(symbols[0].index_group, 123)
-
-    def test_get_all_symbols_empty(self):
-        with self.plc:
-            self.assertEqual(len(self.plc.get_all_symbols()), 0)
 
 
 if __name__ == "__main__":
