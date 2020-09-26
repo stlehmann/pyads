@@ -7,23 +7,23 @@
 :created on 2018-06-11 18:15:53
 
 """
+from typing import Type, Dict
 from ctypes import (
     Array,
     c_bool,
-    c_char,
-    c_double,
-    c_float,
-    c_int8,
-    c_int16,
-    c_int32,
-    c_int64,
     c_ubyte,
+    c_int8,
     c_uint8,
+    c_int16,
     c_uint16,
+    c_int32,
     c_uint32,
+    c_float,
+    c_double,
+    c_char,
+    c_int64,
     c_uint64,
 )
-from typing import Dict, Type
 
 STRING_BUFFER = 1024
 PLC_DEFAULT_STRING_SIZE = 80

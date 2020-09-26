@@ -12,7 +12,8 @@
 import functools
 import sys
 import warnings
-from typing import Any, Callable, Optional
+
+from typing import Callable, Any, Optional
 
 
 def platform_is_linux() -> bool:

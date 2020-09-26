@@ -6,28 +6,45 @@
 :created on: 2018-06-11 18:15:53
 
 """
-import struct
-from collections import OrderedDict
-from ctypes import (
-    Array,
-    Structure,
-    addressof,
-    c_ubyte,
-    create_string_buffer,
-    memmove,
-    sizeof,
-)
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
 from datetime import datetime
+import struct
+from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof, create_string_buffer
+from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
+from .utils import decode_ads, platform_is_linux
+from .filetimes import filetime_to_dt
+
+from .pyads_ex import (
+    adsAddRoute,
+    adsAddRouteToPLC,
+    adsDelRoute,
+    adsPortOpenEx,
+    adsPortCloseEx,
+    adsGetLocalAddressEx,
+    adsSyncReadStateReqEx,
+    adsSyncReadDeviceInfoReqEx,
+    adsSyncWriteControlReqEx,
+    adsSyncWriteReqEx,
+    adsSyncReadWriteReqEx2,
+    adsSyncReadReqEx2,
+    adsGetHandle,
+    adsReleaseHandle,
+    adsSyncReadByNameEx,
+    adsSyncWriteByNameEx,
+    adsSyncAddDeviceNotificationReqEx,
+    adsSyncDelDeviceNotificationReqEx,
+    adsSyncSetTimeoutEx,
+    adsSetLocalAddress,
+    ADSError,
+)
 
 # noinspection PyUnresolvedReferences
 from .constants import (
     ADSIGRP_SYM_UPLOAD,
     ADSIGRP_SYM_UPLOADINFO2,
     ADSIOFFS_DEVDATA_ADSSTATE,
-    DATATYPE_MAP,
-    PLC_DEFAULT_STRING_SIZE,
     PLCTYPE_BOOL,
     PLCTYPE_BYTE,
     PLCTYPE_DATE,
@@ -45,40 +62,18 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
+    PLC_DEFAULT_STRING_SIZE,
+    DATATYPE_MAP,
 )
-from .filetimes import filetime_to_dt
-from .pyads_ex import (
-    ADSError,
-    adsAddRoute,
-    adsAddRouteToPLC,
-    adsDelRoute,
-    adsGetHandle,
-    adsGetLocalAddressEx,
-    adsPortCloseEx,
-    adsPortOpenEx,
-    adsReleaseHandle,
-    adsSetLocalAddress,
-    adsSyncAddDeviceNotificationReqEx,
-    adsSyncDelDeviceNotificationReqEx,
-    adsSyncReadByNameEx,
-    adsSyncReadDeviceInfoReqEx,
-    adsSyncReadReqEx2,
-    adsSyncReadStateReqEx,
-    adsSyncReadWriteReqEx2,
-    adsSyncSetTimeoutEx,
-    adsSyncWriteByNameEx,
-    adsSyncWriteControlReqEx,
-    adsSyncWriteReqEx,
-)
+
 from .structs import (
     AdsSymbol,
-    AdsVersion,
     AmsAddr,
+    SAmsNetId,
+    AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
-    SAmsNetId,
 )
-from .utils import decode_ads, platform_is_linux
 
 # custom types
 StructureDef = Tuple[
