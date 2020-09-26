@@ -602,7 +602,10 @@ class Connection(object):
         return None
 
     def get_all_symbols(self) -> List[AdsSymbol]:
-        """Read all symbols from an ADS-device."""
+        """Read all symbols from an ADS-device.
+        
+        :return: List of AdsSymbols
+        """
         symbols = []
         if self._port is not None:
             symbol_size_msg = self.read(
