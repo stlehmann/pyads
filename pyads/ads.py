@@ -335,7 +335,7 @@ def dict_from_bytes(
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
-                        bytearray(byte_list[index: (index + (str_len + 1))])
+                        bytearray(byte_list[index : (index + (str_len + 1))])
                         .partition(b"\0")[0]
                         .decode("utf-8")
                     )
@@ -347,7 +347,7 @@ def dict_from_bytes(
                     var_array.append(
                         struct.unpack(
                             DATATYPE_MAP[plc_datatype],
-                            bytearray(byte_list[index: (index + n_bytes)]),
+                            bytearray(byte_list[index : (index + n_bytes)]),
                         )[0]
                     )
                     index += n_bytes
@@ -618,7 +618,7 @@ class Connection(object):
         return None
 
     def release_handle(self, handle: int) -> None:
-        """ Release handle of a PLC-variable.
+        """Release handle of a PLC-variable.
 
         :param int handle: handle of PLC-variable to be released
         """
@@ -661,10 +661,8 @@ class Connection(object):
         return None
 
     def read_list_by_name(
-        self,
-        data_names: List[str],
-        cache_symbol_info: bool = True
-        ) -> Dict[str, Any]:
+        self, data_names: List[str], cache_symbol_info: bool = True
+    ) -> Dict[str, Any]:
         """Read a list of variables in a single ADS call.
 
         :param data_names: list of variable names to be read
@@ -690,10 +688,8 @@ class Connection(object):
         return adsSumRead(self._port, self._adr, data_names, data_symbols)
 
     def write_list_by_name(
-        self,
-        data_names_and_values: Dict[str, Any],
-        cache_symbol_info: bool = True
-        ) -> Dict[str, int]:
+        self, data_names_and_values: Dict[str, Any], cache_symbol_info: bool = True
+    ) -> Dict[str, int]:
         """Write a list of variables in a single ADS call
 
         :param data_names_and_values: dictionary of variable names and their values to be written
@@ -960,45 +956,45 @@ class Connection(object):
         # noinspection PyTypeChecker
         """Parse a notification.
 
-                        Convert the data of the NotificationHeader into the fitting Python type.
+        Convert the data of the NotificationHeader into the fitting Python type.
 
-                        :param notification: The notification we recieve from PLC datatype to be
-                        converted. This can be any basic PLC datatype or a `ctypes.Structure`.
-                        :param plc_datatype: The PLC datatype that needs to be converted. This can
-                        be any basic PLC datatype or a `ctypes.Structure`.
-                        :param timestamp_as_filetime: Whether the notification timestamp should be returned
-                        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
-                        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
-                        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
-                        task cycle times such as 62.5 µs. Default: False.
+        :param notification: The notification we recieve from PLC datatype to be
+        converted. This can be any basic PLC datatype or a `ctypes.Structure`.
+        :param plc_datatype: The PLC datatype that needs to be converted. This can
+        be any basic PLC datatype or a `ctypes.Structure`.
+        :param timestamp_as_filetime: Whether the notification timestamp should be returned
+        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+        task cycle times such as 62.5 µs. Default: False.
 
-                        :rtype: (int, int, Any)
-                        :returns: notification handle, timestamp, value
+        :rtype: (int, int, Any)
+        :returns: notification handle, timestamp, value
 
-                        **Usage**:
+        **Usage**:
 
-                        >>> import pyads
-                        >>> from ctypes import sizeof
-                        >>>
-                        >>> # Connect to the local TwinCAT PLC
-                        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
-                        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
-                        >>>
-                        >>> # Create callback function that prints the value
-                        >>> def mycallback(notification: SAdsNotificationHeader, data: str) -> None:
-                        >>>     data_type = tag[data]
-                        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
-                        >>>     print(value)
-                        >>>
-                        >>> with plc:
-                        >>>     # Add notification with default settings
-                        >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
-                        >>>
-                        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
-                        >>>
-                        >>>     # Remove notification
-                        >>>     plc.del_device_notification(handles)
-                        """
+        >>> import pyads
+        >>> from ctypes import sizeof
+        >>>
+        >>> # Connect to the local TwinCAT PLC
+        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
+        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
+        >>>
+        >>> # Create callback function that prints the value
+        >>> def mycallback(notification: SAdsNotificationHeader, data: str) -> None:
+        >>>     data_type = tag[data]
+        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
+        >>>     print(value)
+        >>>
+        >>> with plc:
+        >>>     # Add notification with default settings
+        >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
+        >>>
+        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+        >>>
+        >>>     # Remove notification
+        >>>     plc.del_device_notification(handles)
+        """
         contents = notification.contents
         data_size = contents.cbSampleSize
         # Get dynamically sized data array

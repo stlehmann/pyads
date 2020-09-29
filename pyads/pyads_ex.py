@@ -643,7 +643,7 @@ def adsSyncReadWriteReqEx2(
             read_data.entryLength
             if isinstance(read_data, SAdsSymbolEntry)
             else read_length.value
-        )    
+        )
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
@@ -801,14 +801,16 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
     return symbol_info
 
 
-def adsSumRead(port: int, address: AmsAddr, data_names: List[str], data_symbols) -> Dict[str, Any]:
+def adsSumRead(
+    port: int, address: AmsAddr, data_names: List[str], data_symbols
+) -> Dict[str, Any]:
     """Perform a sum read to get the value of multiple variables
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param data_names: list of variables names to read
     :type data_name: list[str]
-    :param data_symbols: list of dictionaries of ADS Symbol Info 
+    :param data_symbols: list of dictionaries of ADS Symbol Info
     :type data_symbols: dict[str, ADSSymbolInfo]
     :return: result: dict of variable names and values
     :rtype: dict[str, Any]
@@ -869,14 +871,19 @@ def adsSumRead(port: int, address: AmsAddr, data_names: List[str], data_symbols)
     return result
 
 
-def adsSumWrite(port: int, address: AmsAddr, data_names_and_values: Dict[str, Any], data_symbols: Dict[str, SAdsSymbolEntry]) -> Dict[str, int]:
+def adsSumWrite(
+    port: int,
+    address: AmsAddr,
+    data_names_and_values: Dict[str, Any],
+    data_symbols: Dict[str, SAdsSymbolEntry],
+) -> Dict[str, int]:
     """Perform a sum write to write the value of multiple ADS variables
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param data_names_and_values: dict of variable names and values to be written
     :type data_names_and_values: dict[str, Any]
-    :param data_symbols: list of dictionaries of ADS Symbol Info 
+    :param data_symbols: list of dictionaries of ADS Symbol Info
     :type data_symbols: dict[str, ADSSymbolInfo]
     :return: result: dict of variable names and error codes
     :rtype: dict[str, ADSError]
@@ -980,7 +987,7 @@ def adsSyncReadByNameEx(
             SAdsSymbolEntry,
             data_name,
             PLCTYPE_STRING,
-            check_length=check_length
+            check_length=check_length,
         )
 
         if symbol_info.dataType in ads_type_to_ctype:
