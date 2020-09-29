@@ -9,7 +9,6 @@
 import pyads
 from pyads import AmsAddr
 from pyads.utils import platform_is_linux
-from ctypes import c_ubyte
 from collections import OrderedDict
 import unittest
 
@@ -81,28 +80,6 @@ class AdsTest(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 pyads.set_local_address(123)
 
-    def test_functions_with_closed_port(self):
-        # type: () -> None
-        """Test pyads functions with no open port."""
-        pyads.open_port()
-        adr = pyads.get_local_address()
-        pyads.close_port()
-
-        self.assertIsNotNone(adr)
-        self.assertIsNone(pyads.get_local_address())
-        self.assertIsNone(pyads.read_state(adr))
-        self.assertIsNone(pyads.read_device_info(adr))
-        self.assertIsNone(
-            pyads.read_write(adr, 1, 2, pyads.PLCTYPE_INT, 1, pyads.PLCTYPE_INT)
-        )
-        self.assertIsNone(pyads.read(adr, 1, 2, pyads.PLCTYPE_INT))
-        self.assertIsNone(pyads.read_by_name(adr, "hello", pyads.PLCTYPE_INT))
-        self.assertIsNone(
-            pyads.add_device_notification(
-                adr, "test", pyads.NotificationAttrib(4), lambda x: x
-            )
-        )
-
     def test_set_timeout(self):
         # type: () -> None
         """Test timeout function."""
@@ -129,13 +106,13 @@ class AdsTest(unittest.TestCase):
             ("iVar7", pyads.PLCTYPE_WORD, 1),
             ("iVar8", pyads.PLCTYPE_DWORD, 1),
         )
-        self.assertEqual(pyads.size_of_structure(structure_def), c_ubyte * 173)
+        self.assertEqual(pyads.size_of_structure(structure_def), 173)
 
         # test for PLC_DEFAULT_STRING_SIZE
         structure_def = (("sVar", pyads.PLCTYPE_STRING, 4),)
         self.assertEqual(
             pyads.size_of_structure(structure_def),
-            c_ubyte * ((pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4),
+            (pyads.PLC_DEFAULT_STRING_SIZE + 1) * 4,
         )
 
         # tests for incorrect definitions
@@ -173,7 +150,7 @@ class AdsTest(unittest.TestCase):
             ("iVar1", pyads.PLCTYPE_INT, 3),
             ("bVar1", pyads.PLCTYPE_BOOL, 4),
         )
-        self.assertEqual(pyads.size_of_structure(structure_def * 5), c_ubyte * 1185)
+        self.assertEqual(pyads.size_of_structure(structure_def * 5), 1185)
 
     def test_dict_from_bytes(self):
         # type: () -> None

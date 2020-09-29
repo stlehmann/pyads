@@ -83,6 +83,7 @@ class AdsClientConnection(threading.Thread):
                 logger.info(packet)
                 self.client.send(packet.to_bytes())
 
+    # noinspection PyProtectedMember
     def create_notification_packet(self, notification, length, handle):
         sample = AdsNotificationSample(
             handle=handle, sample_size=length, data=notification.value[:length]
