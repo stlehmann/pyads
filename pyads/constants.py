@@ -178,8 +178,8 @@ ADSIGRP_IOIMAGE_RWOX = 0xF031  #: read/write output bit
 ADSIGRP_IOIMAGE_CLEARI = 0xF040  #: write inputs to null
 ADSIGRP_IOIMAGE_CLEARO = 0xF050  #: write outputs to null
 
-ADISGRP_SUMUP_READ = 0xF080  #: ADS Sum Read Request
-ADISGRP_SUMUP_WRITE = 0xF081  #: ADS Sum Write Request
+ADSIGRP_SUMUP_READ = 0xF080  #: ADS Sum Read Request
+ADSIGRP_SUMUP_WRITE = 0xF081  #: ADS Sum Write Request
 
 ADSIGRP_DEVICE_DATA = 0xF100  #: state, name, etc...
 ADSIOFFS_DEVDATA_ADSSTATE = 0x0000  #: ads state of device

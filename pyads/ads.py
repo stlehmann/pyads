@@ -62,8 +62,8 @@ from .constants import (
     PLCTYPE_WORD,
     PLC_DEFAULT_STRING_SIZE,
     DATATYPE_MAP,
-    ADISGRP_SUMUP_READ,
-    ADISGRP_SUMUP_WRITE,
+    ADSIGRP_SUMUP_READ,
+    ADSIGRP_SUMUP_WRITE,
 )
 
 from .structs import (
@@ -884,7 +884,7 @@ class Connection(object):
     def read_by_name(
         self,
         data_name,
-        plc_datatype,
+        plc_datatype=None,
         return_ctypes=False,
         handle=None,
         check_length=True,
@@ -1026,7 +1026,7 @@ class Connection(object):
 
         return None
 
-    def write_by_name(self, data_name, value, plc_datatype, handle=None):
+    def write_by_name(self, data_name, value, plc_datatype=None, handle=None):
         # type: (str, Any, Type, int) -> None
         """Send data synchronous to an ADS-device from data name.
 

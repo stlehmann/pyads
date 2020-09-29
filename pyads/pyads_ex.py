@@ -42,8 +42,8 @@ from .constants import (
     ADSIGRP_SYM_VALBYHND,
     ADSIGRP_SYM_RELEASEHND,
     PORT_SYSTEMSERVICE,
-    ADISGRP_SUMUP_READ,
-    ADISGRP_SUMUP_WRITE,
+    ADSIGRP_SUMUP_READ,
+    ADSIGRP_SUMUP_WRITE,
     DATATYPE_MAP,
     ads_type_to_ctype,
 )
@@ -558,7 +558,7 @@ def adsSyncReadWriteReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if index_group == ADISGRP_SUMUP_READ:
+    if index_group == ADSIGRP_SUMUP_READ:
         response_size = ctypes.sizeof(ctypes.c_ulong) * len(value)
         for _ in value:
             response_size += _.size
@@ -567,7 +567,7 @@ def adsSyncReadWriteReqEx2(
         read_data_pointer = ctypes.pointer(read_data)
         read_length = response_size
 
-    elif index_group == ADISGRP_SUMUP_WRITE:
+    elif index_group == ADSIGRP_SUMUP_WRITE:
         response_size = (
             index_offset * 4
         )  # expect 4 bytes back for every value written (error data)
@@ -592,10 +592,10 @@ def adsSyncReadWriteReqEx2(
     bytes_read = ctypes.c_ulong()
     bytes_read_pointer = ctypes.pointer(bytes_read)
 
-    if index_group == ADISGRP_SUMUP_READ:
+    if index_group == ADSIGRP_SUMUP_READ:
         write_data_pointer = ctypes.pointer(value)
         write_length = ctypes.sizeof(value)
-    elif index_group == ADISGRP_SUMUP_WRITE:
+    elif index_group == ADSIGRP_SUMUP_WRITE:
         write_data = (ctypes.c_byte * len(value)).from_buffer(value)
         write_data_pointer = ctypes.pointer(write_data)
         write_length = ctypes.sizeof(write_data)
@@ -634,14 +634,14 @@ def adsSyncReadWriteReqEx2(
     if err_code:
         raise ADSError(err_code)
 
-    if index_group == ADISGRP_SUMUP_READ or index_group == ADISGRP_SUMUP_WRITE:
+    if index_group == ADSIGRP_SUMUP_READ or index_group == ADSIGRP_SUMUP_WRITE:
         expected_length = response_size
     else:
         expected_length = (
             read_data.entryLength
             if isinstance(read_data, SAdsSymbolEntry)
             else read_length.value
-        )
+        )    
 
     # If we're reading a value of predetermined size (anything but a string),
     # validate that the correct number of bytes were read
@@ -781,7 +781,7 @@ def adsGetHandle(port, address, data_name):
 
 def adsGetSymbolInfo(port, address, data_name):
     # type: (int, AmsAddr, str) -> SAdsSymbolInfo
-    """Get the handle of the PLC-variable.
+    """Get the symbol information of the PLC-variable.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -829,7 +829,7 @@ def adsSumRead(port, address, data_names, data_symbols):
     sum_response = adsSyncReadWriteReqEx2(
         port,
         address,
-        ADISGRP_SUMUP_READ,
+        ADSIGRP_SUMUP_READ,
         num_requests,
         None,
         sum_req_array,
@@ -917,7 +917,7 @@ def adsSumWrite(port, address, data_names_and_values, data_symbols):
     sum_response = adsSyncReadWriteReqEx2(
         port,
         address,
-        ADISGRP_SUMUP_WRITE,
+        ADSIGRP_SUMUP_WRITE,
         num_requests,
         None,
         buf,
@@ -985,6 +985,7 @@ def adsSyncReadByNameEx(
             SAdsSymbolEntry,
             data_name,
             PLCTYPE_STRING,
+            check_length=check_length
         )
 
         if symbol_info.dataType in ads_type_to_ctype:
@@ -1046,6 +1047,42 @@ def adsSyncWriteByNameEx(port, address, data_name, value, data_type, handle=None
         handle = adsGetHandle(port, address, data_name)
     else:
         no_handle = False
+
+    if data_type is None:
+        symbol_info = adsSyncReadWriteReqEx2(
+            port,
+            address,
+            ADSIGRP_SYM_INFOBYNAMEEX,
+            0x0,
+            SAdsSymbolEntry,
+            data_name,
+            PLCTYPE_STRING,
+        )
+
+        if symbol_info.dataType in ads_type_to_ctype:
+            data_type = ads_type_to_ctype[symbol_info.dataType]
+        elif symbol_info.type_name in ads_type_to_ctype:
+            # Potential feature: allow mapping of type names to structures by
+            # registering them in `ads_type_to_ctype`
+            data_type = ads_type_to_ctype[symbol_info.type_name]
+        else:
+            raise ValueError(
+                "Unsupported data type {!r} (number={} size={} comment={!r})"
+                "".format(
+                    symbol_info.type_name,
+                    symbol_info.dataType,
+                    symbol_info.size,
+                    symbol_info.comment,
+                )
+            )
+
+        if data_type is not PLCTYPE_STRING:
+            # String types are handled directly by adsSyncReadReqEx2.
+            # Otherwise, if the reported size is larger than the data type
+            # size, it is an array of that type:
+            array_length = symbol_info.size // ctypes.sizeof(data_type)
+            if array_length > 1:
+                data_type = data_type * array_length
 
     # Write the value of a PLC-variable, via handle
     adsSyncWriteReqEx(port, address, ADSIGRP_SYM_VALBYHND, handle, value, data_type)
