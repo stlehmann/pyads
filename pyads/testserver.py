@@ -446,9 +446,28 @@ class BasicHandler(AbstractHandler):
 
         elif command_id == constants.ADSCOMMAND_READWRITE:
             logger.info("Command received: READ_WRITE")
-            # Parse requested data length
+            # parse the request
+            index_group = struct.unpack("<I", request.ams_header.data[:4])[0]
             response_length = struct.unpack("<I", request.ams_header.data[8:12])[0]
-            if response_length > 0:
+            write_length = struct.unpack("<I", request.ams_header.data[12:16])[0]
+            write_data = request.ams_header.data[16 : (16 + write_length)]
+
+            if index_group == constants.ADSIGRP_SYM_INFOBYNAMEEX:
+                # Pack the structure in the same format as SAdsSymbolEntry.
+                # Only 'EntrySize' (first field) and Type will be filled.
+                # Use fixed UINT8 type
+                response_value = struct.pack(
+                    "<IIIIIIHHH", 30, 0, 0, 1, constants.ADST_UINT8, 0, 0, 0, 0
+                )
+
+            elif index_group == constants.ADSIGRP_SUMUP_READ:
+                # Could be improved to handle variable length requests
+                response_value = struct.pack("<IIBB", 0, 0, 1, 2)
+
+            elif index_group == constants.ADSIGRP_SUMUP_WRITE:
+                response_value = struct.pack("<II", 0, 0)
+
+            elif response_length > 0:
                 # Create response of repeated 0x0F with a null terminator for strings
                 response_value = (("\x0F" * (response_length - 1)) + "\x00").encode(
                     "utf-8"

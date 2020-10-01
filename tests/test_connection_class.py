@@ -693,7 +693,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         requests = self.test_server.request_history
 
         with self.plc:
-            notification, user = self.plc.add_device_notification(handle_name, attr, callback)
+            notification, user = self.plc.add_device_notification(
+                handle_name, attr, callback
+            )
             # Assert that Read/Write command was used to get the handle by name
             self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
             # Assert that ADDDEVICENOTIFICATION was used to add device notification
@@ -712,10 +714,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         n_index_offset = 0
         attr = NotificationAttrib(length=4)
         requests = self.test_server.request_history
-    
+
         with self.plc:
             notification, user_hnl = self.plc.add_device_notification(
-                    (n_index_group, n_index_offset), attr, callback
+                (n_index_group, n_index_offset), attr, callback
             )
 
             # Assert that ADDDEVICENOTIFICATION was used to add device notification
@@ -752,13 +754,14 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         @plc.notification(pyads.PLCTYPE_INT)
         def callback(handle, name, timestamp, value):
-            print (handle, name, timestamp, value)
+            print(handle, name, timestamp, value)
 
         with plc:
-            handles = plc.add_device_notification("a", pyads.NotificationAttrib(20), callback)
+            handles = plc.add_device_notification(
+                "a", pyads.NotificationAttrib(20), callback
+            )
             plc.write_by_name("a", 1, pyads.PLCTYPE_INT)
             plc.del_device_notification(*handles)
-
 
     def create_notification_struct(self, payload):
         # type: (bytes) -> structs.SAdsNotificationHeader
@@ -967,6 +970,111 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
 
+    def test_read_without_type(self):
+        handle_name = "TestHandle"
+
+        with self.plc:
+            read_value = self.plc.read_by_name(handle_name)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 4 requests
+        self.assertEqual(len(requests), 4)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        # Assert that the server received the handle by name
+        received_value = requests[0].ams_header.data[16:]
+        sent_value = (handle_name + "\x00").encode("utf-8")
+        self.assertEqual(sent_value, received_value)
+
+        # Assert that next, the Read command was used to get the symbol info
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that next, the Read command was used to get the value
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READ)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_WRITE)
+
+        # Check read value returned by server:
+        # Test server just returns repeated bytes of 0x0F terminated with 0x00
+        # But because the read value is only 1-byte long, we just get 0x00
+        expected_result = 0
+        self.assertEqual(read_value, expected_result)
+
+    def test_write_without_type(self):
+        handle_name = "TestHandle"
+        # Keep same type as used in read_without_type for simplicity
+        value = 10
+
+        with self.plc:
+            self.plc.write_by_name(handle_name, value)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 4 requests
+        self.assertEqual(len(requests), 4)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that next, the Read command was used to get the symbol info
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that Write command was used to write the value
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+        # Check the value written matches our value
+        received_value = int.from_bytes(requests[2].ams_header.data[12:], "little")
+        self.assertEqual(value, received_value)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_WRITE)
+
+    def test_read_list(self):
+        variables = ["TestVar1", "TestVar2"]
+
+        with self.plc:
+            read_values = self.plc.read_list_by_name(variables)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 3 requests
+        self.assertEqual(len(requests), 3)
+
+        # Assert that all commands are read write - 2x symbol info, 1x sum read
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {"TestVar1": 1, "TestVar2": 2}
+        self.assertEqual(read_values, expected_result)
+
+    def test_write_list(self):
+        variables = {"TestVar1": 1, "TestVar2": 2}
+
+        with self.plc:
+            errors = self.plc.write_list_by_name(variables)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 3 requests
+        self.assertEqual(len(requests), 3)
+
+        # Assert that all commands are read write - 2x symbol info, 1x sum write
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {"TestVar1": "no error", "TestVar2": "no error"}
+        self.assertEqual(errors, expected_result)
+
 
 class AdsApiTestCaseAdvanced(unittest.TestCase):
     @classmethod
@@ -990,7 +1098,6 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
         )
 
-
     def test_read_check_length(self):
         # Write data shorter than what should be read
         with self.plc:
@@ -999,7 +1106,6 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
                 index_group=constants.INDEXGROUP_DATA,
                 index_offset=1,
                 plc_datatype=constants.PLCTYPE_USINT,
-
             )
 
             with self.assertRaises(RuntimeError):

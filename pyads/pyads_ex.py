@@ -876,7 +876,7 @@ def adsSumWrite(
     address: AmsAddr,
     data_names_and_values: Dict[str, Any],
     data_symbols: Dict[str, SAdsSymbolEntry],
-) -> Dict[str, int]:
+) -> Dict[str, ADSError]:
     """Perform a sum write to write the value of multiple ADS variables
 
     :param int port: local AMS port as returned by adsPortOpenEx()

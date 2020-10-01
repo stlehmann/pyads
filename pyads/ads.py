@@ -628,7 +628,7 @@ class Connection(object):
     def read_by_name(
         self,
         data_name: str,
-        plc_datatype: Type,
+        plc_datatype: Type = None,
         return_ctypes: bool = False,
         handle: Optional[int] = None,
         check_length: bool = True,
@@ -780,7 +780,7 @@ class Connection(object):
         self,
         data_name: str,
         value: Any,
-        plc_datatype: Type,
+        plc_datatype: Type = None,
         handle: Optional[int] = None,
     ) -> None:
         """Send data synchronous to an ADS-device from data name.
