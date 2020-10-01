@@ -1126,6 +1126,19 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             )
             self.assertEqual(value, 1)
 
+    def test_get_all_symbols_empty(self):
+        with self.plc:
+            self.assertEqual(len(self.plc.get_all_symbols()), 0)
+
+    def test_get_all_symbols_single(self):
+        with self.plc:
+            self.plc.write(
+                value="1", index_group=123, index_offset=0, plc_datatype=constants.PLCTYPE_STRING
+            )
+            symbols = self.plc.get_all_symbols()
+            self.assertEqual(len(symbols), 1)
+            self.assertEqual(symbols[0].index_group, 123)
+
 
 if __name__ == "__main__":
     unittest.main()

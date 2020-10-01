@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 3.3.0 [unreleased]
 
 ### Added
+* [#155](https://github.com/stlehmann/pyads/pull/155) Add get_all_symbols method to Connection
 
 ### Changed
 * [#150](https://github.com/stlehmann/pyads/pull/150) Use function annotations and variable annotations for type annotations

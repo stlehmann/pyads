@@ -46,3 +46,15 @@ def deprecated(message: Optional[str] = None) -> Callable:
         return wrapper
 
     return decorator
+
+
+def decode_ads(message: bytes) -> str:
+    """
+    Decode a string that in encoded in the format used by ADS.
+
+    From Beckhoff documentation: 'A STRING constant is a string enclosed by
+    single quotation marks. The characters are encoded according to the Windows
+    1252 character set. As a subset of Windows-1252, the character set of
+    ISO/IEC 8859-1 is supported.'
+    """
+    return message.decode("windows-1252").strip(" \t\n\r\0")
