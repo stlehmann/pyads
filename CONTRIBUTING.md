@@ -30,20 +30,6 @@ Please follow these guidelines for contributing. Pull requests are welcome.
 Use [Black](https://github.com/psf/black) for formatting Python code.
 Simply run `black <filename>` from the command line.
 
-### Connection class
-  
-There is currently functions inside the `ads.py` file which seem duplicated
-by methods inside the `Connection` class. Functions duplicated outside of the
-class are for backwards compatibility. 
-
-The `Connection` class`is the recommended way for users of pyads to interact
-with a PLC:
-
-    plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
-
-New features should therefore focus on adding to the `Connection` class`.
-Depreciation of duplicate functions is under ongoing review.
-
 ### Docstrings
 
 Please use the [Python domain info field lists](https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html?highlight=%3Areturn%3A#info-field-lists)
@@ -99,7 +85,3 @@ The resulting html files are in `doc/build/html`.
 
 Documentation is found on [read the docs](https://pyads.readthedocs.io/en/latest/)
 and will automatically update when PRs are merged.
-
-## Python 2
-pyads is still supporting Python 2.7, please make contributions backwards compatible.
-Support for Python 2.7 is under ongoing review.
