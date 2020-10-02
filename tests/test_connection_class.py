@@ -666,7 +666,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         """Test write by structure method"""
 
         handle_name = "TestHandle"
-        value = "Test Value"
+        value = OrderedDict([("sVar", "Test Value")])
 
         structure_def = (("sVar", pyads.PLCTYPE_STRING, 1),)
 
