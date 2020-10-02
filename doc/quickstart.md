@@ -113,7 +113,13 @@ True
 >>> plc.read_by_name('global.bool_value', pyads.PLCTYPE_BOOL)
 False
 >>> plc.close()
+```
+If the type is not provided, it will be read from the server before reading or writing the value
 
+```python
+>>> plc.read_by_name('global.bool_value')
+True
+>>> plc.write_by_name('global.bool_value', False)
 ```
 
 If the name could not be found an Exception containing the error message and ADS Error number is raised.
@@ -270,6 +276,21 @@ Toggle bitsize variables by address.
 >>> data = plc.read(INDEXGROUP_MEMORYBIT, 100*8 + 0, pyads.PLCTYPE_BOOL)
 >>> # write inverted value to memory bit MX100.0
 >>> plc.write(INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
+```
+
+### Read and write lists of values
+
+Reading and writing of multiple values can be performed in a single transaction. After the first operation, the symbol info is cached for future use.
+
+```python
+>>> import pyads
+>>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+>>> var_list = ['MAIN.b_Execute', 'MAIN.str_TestString', 'MAIN.r32_TestReal']
+>>> plc.read_list_by_name(var_list)
+{'MAIN.b_Execute': True, 'MAIN.str_TestString': 'Hello World', 'MAIN.r32_TestReal': 123.45}
+>>> write_dict = {'MAIN.b_Execute': False, 'MAIN.str_TestString': 'Goodbye World', 'MAIN.r32_TestReal': 54.321}
+>>> plc.write_list_by_name(write_dict)
+{'MAIN.b_Execute': 'no error', 'MAIN.str_TestString': 'no error', 'MAIN.r32_TestReal': 'no error'}
 ```
 
 ### Get all symbols

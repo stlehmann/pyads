@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#155](https://github.com/stlehmann/pyads/pull/155) Add get_all_symbols method to Connection
+* [#149](https://github.com/stlehmann/pyads/pull/149) Add sum commands and support read/write by name without type
 
 ### Changed
 * [#150](https://github.com/stlehmann/pyads/pull/150) Use function annotations and variable annotations for type annotations
