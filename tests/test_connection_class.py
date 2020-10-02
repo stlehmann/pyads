@@ -666,13 +666,14 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         """Test write by structure method"""
 
         handle_name = "TestHandle"
-        value = OrderedDict([("sVar", "Test Value")])
+        struct_to_write = OrderedDict([("sVar", "Test Value")])
+        value = "Test Value"
 
         structure_def = (("sVar", pyads.PLCTYPE_STRING, 1),)
 
         # test with no structure size passed in
         with self.plc:
-            self.plc.write_structure_by_name(handle_name, value, structure_def)
+            self.plc.write_structure_by_name(handle_name, struct_to_write, structure_def)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -696,7 +697,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         structure_size = pyads.size_of_structure(structure_def)
         with self.plc:
             self.plc.write_structure_by_name(
-                handle_name, value, structure_def, structure_size=structure_size
+                handle_name, struct_to_write, structure_def, structure_size=structure_size
             )
 
         requests = self.test_server.request_history
@@ -706,7 +707,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Test with handle passed in
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            self.plc.write_structure_by_name("", value, structure_def, handle=handle)
+            self.plc.write_structure_by_name("", struct_to_write, structure_def, handle=handle)
 
         requests = self.test_server.request_history
         received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
