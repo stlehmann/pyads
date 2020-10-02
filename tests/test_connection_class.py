@@ -1150,7 +1150,12 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[5], constants.ADSCOMMAND_READWRITE)
 
         # Expected result
-        expected_result = {"TestVar1": 1, "TestVar2": 2, "str_TestVar3": "test", "TestVar4": "Internal error"}
+        expected_result = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": "Internal error",
+        }
         self.assertEqual(read_values, expected_result)
         self.assertEqual(read_values2, expected_result)
 
@@ -1176,11 +1181,21 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
 
         # Expected result
-        expected_result = {"TestVar1": 1, "TestVar2": 2, "str_TestVar3": "test", "TestVar4": "Internal error"}
+        expected_result = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": "Internal error",
+        }
         self.assertEqual(read_values, expected_result)
 
     def test_write_list(self):
-        variables = {"TestVar1": 1, "TestVar2": 2,  "str_TestVar3": "test", "TestVar4": 3}
+        variables = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": 3,
+        }
 
         with self.plc:
             errors = self.plc.write_list_by_name(variables, cache_symbol_info=False)
@@ -1199,11 +1214,21 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
 
         # Expected result
-        expected_result = {'TestVar1': 'no error', 'TestVar2': 'no error', 'str_TestVar3': 'no error', 'TestVar4': 'Internal error'}
+        expected_result = {
+            "TestVar1": "no error",
+            "TestVar2": "no error",
+            "str_TestVar3": "no error",
+            "TestVar4": "Internal error",
+        }
         self.assertEqual(errors, expected_result)
 
     def test_write_list_without_cache(self):
-        variables = {"TestVar1": 1, "TestVar2": 2,  "str_TestVar3": "test", "TestVar4": 3}
+        variables = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": 3,
+        }
 
         with self.plc:
             errors = self.plc.write_list_by_name(variables)
@@ -1222,7 +1247,12 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
 
         # Expected result
-        expected_result = {'TestVar1': 'no error', 'TestVar2': 'no error', 'str_TestVar3': 'no error', 'TestVar4': 'Internal error'}
+        expected_result = {
+            "TestVar1": "no error",
+            "TestVar2": "no error",
+            "str_TestVar3": "no error",
+            "TestVar4": "Internal error",
+        }
         self.assertEqual(errors, expected_result)
 
     def test_ads_symbol_entry(self):
@@ -1233,15 +1263,30 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         t_byte_buffer = ctypes.c_ubyte * 768
         Buf = t_byte_buffer()
 
-        struct.pack_into(str(len(symbol_name))+"s", Buf, 0, symbol_name.encode("utf-8"))
-        struct.pack_into(str(len(type_name))+"s", Buf, len(symbol_name) + 1, type_name.encode("utf-8"))
-        struct.pack_into(str(len(comment))+"s", Buf, len(symbol_name) + len(type_name) + 2, comment.encode("utf-8"))
+        struct.pack_into(
+            str(len(symbol_name)) + "s", Buf, 0, symbol_name.encode("utf-8")
+        )
+        struct.pack_into(
+            str(len(type_name)) + "s",
+            Buf,
+            len(symbol_name) + 1,
+            type_name.encode("utf-8"),
+        )
+        struct.pack_into(
+            str(len(comment)) + "s",
+            Buf,
+            len(symbol_name) + len(type_name) + 2,
+            comment.encode("utf-8"),
+        )
 
-        test_struct = structs.SAdsSymbolEntry(0, 0, 0, 0, 0, 0, len(symbol_name), len(type_name), len(comment), Buf)
+        test_struct = structs.SAdsSymbolEntry(
+            0, 0, 0, 0, 0, 0, len(symbol_name), len(type_name), len(comment), Buf
+        )
 
         self.assertEqual(symbol_name, test_struct.name)
         self.assertEqual(type_name, test_struct.type_name)
         self.assertEqual(comment, test_struct.comment)
+
 
 class AdsApiTestCaseAdvanced(unittest.TestCase):
     @classmethod
@@ -1300,7 +1345,10 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_get_all_symbols_single(self):
         with self.plc:
             self.plc.write(
-                value="1", index_group=123, index_offset=0, plc_datatype=constants.PLCTYPE_STRING
+                value="1",
+                index_group=123,
+                index_offset=0,
+                plc_datatype=constants.PLCTYPE_STRING,
             )
             symbols = self.plc.get_all_symbols()
             self.assertEqual(len(symbols), 1)

@@ -477,7 +477,9 @@ class BasicHandler(AbstractHandler):
 
             elif index_group == constants.ADSIGRP_SUMUP_READ:
                 # Could be improved to handle variable length requests
-                response_value = struct.pack("<IIIIBB4sB", 0, 0, 0, 1, 1, 2, ("test" + "\x00").encode("utf-8"), 0)
+                response_value = struct.pack(
+                    "<IIIIBB4sB", 0, 0, 0, 1, 1, 2, ("test" + "\x00").encode("utf-8"), 0
+                )
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
                 response_value = struct.pack("<IIII", 0, 0, 0, 1)
