@@ -456,16 +456,31 @@ class BasicHandler(AbstractHandler):
                 # Pack the structure in the same format as SAdsSymbolEntry.
                 # Only 'EntrySize' (first field) and Type will be filled.
                 # Use fixed UINT8 type
-                response_value = struct.pack(
-                    "<IIIIIIHHH", 30, 0, 0, 1, constants.ADST_UINT8, 0, 0, 0, 0
-                )
+                if "str_" in write_data.decode():
+                    response_value = struct.pack(
+                        "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_STRING, 0, 0, 0, 0
+                    )
+                # Non-existant type
+                elif "no_type" in write_data.decode():
+                    response_value = struct.pack(
+                        "<IIIIIIHHH", 30, 0, 0, 5, 1, 0, 0, 0, 0
+                    )
+                # Array
+                elif "ar_" in write_data.decode():
+                    response_value = struct.pack(
+                        "<IIIIIIHHH", 30, 0, 0, 2, constants.ADST_UINT8, 0, 0, 0, 0
+                    )
+                else:
+                    response_value = struct.pack(
+                        "<IIIIIIHHH", 30, 0, 0, 1, constants.ADST_UINT8, 0, 0, 0, 0
+                    )
 
             elif index_group == constants.ADSIGRP_SUMUP_READ:
                 # Could be improved to handle variable length requests
-                response_value = struct.pack("<IIBB", 0, 0, 1, 2)
+                response_value = struct.pack("<IIIIBB4sB", 0, 0, 0, 1, 1, 2, ("test" + "\x00").encode("utf-8"), 0)
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
-                response_value = struct.pack("<II", 0, 0)
+                response_value = struct.pack("<IIII", 0, 0, 0, 1)
 
             elif response_length > 0:
                 # Create response of repeated 0x0F with a null terminator for strings

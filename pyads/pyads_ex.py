@@ -856,6 +856,8 @@ def adsSumRead(
                     offset=data_start + offset,
                 )[0]
             else:
+                print("DATA_NAME: ", data_name)
+                print("DATA_TYPE: ", data_symbols[data_name].dataType)
                 null_idx = sum_response[
                     data_start
                     + offset : data_start
@@ -992,10 +994,6 @@ def adsSyncReadByNameEx(
 
         if symbol_info.dataType in ads_type_to_ctype:
             data_type = ads_type_to_ctype[symbol_info.dataType]
-        elif symbol_info.type_name in ads_type_to_ctype:
-            # Potential feature: allow mapping of type names to structures by
-            # registering them in `ads_type_to_ctype`
-            data_type = ads_type_to_ctype[symbol_info.type_name]
         else:
             raise ValueError(
                 "Unsupported data type {!r} (number={} size={} comment={!r})"
@@ -1069,10 +1067,6 @@ def adsSyncWriteByNameEx(
 
         if symbol_info.dataType in ads_type_to_ctype:
             data_type = ads_type_to_ctype[symbol_info.dataType]
-        elif symbol_info.type_name in ads_type_to_ctype:
-            # Potential feature: allow mapping of type names to structures by
-            # registering them in `ads_type_to_ctype`
-            data_type = ads_type_to_ctype[symbol_info.type_name]
         else:
             raise ValueError(
                 "Unsupported data type {!r} (number={} size={} comment={!r})"

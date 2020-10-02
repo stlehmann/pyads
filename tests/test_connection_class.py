@@ -1004,6 +1004,56 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         expected_result = 0
         self.assertEqual(read_value, expected_result)
 
+    def test_read_array_without_type(self):
+        handle_name = "ar_TestHandle"
+
+        with self.plc:
+            read_value = self.plc.read_by_name(handle_name)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 4 requests
+        self.assertEqual(len(requests), 4)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        # Assert that the server received the handle by name
+        received_value = requests[0].ams_header.data[16:]
+        sent_value = (handle_name + "\x00").encode("utf-8")
+        self.assertEqual(sent_value, received_value)
+
+        # Assert that next, the Read command was used to get the symbol info
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that next, the Read command was used to get the value
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READ)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_WRITE)
+
+        # Check read value returned by server:
+        # Test server just returns repeated bytes of 0x0F terminated with 0x00
+        expected_result = [15, 0]
+        self.assertEqual(read_value, expected_result)
+
+    def test_read_without_type_bad_type(self):
+        handle_name = "no_type"
+
+        with self.plc:
+            with self.assertRaises(ValueError):
+                self.plc.read_by_name(handle_name)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 2 requests - handle and symbol info
+        self.assertEqual(len(requests), 2)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+
     def test_write_without_type(self):
         handle_name = "TestHandle"
         # Keep same type as used in read_without_type for simplicity
@@ -1033,29 +1083,127 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Assert that Write was used to release the handle
         self.assert_command_id(requests[3], constants.ADSCOMMAND_WRITE)
 
-    def test_read_list(self):
-        variables = ["TestVar1", "TestVar2"]
+    def test_write_array_without_type(self):
+        handle_name = "ar_TestHandle"
+        # Keep same type as used in read_without_type for simplicity
+        value = [10, 11]
 
         with self.plc:
-            read_values = self.plc.read_list_by_name(variables)
+            self.plc.write_by_name(handle_name, value)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
 
-        # Assert that the server received 3 requests
-        self.assertEqual(len(requests), 3)
+        # Assert that the server received 4 requests
+        self.assertEqual(len(requests), 4)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that next, the Read command was used to get the symbol info
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+
+        # Assert that Write command was used to write the value
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+
+        # Assert that Write was used to release the handle
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_WRITE)
+
+    def test_write_without_type_bad_type(self):
+        handle_name = "no_type"
+        value = 10
+
+        with self.plc:
+            with self.assertRaises(ValueError):
+                self.plc.write_by_name(handle_name, value)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 2 requests - handle and symbol info
+        self.assertEqual(len(requests), 2)
+
+        # Assert that Read/Write command was used to get the handle by name
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+
+    def test_read_list(self):
+        variables = ["TestVar1", "TestVar2", "str_TestVar3", "TestVar4"]
+
+        # Read twice to show caching
+        with self.plc:
+            read_values = self.plc.read_list_by_name(variables)
+            read_values2 = self.plc.read_list_by_name(variables)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received - 4x symbol info, 1x sum read, 1x sum read (second)
+        self.assertEqual(len(requests), 6)
 
         # Assert that all commands are read write - 2x symbol info, 1x sum read
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
         self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
         self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[5], constants.ADSCOMMAND_READWRITE)
 
         # Expected result
-        expected_result = {"TestVar1": 1, "TestVar2": 2}
+        expected_result = {"TestVar1": 1, "TestVar2": 2, "str_TestVar3": "test", "TestVar4": "Internal error"}
+        self.assertEqual(read_values, expected_result)
+        self.assertEqual(read_values2, expected_result)
+
+    def test_read_list_without_cache(self):
+
+        # Repeat the test without cache
+        variables = ["TestVar1", "TestVar2", "str_TestVar3", "TestVar4"]
+
+        with self.plc:
+            read_values = self.plc.read_list_by_name(variables, cache_symbol_info=False)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received - 4x symbol info, 1x sum read (second)
+        self.assertEqual(len(requests), 5)
+
+        # Assert that all commands are read write - 2x symbol info, 1x sum read
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {"TestVar1": 1, "TestVar2": 2, "str_TestVar3": "test", "TestVar4": "Internal error"}
         self.assertEqual(read_values, expected_result)
 
     def test_write_list(self):
-        variables = {"TestVar1": 1, "TestVar2": 2}
+        variables = {"TestVar1": 1, "TestVar2": 2,  "str_TestVar3": "test", "TestVar4": 3}
+
+        with self.plc:
+            errors = self.plc.write_list_by_name(variables, cache_symbol_info=False)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 3 requests
+        self.assertEqual(len(requests), 5)
+
+        # Assert that all commands are read write - 4x symbol info, 1x sum write
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {'TestVar1': 'no error', 'TestVar2': 'no error', 'str_TestVar3': 'no error', 'TestVar4': 'Internal error'}
+        self.assertEqual(errors, expected_result)
+
+    def test_write_list_without_cache(self):
+        variables = {"TestVar1": 1, "TestVar2": 2,  "str_TestVar3": "test", "TestVar4": 3}
 
         with self.plc:
             errors = self.plc.write_list_by_name(variables)
@@ -1064,17 +1212,36 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         requests = self.test_server.request_history
 
         # Assert that the server received 3 requests
-        self.assertEqual(len(requests), 3)
+        self.assertEqual(len(requests), 5)
 
-        # Assert that all commands are read write - 2x symbol info, 1x sum write
+        # Assert that all commands are read write - 4x symbol info, 1x sum write
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
         self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
         self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
 
         # Expected result
-        expected_result = {"TestVar1": "no error", "TestVar2": "no error"}
+        expected_result = {'TestVar1': 'no error', 'TestVar2': 'no error', 'str_TestVar3': 'no error', 'TestVar4': 'Internal error'}
         self.assertEqual(errors, expected_result)
 
+    def test_ads_symbol_entry(self):
+        symbol_name = "Test_Symbol"
+        type_name = "UINT8"
+        comment = "Test Comment"
+
+        t_byte_buffer = ctypes.c_ubyte * 768
+        Buf = t_byte_buffer()
+
+        struct.pack_into(str(len(symbol_name))+"s", Buf, 0, symbol_name.encode("utf-8"))
+        struct.pack_into(str(len(type_name))+"s", Buf, len(symbol_name) + 1, type_name.encode("utf-8"))
+        struct.pack_into(str(len(comment))+"s", Buf, len(symbol_name) + len(type_name) + 2, comment.encode("utf-8"))
+
+        test_struct = structs.SAdsSymbolEntry(0, 0, 0, 0, 0, 0, len(symbol_name), len(type_name), len(comment), Buf)
+
+        self.assertEqual(symbol_name, test_struct.name)
+        self.assertEqual(type_name, test_struct.type_name)
+        self.assertEqual(comment, test_struct.comment)
 
 class AdsApiTestCaseAdvanced(unittest.TestCase):
     @classmethod
