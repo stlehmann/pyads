@@ -555,7 +555,6 @@ class AdsConnectionClassTestCase(unittest.TestCase):
     def test_read_structure_by_name(self):
         # type: () -> None
         """Test read by structure method"""
-        # TODO may need testserver.py changes to increase test usefulness
 
         handle_name = "TestHandle"
 
