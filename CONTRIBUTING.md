@@ -72,6 +72,26 @@ the unit tests with the code in the PR and report back.
 [Github]: https://github.com/stlehmann/pyads/pulls
 [Travis]: https://travis-ci.org/stlehmann/pyads
 
+### Testing issues on Windows
+
+There are known issues when running tests using a Windows development environment with
+TwinCat installed; TwinCat can cause issues with the ADS Test Server. If running tests
+using tox causes problems, tests can be run using Docker instead.
+
+With Docker installed docker images can be built and run for any python version.
+The following commands will build an image using python3.8, then tests will run when the
+container starts:
+
+```
+docker build --build-arg python_version=3.8 -t container_name .
+docker run --rm container_name
+```
+
+The container is deleted automatically after running so that multiple containers don't
+build up on the system. To rerun the tests after making changes to pyads, any docker images
+will need to be rebuilt.
+
+
 ## Documentation contributions
 
 Sphinx is used to create the documentation from source files and docstrings in code.
