@@ -30,20 +30,6 @@ Please follow these guidelines for contributing. Pull requests are welcome.
 Use [Black](https://github.com/psf/black) for formatting Python code.
 Simply run `black <filename>` from the command line.
 
-### Connection class
-  
-There is currently functions inside the `ads.py` file which seem duplicated
-by methods inside the `Connection` class. Functions duplicated outside of the
-class are for backwards compatibility. 
-
-The `Connection` class`is the recommended way for users of pyads to interact
-with a PLC:
-
-    plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
-
-New features should therefore focus on adding to the `Connection` class`.
-Depreciation of duplicate functions is under ongoing review.
-
 ### Docstrings
 
 Please use the [Python domain info field lists](https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html?highlight=%3Areturn%3A#info-field-lists)
@@ -86,6 +72,26 @@ the unit tests with the code in the PR and report back.
 [Github]: https://github.com/stlehmann/pyads/pulls
 [Travis]: https://travis-ci.org/stlehmann/pyads
 
+### Testing issues on Windows
+
+There are known issues when running tests using a Windows development environment with
+TwinCat installed; TwinCat can cause issues with the ADS Test Server. If running tests
+using tox causes problems, tests can be run using Docker instead.
+
+With Docker installed docker images can be built and run for any python version.
+The following commands will build an image using python3.8, then tests will run when the
+container starts:
+
+```
+docker build --build-arg python_version=3.8 -t container_name .
+docker run --rm container_name
+```
+
+The container is deleted automatically after running so that multiple containers don't
+build up on the system. To rerun the tests after making changes to pyads, any docker images
+will need to be rebuilt.
+
+
 ## Documentation contributions
 
 Sphinx is used to create the documentation from source files and docstrings in code.
@@ -99,7 +105,3 @@ The resulting html files are in `doc/build/html`.
 
 Documentation is found on [read the docs](https://pyads.readthedocs.io/en/latest/)
 and will automatically update when PRs are merged.
-
-## Python 2
-pyads is still supporting Python 2.7, please make contributions backwards compatible.
-Support for Python 2.7 is under ongoing review.
