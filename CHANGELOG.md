@@ -8,15 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#155](https://github.com/stlehmann/pyads/pull/155) Add get_all_symbols method to Connection
-* [#157](https://github.com/stlehmann/pyads/pull/157) Add write_structure_by_name method to Connection
-* [#161](https://github.com/stlehmann/pyads/pull/161) Add sum read and write commands
 
 ### Changed
 * [#150](https://github.com/stlehmann/pyads/pull/150) Use function annotations and variable annotations for type annotations
 
 ### Removed
-* [#152](https://github.com/stlehmann/pyads/pull/152) Remove deprecated functions
-* [#150](https://github.com/stlehmann/pyads/pull/150) Drop support for Python 2.7 and Python 3.5
 
 ## 3.2.2
 
