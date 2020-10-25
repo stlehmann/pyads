@@ -975,6 +975,9 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         cls.test_server = AdsTestServer(AdvancedHandler(), logging=False)
         cls.test_server.start()
 
+        # wait a bit otherwise error might occur
+        time.sleep(1)
+
     @classmethod
     def tearDownClass(cls):
         cls.test_server.stop()
