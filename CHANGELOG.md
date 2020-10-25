@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#150](https://github.com/stlehmann/pyads/pull/150) Use function annotations and variable annotations for type annotations
 
 ### Removed
+* [#152](https://github.com/stlehmann/pyads/pull/152) Remove deprecated functions
+* [#150](https://github.com/stlehmann/pyads/pull/150) Drop support for Python 2.7 and Python 3.5
 
 ## 3.2.2
 
