@@ -30,6 +30,9 @@ from .pyads_ex import (
     adsSyncReadWriteReqEx2,
     adsSyncReadReqEx2,
     adsGetHandle,
+    adsGetSymbolInfo,
+    adsSumRead,
+    adsSumWrite,
     adsReleaseHandle,
     adsSyncReadByNameEx,
     adsSyncWriteByNameEx,
@@ -64,6 +67,8 @@ from .constants import (
     PLCTYPE_WORD,
     PLC_DEFAULT_STRING_SIZE,
     DATATYPE_MAP,
+    ADSIGRP_SUMUP_READ,
+    ADSIGRP_SUMUP_WRITE,
 )
 
 from .structs import (
@@ -73,6 +78,7 @@ from .structs import (
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
+    SAdsSumRequest,
 )
 
 # custom types
@@ -371,6 +377,7 @@ class Connection(object):
             self.ip_address = ip_address
         self._open = False
         self._notifications = {}  # type: Dict[int, str]
+        self._symbol_info_cache = {} # type: Dict[str, SAdsSymbolEntry]
 
     @property
     def ams_netid(self) -> str:
@@ -662,7 +669,7 @@ class Connection(object):
     def read_by_name(
         self,
         data_name: str,
-        plc_datatype: Type,
+        plc_datatype: Optional[int] = None,
         return_ctypes: bool = False,
         handle: Optional[int] = None,
         check_length: bool = True,
@@ -693,6 +700,67 @@ class Connection(object):
             )
 
         return None
+
+    def read_list_by_name(
+        self, data_names: List[str], cache_symbol_info: bool = True
+    ) -> Dict[str, Any]:
+        """Read a list of variables in a single ADS call.
+
+        :param data_names: list of variable names to be read
+        :type data_names: list[str]
+        :param bool cache_symbol_info: when True, symbol info will be cached for future reading
+
+        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
+        :rtype dict(str, Any)
+
+        """
+        if cache_symbol_info:
+            new_items = [i for i in data_names if i not in self._symbol_info_cache]
+            new_cache = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+            }
+            self._symbol_info_cache.update(new_cache)
+            data_symbols = {i: self._symbol_info_cache[i] for i in data_names}
+        else:
+            data_symbols = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
+            }
+
+        return adsSumRead(self._port, self._adr, data_names, data_symbols)
+
+    def write_list_by_name(
+        self, data_names_and_values: Dict[str, Any], cache_symbol_info: bool = True
+    ) -> Dict[str, int]:
+        """Write a list of variables in a single ADS call
+
+        :param data_names_and_values: dictionary of variable names and their values to be written
+        :type data_names: dict[str, Any]
+        :param bool cache_symbol_info: when True, symbol info will be cached for future reading
+
+        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
+        :rtype dict(str, Any)
+
+        """
+        if cache_symbol_info:
+            new_items = [
+                i
+                for i in data_names_and_values.keys()
+                if i not in self._symbol_info_cache
+            ]
+            new_cache = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+            }
+            self._symbol_info_cache.update(new_cache)
+            data_symbols = {
+                i: self._symbol_info_cache[i] for i in data_names_and_values
+            }
+        else:
+            data_symbols = {
+                i: adsGetSymbolInfo(self._port, self._adr, i)
+                for i in data_names_and_values.keys()
+            }
+
+        return adsSumWrite(self._port, self._adr, data_names_and_values, data_symbols)
 
     def read_structure_by_name(
         self,
@@ -746,7 +814,7 @@ class Connection(object):
         self,
         data_name: str,
         value: Any,
-        plc_datatype: Type,
+        plc_datatype: Optional[int] = None,
         handle: Optional[int] = None,
     ) -> None:
         """Send data synchronous to an ADS-device from data name.
