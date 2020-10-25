@@ -181,7 +181,7 @@ Python code:
 1234.5
 ```
 
-#### Structures with multiple datatypes (_read only_)
+#### Structures with multiple datatypes
 
 **The structure in the PLC must be defined with `{attribute ‘pack_mode’ := ‘1’}.**
 
@@ -201,8 +201,8 @@ END_TYPE
 
 Python code:
 
-First you must declare a tuple which defines the PLC structure. This should match the order
-as declared in the PLC.
+First declare a tuple which defines the PLC structure. This should match the order
+as declared in the PLC. Information is passed and returned using the OrderedDict type. 
 
 ```python
 >>> structure_def = (
@@ -210,12 +210,18 @@ as declared in the PLC.
 ...    ('rVar2', pyads.PLCTYPE_REAL, 1),
 ...    ('iVar', pyads.PLCTYPE_INT, 1),
 ...    ('iVar2', pyads.PLCTYPE_DINT, 3),
-...    ('sVar', pyads.PLCTYPE_STRING, 1))
-```
+...    ('sVar', pyads.PLCTYPE_STRING, 1)
+... )
 
-Then you can read the structure:
+>>> vars_to_write = OrderedDict([
+...     ('rVar', 11.1),
+...     ('rar2', 22.2),
+...     ('iVar', 3),
+...     ('iVar2', [4, 44, 444]),
+...     ('sVar', 'abc')]
+... )
 
-```python
+>>> plc.write_structure_by_name('global.sample_structure', vars_to_write, structure_def)
 >>> plc.read_structure_by_name('global.sample_structure', structure_def)
 OrderedDict([('rVar', 11.1), ('rVar2', 22.2), ('iVar', 3), ('iVar2', [4, 44, 444]), ('sVar', 'abc')])
 ```

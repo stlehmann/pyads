@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#155](https://github.com/stlehmann/pyads/pull/155) Add get_all_symbols method to Connection
+* [#157](https://github.com/stlehmann/pyads/pull/157) Add write_structure_by_name method to Connection
 
 ### Changed
 * [#150](https://github.com/stlehmann/pyads/pull/150) Use function annotations and variable annotations for type annotations
