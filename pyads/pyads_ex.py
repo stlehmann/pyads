@@ -30,7 +30,7 @@ from .structs import (
     SAdsSymbolEntry,
     NotificationAttrib,
     SAdsSumRequest,
-    )
+)
 from .constants import (
     PLCTYPE_STRING,
     STRING_BUFFER,
@@ -981,7 +981,7 @@ def adsSyncReadByNameEx(
     else:
         no_handle = False
 
-if data_type is None:
+    if data_type is None:
         symbol_info = adsSyncReadWriteReqEx2(
             port,
             address,
@@ -1055,7 +1055,7 @@ def adsSyncWriteByNameEx(
     else:
         no_handle = False
 
-        if data_type is None:
+    if data_type is None:
         symbol_info = adsSyncReadWriteReqEx2(
             port,
             address,
