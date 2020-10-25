@@ -113,13 +113,7 @@ True
 >>> plc.read_by_name('global.bool_value', pyads.PLCTYPE_BOOL)
 False
 >>> plc.close()
-```
-If the type is not provided, it will be read from the server before reading or writing the value
 
-```python
->>> plc.read_by_name('global.bool_value')
-True
->>> plc.write_by_name('global.bool_value', False)
 ```
 
 If the name could not be found an Exception containing the error message and ADS Error number is raised.

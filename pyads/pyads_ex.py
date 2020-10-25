@@ -953,7 +953,7 @@ def adsSyncReadByNameEx(
     port: int,
     address: AmsAddr,
     data_name: str,
-    data_type: Optional[int] = None,
+    data_type: Type,
     return_ctypes: bool = False,
     handle: int = None,
     check_length: bool = True,
@@ -964,8 +964,7 @@ def adsSyncReadByNameEx(
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param string data_name: data name
     :param Type data_type: type of the data given to the PLC, according to
-        PLCTYPE constants. If unspecified, the ADS server will be queried for
-        the type information (default: None)
+        PLCTYPE constants
     :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
     :param int handle: PLC-variable handle (default: None)
@@ -980,39 +979,6 @@ def adsSyncReadByNameEx(
         handle = adsGetHandle(port, address, data_name)
     else:
         no_handle = False
-
-    if data_type is None:
-        symbol_info = adsSyncReadWriteReqEx2(
-            port,
-            address,
-            ADSIGRP_SYM_INFOBYNAMEEX,
-            0x0,
-            SAdsSymbolEntry,
-            data_name,
-            PLCTYPE_STRING,
-            check_length=check_length,
-        )
-
-        if symbol_info.dataType in ads_type_to_ctype:
-            data_type = ads_type_to_ctype[symbol_info.dataType]
-        else:
-            raise ValueError(
-                "Unsupported data type {!r} (number={} size={} comment={!r})"
-                "".format(
-                    symbol_info.type_name,
-                    symbol_info.dataType,
-                    symbol_info.size,
-                    symbol_info.comment,
-                )
-            )
-
-        if data_type is not PLCTYPE_STRING:
-            # String types are handled directly by adsSyncReadReqEx2.
-            # Otherwise, if the reported size is larger than the data type
-            # size, it is an array of that type:
-            array_length = symbol_info.size // ctypes.sizeof(data_type)
-            if array_length > 1:
-                data_type = data_type * array_length
 
     # Read the value of a PLC-variable, via handle
     value = adsSyncReadReqEx2(
@@ -1054,38 +1020,6 @@ def adsSyncWriteByNameEx(
         handle = adsGetHandle(port, address, data_name)
     else:
         no_handle = False
-
-    if data_type is None:
-        symbol_info = adsSyncReadWriteReqEx2(
-            port,
-            address,
-            ADSIGRP_SYM_INFOBYNAMEEX,
-            0x0,
-            SAdsSymbolEntry,
-            data_name,
-            PLCTYPE_STRING,
-        )
-
-        if symbol_info.dataType in ads_type_to_ctype:
-            data_type = ads_type_to_ctype[symbol_info.dataType]
-        else:
-            raise ValueError(
-                "Unsupported data type {!r} (number={} size={} comment={!r})"
-                "".format(
-                    symbol_info.type_name,
-                    symbol_info.dataType,
-                    symbol_info.size,
-                    symbol_info.comment,
-                )
-            )
-
-        if data_type is not PLCTYPE_STRING:
-            # String types are handled directly by adsSyncReadReqEx2.
-            # Otherwise, if the reported size is larger than the data type
-            # size, it is an array of that type:
-            array_length = symbol_info.size // ctypes.sizeof(data_type)
-            if array_length > 1:
-                data_type = data_type * array_length
 
     # Write the value of a PLC-variable, via handle
     adsSyncWriteReqEx(port, address, ADSIGRP_SYM_VALBYHND, handle, value, data_type)
