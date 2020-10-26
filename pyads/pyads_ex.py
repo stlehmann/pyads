@@ -857,8 +857,6 @@ def adsSumRead(
                     offset=data_start + offset,
                 )[0]
             else:
-                print("DATA_NAME: ", data_name)
-                print("DATA_TYPE: ", data_symbols[data_name].dataType)
                 null_idx = sum_response[
                     data_start
                     + offset : data_start

@@ -377,7 +377,7 @@ class Connection(object):
             self.ip_address = ip_address
         self._open = False
         self._notifications = {}  # type: Dict[int, str]
-        self._symbol_info_cache = {} # type: Dict[str, SAdsSymbolEntry]
+        self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
 
     @property
     def ams_netid(self) -> str:
