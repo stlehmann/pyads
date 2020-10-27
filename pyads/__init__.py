@@ -20,6 +20,7 @@ from .ads import (
     set_timeout,
     size_of_structure,
     dict_from_bytes,
+    bytes_from_dict,
 )
 
 from .pyads_ex import ADSError

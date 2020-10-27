@@ -354,6 +354,75 @@ def dict_from_bytes(
         return values_list[0]
 
 
+def bytes_from_dict(
+    values: Union[Dict[str, Any], List[Dict[str, Any]]],
+    structure_def: StructureDef,
+    array_size: int = 1,
+) -> List[int]:
+    """Returns a byte array of values which can be written to the PLC from an ordered dict.
+
+    :param Union[Dict[str, Any], List[Dict[str, Any]]] values: ordered dictionary of values
+            for each variable type in order of structure_def
+    :param tuple structure_def: special tuple defining the structure and
+            types contained within it according o PLCTYPE constants
+
+            Expected input example:
+
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('sVar2', pyads.PLCTYPE_STRING, 1),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3)
+            )
+            i.e ('Variable Name', variable type, arr size (1 if not array),
+                 length of string (if defined in PLC))
+
+    :param array_size: size of array if writing array of structure, defaults to 1
+    :type array_size: int, optional
+
+    :return: byte_list: list of byte values for an entire structure
+    """
+    byte_list = []
+    for structure in range(0, array_size):
+        if array_size == 1:
+            cur_dict = values
+        else:
+            cur_dict = values[structure]
+
+        for item in structure_def:
+            try:
+                var, plc_datatype, size = item  # type: ignore
+                str_len = None
+            except ValueError:
+                var, plc_datatype, size, str_len = item  # type: ignore
+
+            var = cur_dict[var]
+            for i in range(0, size):
+                if plc_datatype == PLCTYPE_STRING:
+                    if str_len is None:
+                        str_len = PLC_DEFAULT_STRING_SIZE
+                    if size > 1:
+                        byte_list += list(var[i].encode("utf-8"))
+                        remaining_bytes = str_len + 1 - len(var[i])
+                    else:
+                        byte_list += list(var.encode("utf-8"))
+                        remaining_bytes = str_len + 1 - len(var)
+                    for byte in range(remaining_bytes):
+                        byte_list.append(0)
+                elif plc_datatype not in DATATYPE_MAP:
+                    raise RuntimeError("Datatype not found. Check structure definition")
+                else:
+                    if size > 1:
+                        byte_list += list(
+                            struct.pack(DATATYPE_MAP[plc_datatype], var[i])
+                        )
+                    else:
+                        byte_list += list(struct.pack(DATATYPE_MAP[plc_datatype], var))
+    return byte_list
+
+
 class Connection(object):
     """Class for managing the connection to an ADS device.
 
@@ -830,6 +899,51 @@ class Connection(object):
             return adsSyncWriteByNameEx(
                 self._port, self._adr, data_name, value, plc_datatype, handle=handle
             )
+
+    def write_structure_by_name(
+        self,
+        data_name: str,
+        value: Union[Dict[str, Any], List[Dict[str, Any]]],
+        structure_def: StructureDef,
+        array_size: int = 1,
+        structure_size: Optional[int] = None,
+        handle: Optional[int] = None,
+    ) -> None:
+        """Write a structure of multiple types.
+
+        :param string data_name: data name
+        :param Union[Dict[str, Any], List[Dict[str, Any]]] value: value to write to the storage address of the PLC
+        :param tuple structure_def: special tuple defining the structure and
+            types contained within it according to PLCTYPE constants, must match
+            the structure defined in the PLC, PLC structure must be defined with
+            {attribute 'pack_mode' :=  '1'}
+
+            Expected input example:
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('sVar', pyads.PLCTYPE_STRING, 1),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+            )
+            i.e ('Variable Name', variable type, arr size (1 if not array),
+                 length of string (if defined in PLC))
+
+        :param array_size: size of array if writing array of structure, defaults to 1
+        :type array_size: int, optional
+        :param structure_size: size of structure if known by previous use of
+            size_of_structure, defaults to None
+        :type structure_size: int, optional
+        :param handle: PLC-variable handle, pass in handle if previously
+            obtained to speed up reading, defaults to None
+        :type handle: int, optional
+        """
+        byte_values = bytes_from_dict(value, structure_def, array_size=array_size)
+        if structure_size is None:
+            structure_size = size_of_structure(structure_def * array_size)
+        return self.write_by_name(
+            data_name, byte_values, c_ubyte * structure_size, handle=handle
+        )
 
     def add_device_notification(
         self,
