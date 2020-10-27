@@ -278,6 +278,21 @@ Toggle bitsize variables by address.
 >>> plc.write(INDEXGROUP_MEMORYBIT, 100*8 + 0, not data)
 ```
 
+### Read and write lists of values
+
+Reading and writing of multiple values can be performed in a single transaction. After the first operation, the symbol info is cached for future use.
+
+```python
+>>> import pyads
+>>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+>>> var_list = ['MAIN.b_Execute', 'MAIN.str_TestString', 'MAIN.r32_TestReal']
+>>> plc.read_list_by_name(var_list)
+{'MAIN.b_Execute': True, 'MAIN.str_TestString': 'Hello World', 'MAIN.r32_TestReal': 123.45}
+>>> write_dict = {'MAIN.b_Execute': False, 'MAIN.str_TestString': 'Goodbye World', 'MAIN.r32_TestReal': 54.321}
+>>> plc.write_list_by_name(write_dict)
+{'MAIN.b_Execute': 'no error', 'MAIN.str_TestString': 'no error', 'MAIN.r32_TestReal': 'no error'}
+```
+
 ### Get all symbols
 
 In order to get a list of the device's declared variables, use the `get_all_symbols` method.
