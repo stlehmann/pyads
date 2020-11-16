@@ -6,16 +6,18 @@ the circular dependencies.
 """
 
 from __future__ import annotations  # Allows forward declarations
-from typing import TYPE_CHECKING, Any, Union, Optional, Type
+from typing import TYPE_CHECKING, Any, Union, Optional, Type, List, Tuple, \
+    Callable
 # ads.Connection relies on structs.AdsSymbol (but type hints only), so use
 # this if to only include it when type hinting (False during execution)
 if TYPE_CHECKING:
     from .ads import Connection
 import re
+from ctypes import sizeof,
 
 from .pyads_ex import adsGetSymbolInfo
-from . import constants
-# We want to access all constants, so use package notation
+from .structs import NotificationAttrib
+from . import constants  # To access all constants, use package notation
 
 
 class AdsSymbol:
@@ -61,6 +63,7 @@ class AdsSymbol:
 
         """
         self._plc = plc
+        self._handles_list: List[Tuple[int, int]] = []  # Notification handles
 
         do_lookup = True
 
@@ -101,9 +104,6 @@ class AdsSymbol:
 
     def write(self, new_value: Any):
         """Write a new value to the symbol"""
-        if self._handle:
-            return self._plc.write_by_name(self.name, new_value, self.symtype,
-                                           handle=self._handle)
         return self._plc.write(self.index_group, self.index_offset,
                                new_value, self.symtype)
 
@@ -121,6 +121,54 @@ class AdsSymbol:
         return '<{}.{} object at {}, name: {}, type: {}>'.format(
             t.__module__, t.__qualname__, hex(id(self)),
             self.name, self.type_name)
+
+    def __del__(self):
+        """Destructor"""
+        self.clear_device_notifications()
+
+    def add_device_notification(
+            self,
+            callback: Callable,
+            attr: Optional[NotificationAttrib] = None,
+            user_handle:  Optional[int] = None
+    ) -> Optional[Tuple[int, int]]:
+        """Add on-change callback to symbol
+
+        See Connection.add_device_notification(...).
+
+        When `attr` is omitted, the default will be used.
+
+        The notification handles are returned but also stored locally. When
+        this symbol is destructed any notifications will be freed up
+        automatically.
+        """
+
+        if attr is None:
+            attr = NotificationAttrib(length=sizeof(self.symtype))
+
+        handles = self._plc.add_device_notification(
+                (self.index_group, self.index_offset),
+                attr,
+                callback,
+                user_handle
+        )
+
+        self._handles_list.append(handles)
+
+        return handles
+
+    def clear_device_notifications(self):
+        """Remove all registered notifications"""
+        if self._handles_list:
+            for handles in self._handles_list:
+                self._plc.del_device_notification(*handles)
+            self._handles_list = []  # Clear the list
+
+    def del_device_notification(self, handles: Tuple[int, int]):
+        """Remove a single device notification by handles"""
+        if handles in self._handles_list:
+            self._plc.del_device_notification(*handles)
+            self._handles_list.remove(handles)
 
     @staticmethod
     def get_type_from_str(type_str: str) -> Optional[Type]:
