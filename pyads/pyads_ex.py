@@ -802,6 +802,33 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
     return symbol_info
 
 
+def adsGetSymbolInfoByIndices(port: int, address: AmsAddr, index_group: int,
+                              index_offset: int ) -> SAdsSymbolEntry:
+    """Get the symbol information of the PLC-variable.
+
+    Same as `adsGetSymbolInfo`, only without using the name.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param pyads.structs.AmsAddr address: local or remote AmsAddr
+    :param string data_name: data name
+    :rtype: SAdsSymbolInfo
+    :return: symbol_info: PLC Symbol info
+    """
+    symbol_info = adsSyncReadWriteReqEx2(
+        port,
+        address,
+        ADSIGRP_SYM_INFOBYNAMEEX,
+        0x0,
+        SAdsSymbolEntry,
+        data_name,
+        PLCTYPE_STRING,
+    )
+
+
+
+    return symbol_info
+
+
 def adsSumRead(
     port: int, address: AmsAddr, data_names: List[str], data_symbols
 ) -> Dict[str, Any]:

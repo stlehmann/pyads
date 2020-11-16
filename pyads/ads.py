@@ -6,7 +6,14 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
+from __future__ import annotations  # Allows forward declarations
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, \
+    TYPE_CHECKING
+# ads.Connection relies on structs.AdsSymbol (but type hints only), so use
+# this if to only include it when type hinting (False during execution)
+if TYPE_CHECKING:
+    from .symbol import AdsSymbol
+
 from datetime import datetime
 import struct
 from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof, create_string_buffer
@@ -15,6 +22,8 @@ from functools import partial
 
 from .utils import decode_ads, platform_is_linux
 from .filetimes import filetime_to_dt
+
+from .symbol import AdsSymbol
 
 from .pyads_ex import (
     adsAddRoute,
@@ -72,13 +81,13 @@ from .constants import (
 )
 
 from .structs import (
-    AdsSymbol,
     AmsAddr,
     SAmsNetId,
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
     SAdsSumRequest,
+    SAdsSymbolEntry,
 )
 
 # custom types
@@ -472,6 +481,14 @@ class Connection(object):
             )
         self._adr.port = port
 
+    @property
+    def port(self) -> int:
+        return self._port
+
+    @property
+    def ams_addr(self) -> AmsAddr:
+        return self._adr
+
     def __enter__(self) -> "Connection":
         """Open on entering with-block."""
         self.open()
@@ -709,9 +726,9 @@ class Connection(object):
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
-                symbol = AdsSymbol(plc=self, index_group=index_group,
+                symbol = AdsSymbol(plc=self, name=name,
+                                   index_group=index_group,
                                    index_offset=index_offset,
-                                   name=name,
                                    symtype=symtype, comment=comment)
                 symbols.append(symbol)
         return symbols
