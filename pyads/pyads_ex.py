@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Contains cross platform ADS extension functions.
 
 :author: David Browne <davidabrowne@gmail.com>
