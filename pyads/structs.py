@@ -8,7 +8,12 @@
 :last modified time: 2018-07-12 14:33:11
 
 """
-import typing
+from __future__ import annotations  # Allows forward declarations
+from typing import TYPE_CHECKING, Any, Union, Optional, Type
+# ads.Connection relies on structs.AdsSymbol (but type hints only), so use
+# this if to only include it when type hinting (False during execution)
+if TYPE_CHECKING:
+    from .ads import Connection
 from ctypes import Structure, Union, c_ubyte, c_uint16, c_uint32, c_uint64
 
 from .constants import ADSTRANS_SERVERONCHA
@@ -43,8 +48,11 @@ class AdsVersion:
 
 
 class AdsSymbol:
-    """Contains index group, index offset, name, symbol type, comment of ADS 
-    symbol.
+    """Object that points to an ADS variable
+
+    Contains index group, index offset, name, symbol type, comment of ADS
+    symbol. Also remembers a reference to a Connection to be able to
+    read/write directly.
 
     :param index_group: Index group of symbol
     :param index_offset: Index offset of symbol
@@ -54,13 +62,91 @@ class AdsSymbol:
 
     """
 
-    def __init__(self, index_group, index_offset, name, symtype, comment):
-        # type: (int, int, str, str, str) -> None
+    def __init__(self,
+                 plc: Connection,
+                 name: Optional[str] = None,
+                 index_group: Optional[int] = None,
+                 index_offset: Optional[int] = None,
+                 symtype: Optional[Union[Type, str]] = None,
+                 comment=None):
+        """Create AdsSymbol instance
+
+        If the index_group and index_offset or the name is omitted, it will
+        be filled in automatically.
+        When the symtype is not specified, it will be attempted to be
+        determined automatically.
+        symtype can be a PLCTYPE_* constant or a string representing PLC type.
+
+        The virtual property `value` can be used to read from and write to
+        the symbol.
+
+        :param plc: Connection instance
+        :param name:
+        :param index_group:
+        :param index_offset:
+        :param symtype:
+        :param comment:
+
+        """
+        self._plc = plc
         self.index_group = index_group
         self.index_offset = index_offset
         self.name = name
         self.symtype = symtype
         self.comment = comment
+
+        self._handle = None  # ADS handle, used when no indices were given
+
+        if self.name is None and (self.index_group is None or
+                                  self.index_offset is None):
+            raise ValueError('Please specify either `name` or both '
+                             '`index_group` and `index_offset`')
+        elif self.name is None:
+            # We cannot find the name through address alone
+            pass
+        else:  # Either index is None
+            # We actually cannot find the indices of the symbol through the
+            # name, use a handle instead
+            self._handle = self._plc.get_handle(self.name)
+
+    def read(self) -> Any:
+        """Read the current value of this symbol"""
+        if self._handle:
+            return self._plc.read_by_name(self.name, self.symtype,
+                                          handle=self._handle)
+        return self._plc.read(self.index_group, self.index_offset,
+                              self.symtype)
+
+    def write(self, new_value: Any):
+        """Write a new value to the symbol"""
+        if self._handle:
+            return self._plc.write_by_name(self.name, new_value, self.symtype,
+                                           handle=self._handle)
+        return self._plc.write(self.index_group, self.index_offset,
+                               new_value, self.symtype)
+
+    @property
+    def value(self):
+        return self.read()
+
+    @value.setter
+    def value(self, new_value):
+        self.write(new_value)
+
+    def __del__(self):
+        """Destructor
+
+        Free up handles
+        """
+        if self._handle:
+            self._plc.release_handle(self._handle)
+
+    def __repr__(self):
+        """Debug string"""
+        t = type(self)
+        return '<{}.{} object at {}, name: {}, indices: {},{}>'.format(
+            t.__module__, t.__qualname__, hex(id(self)),
+            self.name, self.index_group, self.index_offset)
 
 
 class SAmsNetId(Structure):
@@ -123,7 +209,7 @@ class AmsAddr(object):
 
     @netid.setter
     def netid(self, value):
-        # type: (typing.Union[str, SAmsNetId]) -> None
+        # type: (Union[str, SAmsNetId]) -> None
         # Check if the value is already an instance of the SAmsNetId struct
         if isinstance(value, SAmsNetId):
             self._ams_addr.netId = value

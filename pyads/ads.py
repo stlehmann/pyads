@@ -709,7 +709,10 @@ class Connection(object):
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
-                symbol = AdsSymbol(index_group, index_offset, name, symtype, comment)
+                symbol = AdsSymbol(plc=self, index_group=index_group,
+                                   index_offset=index_offset,
+                                   name=name,
+                                   symtype=symtype, comment=comment)
                 symbols.append(symbol)
         return symbols
 
