@@ -6,7 +6,6 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from __future__ import annotations  # Allows forward declarations
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, \
     TYPE_CHECKING
 # ads.Connection relies on structs.AdsSymbol (but type hints only), so use

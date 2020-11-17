@@ -1206,7 +1206,6 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
         )
 
-
     def test_read_check_length(self):
         # Write data shorter than what should be read
         with self.plc:

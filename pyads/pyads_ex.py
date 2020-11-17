@@ -72,7 +72,8 @@ if platform_is_windows():  # pragma: no cover, skip Windows test
             dll_path += "\\x64"
         dlldir_handle = os.add_dll_directory(dll_path)
     try:
-        _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
+        # _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
+        _adsDLL = ctypes.WinDLL("C:/TwinCAT/AdsApi/TcAdsDll/TcAdsDll.dll")
     finally:
         if dlldir_handle:
             # Do not clobber the load path for other modules
@@ -798,33 +799,6 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
         data_name,
         PLCTYPE_STRING,
     )
-
-    return symbol_info
-
-
-def adsGetSymbolInfoByIndices(port: int, address: AmsAddr, index_group: int,
-                              index_offset: int ) -> SAdsSymbolEntry:
-    """Get the symbol information of the PLC-variable.
-
-    Same as `adsGetSymbolInfo`, only without using the name.
-
-    :param int port: local AMS port as returned by adsPortOpenEx()
-    :param pyads.structs.AmsAddr address: local or remote AmsAddr
-    :param string data_name: data name
-    :rtype: SAdsSymbolInfo
-    :return: symbol_info: PLC Symbol info
-    """
-    symbol_info = adsSyncReadWriteReqEx2(
-        port,
-        address,
-        ADSIGRP_SYM_INFOBYNAMEEX,
-        0x0,
-        SAdsSymbolEntry,
-        data_name,
-        PLCTYPE_STRING,
-    )
-
-
 
     return symbol_info
 

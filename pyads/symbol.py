@@ -5,7 +5,6 @@ Separate file because it depends on many other files, so we try to simplify
 the circular dependencies.
 """
 
-from __future__ import annotations  # Allows forward declarations
 from typing import TYPE_CHECKING, Any, Union, Optional, Type, List, Tuple, \
     Callable
 # ads.Connection relies on structs.AdsSymbol (but type hints only), so use
@@ -13,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Union, Optional, Type, List, Tuple, \
 if TYPE_CHECKING:
     from .ads import Connection
 import re
-from ctypes import sizeof,
+from ctypes import sizeof
 
 from .pyads_ex import adsGetSymbolInfo
 from .structs import NotificationAttrib
@@ -36,7 +35,7 @@ class AdsSymbol:
     """
 
     def __init__(self,
-                 plc: Connection,
+                 plc: "Connection",
                  name: Optional[str] = None,
                  index_group: Optional[int] = None,
                  index_offset: Optional[int] = None,

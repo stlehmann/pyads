@@ -78,6 +78,12 @@ There are known issues when running tests using a Windows development environmen
 TwinCat installed; TwinCat can cause issues with the ADS Test Server. If running tests
 using tox causes problems, tests can be run using Docker instead.
 
+To run the tests on Windows with TwinCAT installed, make sure TwinCAT is not running. 
+Either stop all services and process manually, or run 
+`C:\TwinCAT\TcSwitchRuntime\TcSwitchRuntime.exe` and click 'disable'.
+
+#### Docker
+
 With Docker installed docker images can be built and run for any python version.
 The following commands will build an image using python3.8, then tests will run when the
 container starts:
@@ -91,6 +97,17 @@ The container is deleted automatically after running so that multiple containers
 build up on the system. To rerun the tests after making changes to pyads, any docker images
 will need to be rebuilt.
 
+### Linux Subsystem
+
+Instead of using Docker, the Linux Subsystem for Windows also allows you to run the tests. 
+See for example: https://docs.microsoft.com/en-us/windows/wsl/install-win10
+
+With the subsystem installed, open a Linux shell in your clone directory and run:
+
+1. `sudo apt install python3 python3-pip`
+1. `cd adslib && make && sudo make install && cd ..`
+1. `python3 -m pip install tox`
+1. `ptyhon3 -m tox -e py36` (Ubuntu 18.04 comes with Python 3.6, 20.04 with Python 3.8)
 
 ## Documentation contributions
 
