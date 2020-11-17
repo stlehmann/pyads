@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Contains cross platform ADS extension functions.
 
 :author: David Browne <davidabrowne@gmail.com>
@@ -562,6 +561,7 @@ def adsSyncReadWriteReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
     read_data: Optional[Any]
+    response_size: int = 0
 
     if index_group == ADSIGRP_SUMUP_READ:
         response_size = ctypes.sizeof(ctypes.c_ulong) * len(value)
@@ -811,7 +811,6 @@ def adsSumRead(
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param data_names: list of variables names to read
-    :type data_name: list[str]
     :param data_symbols: list of dictionaries of ADS Symbol Info
     :type data_symbols: dict[str, ADSSymbolInfo]
     :return: result: dict of variable names and values
