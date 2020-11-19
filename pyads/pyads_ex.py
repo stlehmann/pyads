@@ -12,9 +12,10 @@ from typing import Union, Callable, Any, Tuple, Type, Optional, List, Dict
 import ctypes
 import os
 import platform
-import sys
+import socket
 import struct
-
+import sys
+from contextlib import closing
 from functools import wraps
 
 from .utils import platform_is_linux, platform_is_windows
@@ -197,10 +198,6 @@ def adsAddRouteToPLC(
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
 
     """
-    import socket
-    import struct
-    from contextlib import closing
-
     # ALL SENT STRINGS MUST BE NULL TERMINATED
     adding_host_name += "\0"
     added_net_id = added_net_id if added_net_id else sending_net_id
@@ -283,6 +280,41 @@ def adsAddRouteToPLC(
 
     # If we fell through the whole way to the bottom, then we got a weird response
     raise RuntimeError("Unexpected response from PLC")
+
+
+def getNetIdForPLC(ip_address: str):
+    """Get AMS Net ID from IP address"""
+    # The head of the UDP AMS packet containing host routing information
+    data_header = struct.pack(
+        ">12s", b"\x03\x66\x14\x71\x00\x00\x00\x00\x01\x00\x00\x00"
+    )
+    data_header += struct.pack(
+        ">6B", *map(int, [1,1,1,1,1,1])
+    )  # It doesn't matter what NetID you use here, so just send 1.1.1.1.1.1
+    data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
+    data_header += struct.pack(">4s", b"\x00\x00\x00\x00")  # Block of unknown
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
+        # Listen on 55189 for the response from the PLC
+        sock.bind(("", 55189))
+
+        # Send our data to 48899 on the PLC
+        sock.sendto(data_header, (ip_address, 48899))
+
+        # Response should come in in less than .5 seconds, but wait longer to account for slow communications
+        sock.settimeout(5)
+        # Allow TimeoutError to be raised so user can handle it how they please
+
+        # Keep looping until we get a response from our PLC
+        addr = [0]
+        while addr[0] != ip_address:
+            data, addr = sock.recvfrom(395)  # PLC response is 395 bytes long
+    rcvd_packet_header = data[
+        0:12
+    ]  # AMS Packet header, seems to define communication type
+    # If the last byte in the header is 0x80, then this is a response to our request
+    if struct.unpack(">B", rcvd_packet_header[-1:])[0] == 0x80:
+        ams_id_tuple = struct.unpack(">6B", data[12:18])  # AMS ID of PLC
+        return '.'.join(map(str,ams_id_tuple))
 
 
 @router_function
