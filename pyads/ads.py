@@ -30,6 +30,7 @@ from .pyads_ex import (
     adsSyncReadWriteReqEx2,
     adsSyncReadReqEx2,
     adsGetHandle,
+    adsGetNetIdForPLC,
     adsGetSymbolInfo,
     adsSumRead,
     adsSumWrite,
@@ -178,10 +179,13 @@ def set_local_address(ams_netid: Union[str, SAmsNetId]) -> None:
 def add_route(adr: Union[str, AmsAddr], ip_address: str) -> None:
     """Establish a new route in the AMS Router (linux Only).
 
-    :param adr: AMS Address of routing endpoint as str or AmsAddr object
+    :param adr: AMS Address of routing endpoint as str or AmsAddr object. If an
+        empty string is provided, the net id of the PLC will be discovered.
     :param str ip_address: ip address of the routing endpoint
 
     """
+    if not adr:
+        adr = adsGetNetIdForPLC(ip_address)
     if isinstance(adr, str):
         adr = AmsAddr(adr)
 
@@ -199,7 +203,7 @@ def add_route_to_plc(
 ) -> bool:
     """Embed a new route in the PLC.
 
-    :param pyads.structs.SAmsNetId sending_net_id: sending net id
+    :param str sending_net_id: sending net id
     :param str adding_host_name: host name (or IP) of the PC being added
     :param str ip_address: ip address of the PLC
     :param str username: username for PLC
@@ -436,7 +440,7 @@ class Connection(object):
     """
 
     def __init__(
-        self, ams_net_id: str, ams_net_port: int, ip_address: str = None
+        self, ams_net_id: str = None, ams_net_port: int = None, ip_address: str = None
     ) -> None:
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
@@ -444,6 +448,8 @@ class Connection(object):
             self.ip_address = ".".join(ams_net_id.split(".")[:4])
         else:
             self.ip_address = ip_address
+        self.ams_net_id = ams_net_id
+        self.ams_net_port = ams_net_port
         self._open = False
         self._notifications = {}  # type: Dict[int, str]
         self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
@@ -486,6 +492,9 @@ class Connection(object):
         if self._open:
             return
 
+        if self.ams_net_id is None:
+            self.ams_net_id = adsGetNetIdForPLC(self.ip_address)
+            self._adr = AmsAddr(self.ams_net_id, self.ams_net_port)
         self._port = adsPortOpenEx()
 
         if linux:

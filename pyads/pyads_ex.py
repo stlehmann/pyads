@@ -177,6 +177,35 @@ def adsAddRoute(net_id: SAmsNetId, ip_address: str) -> None:
         raise ADSError(error_code)
 
 
+def send_raw_udp_message(
+    ip_address: str, message: bytes, expected_return_length: int
+) -> Tuple[bytes, str]:
+    """Send a raw UDP message to the PLC and return the response
+
+    :param str ip_address: ip address of the PLC
+    :param message: the message to send to the PLC
+    :expected_return_length: number of bytes to expect in response
+    """
+    with closing(
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ) as sock:  # UDP
+        # Listen on 55189 for the response from the PLC
+        sock.bind(("", 55189))
+
+        # Send our data to 48899 on the PLC
+        sock.sendto(message, (ip_address, 48899))
+
+        # Response should come in in less than .5 seconds, but wait longer to account for slow
+        # communications
+        sock.settimeout(5)
+        # Allow TimeoutError to be raised so user can handle it how they please
+
+        # Keep looping until we get a response from our PLC
+        addr = [0]
+        while addr[0] != ip_address:
+            return sock.recvfrom(expected_return_length)
+
+
 @router_function
 def adsAddRouteToPLC(
     sending_net_id: str,
@@ -213,10 +242,14 @@ def adsAddRouteToPLC(
     data_header += struct.pack(
         ">6B", *map(int, sending_net_id.split("."))
     )  # Sending net ID
-    data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
+    data_header += struct.pack(
+        "<H", PORT_SYSTEMSERVICE
+    )  # Internal communication port
     data_header += struct.pack(">2s", b"\x05\x00")  # Write command
     data_header += struct.pack(">4s", b"\x00\x00\x0c\x00")  # Block of unknown
-    data_header += struct.pack("<H", len(route_name))  # Length of sender host name
+    data_header += struct.pack(
+        "<H", len(route_name)
+    )  # Length of sender host name
     data_header += route_name.encode("utf-8")  # Sender host name
     data_header += struct.pack(">2s", b"\x07\x00")  # Block of unknown
 
@@ -227,32 +260,24 @@ def adsAddRouteToPLC(
     actual_data += struct.pack(
         ">2s", b"\x0d\x00"
     )  # Block of unknown (maybe encryption?)
-    actual_data += struct.pack("<H", len(username))  # Length of the user name field
+    actual_data += struct.pack(
+        "<H", len(username)
+    )  # Length of the user name field
     actual_data += username.encode("utf-8")  # PLC Username
     actual_data += struct.pack(">2s", b"\x02\x00")  # Block of unknown
     actual_data += struct.pack("<H", len(password))  # Length of password field
     actual_data += password.encode("utf-8")  # PLC Password
     actual_data += struct.pack(">2s", b"\x05\x00")  # Block of unknown
-    actual_data += struct.pack("<H", len(adding_host_name))  # Length of route name
+    actual_data += struct.pack(
+        "<H", len(adding_host_name)
+    )  # Length of route name
     actual_data += adding_host_name.encode(
         "utf-8"
     )  # Name of route being added to the PLC
 
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
-        # Listen on 55189 for the response from the PLC
-        sock.bind(("", 55189))
-
-        # Send our data to 48899 on the PLC
-        sock.sendto(data_header + actual_data, (ip_address, 48899))
-
-        # Response should come in in less than .5 seconds, but wait longer to account for slow communications
-        sock.settimeout(5)
-        # Allow TimeoutError to be raised so user can handle it how they please
-
-        # Keep looping until we get a response from our PLC
-        addr = [0]
-        while addr[0] != ip_address:
-            data, addr = sock.recvfrom(32)  # PLC response is 32 bytes long
+    data, addr = send_raw_udp_message(
+        ip_address, data_header + actual_data, 32
+    )  # PLC response is 32 bytes long
 
     rcvd_packet_header = data[
         0:12
@@ -282,39 +307,31 @@ def adsAddRouteToPLC(
     raise RuntimeError("Unexpected response from PLC")
 
 
-def getNetIdForPLC(ip_address: str):
+def adsGetNetIdForPLC(ip_address: str):
     """Get AMS Net ID from IP address"""
     # The head of the UDP AMS packet containing host routing information
     data_header = struct.pack(
         ">12s", b"\x03\x66\x14\x71\x00\x00\x00\x00\x01\x00\x00\x00"
     )
     data_header += struct.pack(
-        ">6B", *map(int, [1,1,1,1,1,1])
+        ">6B", *[1, 1, 1, 1, 1, 1]
     )  # It doesn't matter what NetID you use here, so just send 1.1.1.1.1.1
-    data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
+    data_header += struct.pack(
+        "<H", PORT_SYSTEMSERVICE
+    )  # Internal communication port
     data_header += struct.pack(">4s", b"\x00\x00\x00\x00")  # Block of unknown
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
-        # Listen on 55189 for the response from the PLC
-        sock.bind(("", 55189))
 
-        # Send our data to 48899 on the PLC
-        sock.sendto(data_header, (ip_address, 48899))
+    data, addr = send_raw_udp_message(
+        ip_address, data_header, 395
+    )  # PLC response is 395 bytes long
 
-        # Response should come in in less than .5 seconds, but wait longer to account for slow communications
-        sock.settimeout(5)
-        # Allow TimeoutError to be raised so user can handle it how they please
-
-        # Keep looping until we get a response from our PLC
-        addr = [0]
-        while addr[0] != ip_address:
-            data, addr = sock.recvfrom(395)  # PLC response is 395 bytes long
     rcvd_packet_header = data[
         0:12
     ]  # AMS Packet header, seems to define communication type
     # If the last byte in the header is 0x80, then this is a response to our request
     if struct.unpack(">B", rcvd_packet_header[-1:])[0] == 0x80:
         ams_id_tuple = struct.unpack(">6B", data[12:18])  # AMS ID of PLC
-        return '.'.join(map(str,ams_id_tuple))
+        return ".".join(map(str, ams_id_tuple))
 
 
 @router_function
