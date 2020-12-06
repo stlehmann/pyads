@@ -186,9 +186,7 @@ def send_raw_udp_message(
     :param message: the message to send to the PLC
     :expected_return_length: number of bytes to expect in response
     """
-    with closing(
-        socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    ) as sock:  # UDP
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on 55189 for the response from the PLC
         sock.bind(("", 55189))
 
@@ -242,14 +240,10 @@ def adsAddRouteToPLC(
     data_header += struct.pack(
         ">6B", *map(int, sending_net_id.split("."))
     )  # Sending net ID
-    data_header += struct.pack(
-        "<H", PORT_SYSTEMSERVICE
-    )  # Internal communication port
+    data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
     data_header += struct.pack(">2s", b"\x05\x00")  # Write command
     data_header += struct.pack(">4s", b"\x00\x00\x0c\x00")  # Block of unknown
-    data_header += struct.pack(
-        "<H", len(route_name)
-    )  # Length of sender host name
+    data_header += struct.pack("<H", len(route_name))  # Length of sender host name
     data_header += route_name.encode("utf-8")  # Sender host name
     data_header += struct.pack(">2s", b"\x07\x00")  # Block of unknown
 
@@ -260,17 +254,13 @@ def adsAddRouteToPLC(
     actual_data += struct.pack(
         ">2s", b"\x0d\x00"
     )  # Block of unknown (maybe encryption?)
-    actual_data += struct.pack(
-        "<H", len(username)
-    )  # Length of the user name field
+    actual_data += struct.pack("<H", len(username))  # Length of the user name field
     actual_data += username.encode("utf-8")  # PLC Username
     actual_data += struct.pack(">2s", b"\x02\x00")  # Block of unknown
     actual_data += struct.pack("<H", len(password))  # Length of password field
     actual_data += password.encode("utf-8")  # PLC Password
     actual_data += struct.pack(">2s", b"\x05\x00")  # Block of unknown
-    actual_data += struct.pack(
-        "<H", len(adding_host_name)
-    )  # Length of route name
+    actual_data += struct.pack("<H", len(adding_host_name))  # Length of route name
     actual_data += adding_host_name.encode(
         "utf-8"
     )  # Name of route being added to the PLC
@@ -316,9 +306,7 @@ def adsGetNetIdForPLC(ip_address: str):
     data_header += struct.pack(
         ">6B", *[1, 1, 1, 1, 1, 1]
     )  # It doesn't matter what NetID you use here, so just send 1.1.1.1.1.1
-    data_header += struct.pack(
-        "<H", PORT_SYSTEMSERVICE
-    )  # Internal communication port
+    data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
     data_header += struct.pack(">4s", b"\x00\x00\x00\x00")  # Block of unknown
 
     data, addr = send_raw_udp_message(
