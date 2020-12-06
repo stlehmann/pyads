@@ -87,7 +87,7 @@ class AdvancedHandler:
             index_group = struct.unpack("<I", data[:4])[0]
             index_offset = struct.unpack("<I", data[4:8])[0]
             plc_datatype = struct.unpack("<I", data[8:12])[0]
-            value = data[12:(12 + plc_datatype)]
+            value = data[12 : (12 + plc_datatype)]
 
             logger.info(
                 (
@@ -115,7 +115,7 @@ class AdvancedHandler:
             index_offset = struct.unpack("<I", data[4:8])[0]
             read_length = struct.unpack("<I", data[8:12])[0]
             write_length = struct.unpack("<I", data[12:16])[0]
-            write_data = data[16:(16 + write_length)]
+            write_data = data[16 : (16 + write_length)]
 
             logger.info(
                 (
