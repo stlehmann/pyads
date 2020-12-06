@@ -4,7 +4,7 @@ import threading
 import unittest
 from contextlib import closing
 
-from pyads import Connection
+from pyads.pyads_ex import adsGetNetIdForPLC
 
 
 class PLCAMSTestCase(unittest.TestCase):
@@ -35,16 +35,14 @@ class PLCAMSTestCase(unittest.TestCase):
             # Send our response to 55189
             sock.sendto(response, (self.PLC_IP, 55189))
 
-    def test_connect(self):
+    def test_get_ams(self):
         # Start receiving listener
         route_thread = threading.Thread(target=self.plc_ams_request_receiver)
         route_thread.setDaemon(True)
         route_thread.start()
 
-        # Confirm that connections are possible with just an IP address
-        connection = Connection(ip_address=self.PLC_IP)
-        connection.open()
-        self.assertEqual(connection.ams_net_port, self.PLC_AMS_ID)
+        # Confirm that the AMS net id is properly fetched from PLC
+        self.assertEqual(adsGetNetIdForPLC(self.PLC_IP), self.PLC_AMS_ID)
 
 
 if __name__ == "__main__":
