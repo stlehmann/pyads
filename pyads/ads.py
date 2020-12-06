@@ -445,6 +445,8 @@ class Connection(object):
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
         if ip_address is None:
+            if ams_net_id is None:
+                raise TypeError("Must provide an IP or net ID")
             self.ip_address = ".".join(ams_net_id.split(".")[:4])
         else:
             self.ip_address = ip_address
