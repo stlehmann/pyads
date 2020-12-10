@@ -672,7 +672,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # test with no structure size passed in
         with self.plc:
-            self.plc.write_structure_by_name(handle_name, struct_to_write, structure_def)
+            self.plc.write_structure_by_name(
+                handle_name, struct_to_write, structure_def
+            )
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -696,7 +698,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         structure_size = pyads.size_of_structure(structure_def)
         with self.plc:
             self.plc.write_structure_by_name(
-                handle_name, struct_to_write, structure_def, structure_size=structure_size
+                handle_name,
+                struct_to_write,
+                structure_def,
+                structure_size=structure_size,
             )
 
         requests = self.test_server.request_history
@@ -706,7 +711,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Test with handle passed in
         with self.plc:
             handle = self.plc.get_handle(handle_name)
-            self.plc.write_structure_by_name("", struct_to_write, structure_def, handle=handle)
+            self.plc.write_structure_by_name(
+                "", struct_to_write, structure_def, handle=handle
+            )
 
         requests = self.test_server.request_history
         received_value = requests[1].ams_header.data[12:].decode("utf-8").rstrip("\x00")
@@ -746,7 +753,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         requests = self.test_server.request_history
 
         with self.plc:
-            notification, user = self.plc.add_device_notification(handle_name, attr, callback)
+            notification, user = self.plc.add_device_notification(
+                handle_name, attr, callback
+            )
             # Assert that Read/Write command was used to get the handle by name
             self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
             # Assert that ADDDEVICENOTIFICATION was used to add device notification
@@ -765,10 +774,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         n_index_offset = 0
         attr = NotificationAttrib(length=4)
         requests = self.test_server.request_history
-    
+
         with self.plc:
             notification, user_hnl = self.plc.add_device_notification(
-                    (n_index_group, n_index_offset), attr, callback
+                (n_index_group, n_index_offset), attr, callback
             )
 
             # Assert that ADDDEVICENOTIFICATION was used to add device notification
@@ -805,13 +814,14 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         @plc.notification(pyads.PLCTYPE_INT)
         def callback(handle, name, timestamp, value):
-            print (handle, name, timestamp, value)
+            print(handle, name, timestamp, value)
 
         with plc:
-            handles = plc.add_device_notification("a", pyads.NotificationAttrib(20), callback)
+            handles = plc.add_device_notification(
+                "a", pyads.NotificationAttrib(20), callback
+            )
             plc.write_by_name("a", 1, pyads.PLCTYPE_INT)
             plc.del_device_notification(*handles)
-
 
     def create_notification_struct(self, payload):
         # type: (bytes) -> structs.SAdsNotificationHeader
@@ -1206,7 +1216,6 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
         )
 
-
     def test_read_check_length(self):
         # Write data shorter than what should be read
         with self.plc:
@@ -1215,7 +1224,6 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
                 index_group=constants.INDEXGROUP_DATA,
                 index_offset=1,
                 plc_datatype=constants.PLCTYPE_USINT,
-
             )
 
             with self.assertRaises(RuntimeError):
@@ -1243,7 +1251,10 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_get_all_symbols_single(self):
         with self.plc:
             self.plc.write(
-                value="1", index_group=123, index_offset=0, plc_datatype=constants.PLCTYPE_STRING
+                value="1",
+                index_group=123,
+                index_offset=0,
+                plc_datatype=constants.PLCTYPE_STRING,
             )
             symbols = self.plc.get_all_symbols()
             self.assertEqual(len(symbols), 1)
