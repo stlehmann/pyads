@@ -84,7 +84,10 @@ class AdsSymbol:
             info = adsGetSymbolInfo(self._plc.port, self._plc.ams_addr,
                                     name)
 
-            print('AdsSymbol: info.type_name:', info.type_name)
+            print('---AdsSymbol---:')
+            for field_info in info._fields_:
+                field = field_info[0]
+                print('info.{}:'.format(field), getattr(info, field))
 
             self.index_group = info.iGroup
             self.index_offset = info.iOffs
@@ -96,6 +99,10 @@ class AdsSymbol:
         if isinstance(symtype, str):
             self.type_name = symtype  # Store human-readable type name
             self.symtype = self.get_type_from_str(symtype)
+        elif isinstance(symtype, int):
+            self.type_name = symtype  # This will be a number, but no way to
+            # get it back to a sensible string
+            self.symtype = constants.ads_type_to_ctype[symtype]
         else:
             self.type_name = symtype.__class__.__name__  # Try to find
             # human-readable version

@@ -306,6 +306,30 @@ class SAdsSymbolEntry(Structure):
     :ivar typeLength: length of type name
     :ivar commentLength: length of comment
 
+    A complete example could be:
+
+        value: 57172            # Current value
+        info.entryLength: 88    # Total storage space for this symbol
+        info.iGroup: 16448      # Group index
+        info.iOffs: 385000      # Offset index inside group
+        info.size: 2            # Number of bytes needed for the value
+        info.dataType: 18       # Symbol type, in this case
+                                  constants.ADST_UINT16 (18)
+        info.flags: 8           # TwinCAT byte flags
+        info.nameLength: 11     # Number of characters in the name
+        info.typeLength: 4      # Number of characters in the PLC string
+                                  representation of the type
+        info.commentLength: 20  # Number of characters in the comment
+        info.stringBuffer: <pyads.structs.c_ubyte_Array_768 object>
+                                # Concatenation of all string info
+        bytes(info.stringBuffer): b'GVL.counter\x00UINT\x00 Counter (in '
+                                  'pulses)\x00\x95\x19\x07\x18\x00\x00\x00\x00'
+        bytes(info.stringBuffer).encode(): "GVL.counter UINT (in pulses)"
+
+        info.name(): "GVL.counter"      # The name section from the buffer
+        info.type_name(): "UINT"        # The type_name section from the
+                                          buffer
+        info.comment(): " Counter (in pulses)"  # The comment (if any)
     """
 
     _pack_ = 1
@@ -328,17 +352,17 @@ class SAdsSymbolEntry(Structure):
 
     @property
     def name(self):
-        "The symbol name"
+        """The symbol name"""
         return self._get_string(0, self.nameLength)
 
     @property
     def type_name(self):
-        "The qualified type name, including the namespace"
+        """The qualified type name, including the namespace"""
         return self._get_string(self.nameLength + 1, self.typeLength)
 
     @property
     def comment(self):
-        "User-defined comment"
+        """User-defined comment"""
         return self._get_string(
             self.nameLength + self.typeLength + 2, self.commentLength
         )

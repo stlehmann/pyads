@@ -16,6 +16,7 @@ import struct
 from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler
 from pyads.structs import NotificationAttrib
 from pyads import constants, structs, AdsSymbol
+from pyads.pyads_ex import adsGetSymbolInfo
 from collections import OrderedDict
 
 import pprint
@@ -33,8 +34,8 @@ class AdsSymbolTestCase(unittest.TestCase):
     def setUpClass(cls):
         # type: () -> None
         """Setup the ADS testserver."""
-        cls.test_server = AdsTestServer(handler=AdvancedHandler(),
-                                        logging=True)
+        cls.handler = AdvancedHandler()
+        cls.test_server = AdsTestServer(cls.handler, logging=True)
         # cls.test_server = AdsTestServer(logging=True)
         cls.test_server.start()
 
@@ -108,11 +109,23 @@ class AdsSymbolTestCase(unittest.TestCase):
         handle_name = "TestHandle"
 
         with self.plc:
-            self.plc.write_by_name(handle_name, 7, constants.PLCTYPE_BYTE)
+            self.plc.write_by_name(handle_name, 0, constants.PLCTYPE_BYTE)
 
             symbol = AdsSymbol(self.plc, handle_name)
 
         print('Test: symbol.type_name:', symbol.type_name)
+
+    def test_get_symbol_info(self):
+        handle_name = "TestHandle"
+
+        # Initialize a remote variable
+        self.handler.set_variable(handle_name, value=3.14,
+                                  plc_type=constants.ADST_REAL64)
+
+        with self.plc:
+            symbol = AdsSymbol(self.plc, name=handle_name)
+
+            print(symbol)
 
 
 if __name__ == "__main__":

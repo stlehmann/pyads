@@ -20,7 +20,7 @@ server level by specifying the `handler` kwarg in the server constructor.
 
 """
 from __future__ import absolute_import
-from typing import Any, List, Type, Optional, DefaultDict, Tuple
+from typing import Any, List, Type, Optional, Dict, Tuple
 from types import TracebackType
 import atexit
 import logging
@@ -29,7 +29,7 @@ import socket
 import struct
 import threading
 
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 
 from pyads import constants
 
@@ -509,34 +509,68 @@ class BasicHandler(AbstractHandler):
 
 
 class PLCVariable:
-    """Storage item for named data."""
+    """Storage item for named data
 
-    def __init__(self, name, value):
-        # type: (str, Any) -> None
+    Also include variable type so it can be retrieved later.
+    This basically mirrors SAdsSymbolEntry or AdsSymbol, however we want to
+    avoid using those directly since they are test subjects.
+    """
+
+    handle_count = 0  # Keep track of the latest awarded handle
+
+    def __init__(self,
+                 name="unnamed",
+                 value=0,
+                 plc_type=constants.PLCTYPE_BYTE):
+        # type: (str, Any, Optional[Any]) -> None
+        """
+
+        Handle and indices are set by default (to random but safe values)
+
+        :param name:
+        :param value:
+        :param plc_type: constants.PLCTYPE_*
+        """
         self.name = name
         self.value = value
+        self.plc_type = plc_type
+        self.handle = self.handle_count
+        self.index_group = 12345  # Default value - shouldn't matter much
+        self.index_offset = self.handle  # We will cheat by using the handle
+        # (since we know it will be unique)
+
+        self.ads_type = constants.ADST_UINT16  # type: int
+        self.type_name = 'UINT'  # type: str
+
+        self.size = 2  # Value size in bytes
+
+        self.handle_count += 1  # Increment class property
 
 
 class AdvancedHandler(AbstractHandler):
     """The advanced handler allows to store and restore data.
 
     The advanced handler allows to store and restore data via read, write and
-    read_write functions. There are two separate storage areas access by
-    address and access by name. The purpose of this handler to test read/write
-    access and test basic interaction.
-
+    read_write functions. There is a storage area for each symbol. The
+    purpose of this handler to test read/write access and test basic
+    interaction.
     """
 
     def __init__(self):
         # type: () -> None
+
+        self._data = {}  # type: Dict[Tuple[int, int], PLCVariable]
+        # This will be our variables database
+        # We won't both with indexing it by handle or name, speed is not
+        # important. We store by group + offset index and will have to
+        # search inefficiently for name or handle. (Unlike real ADS!)
+
         self.reset()
 
     def reset(self):
         # type: () -> None
-        self._data = defaultdict(
-            lambda: bytes(16)
-        )  # type: DefaultDict[Tuple[int, int], bytes]  # noqa: E501
-        self._named_data = []  # type: Any
+        """Clear saved variables in handler"""
+        self._data = {}
 
     def handle_request(self, request):
         # type: (AmsPacket) -> AmsResponseData
@@ -552,7 +586,8 @@ class AdvancedHandler(AbstractHandler):
 
         def handle_read_device_info():
             # type: () -> bytes
-            """Create dummy response: version 1.2.3, device name 'TestServer'."""
+            """Create dummy response: version 1.2.3, device name 'TestServer'
+            """
             logger.info("Command received: READ_DEVICE_INFO")
 
             major_version = "\x01".encode("utf-8")
@@ -579,18 +614,21 @@ class AdvancedHandler(AbstractHandler):
                 (
                     "Command received: READ (index group={}, index offset={}, "
                     "data length={})"
-                ).format(index_group, index_offset, plc_datatype)
+                ).format(hex(index_group), hex(index_offset), plc_datatype)
             )
 
             # value by handle is demanded return from named data store
             if index_group == constants.ADSIGRP_SYM_VALBYHND:
 
-                response_value = self._named_data[index_offset].value
+                # response_value = self._named_data[index_offset].value
+                response_value = self.get_variable_by_handle(
+                        index_offset).value
 
             elif index_group == constants.ADSIGRP_SYM_UPLOADINFO2:
                 symbol_count = len(self._data)
                 response_length = 120 * symbol_count
-                response_value = struct.pack("II", symbol_count, response_length)
+                response_value = struct.pack(
+                        "II", symbol_count, response_length)
 
             elif index_group == constants.ADSIGRP_SYM_UPLOAD:
                 response_value = b""
@@ -601,7 +639,8 @@ class AdvancedHandler(AbstractHandler):
             else:
                 # Create response of repeated 0x0F with a null
                 # terminator for strings
-                response_value = self._data[(index_group, index_offset)][:plc_datatype]
+                var = self.get_variable_by_indices(index_group, index_offset)
+                response_value = struct.pack("I", var.value)
 
             return struct.pack("<I", len(response_value)) + response_value
 
@@ -613,23 +652,27 @@ class AdvancedHandler(AbstractHandler):
             index_group = struct.unpack("<I", data[:4])[0]
             index_offset = struct.unpack("<I", data[4:8])[0]
             plc_datatype = struct.unpack("<I", data[8:12])[0]
-            value = data[12 : (12 + plc_datatype)]
+            value = data[12:(12 + plc_datatype)]
 
             logger.info(
                 (
                     "Command received: WRITE (index group={}, index offset={}, "
                     "data length={}, value={}"
-                ).format(index_group, index_offset, plc_datatype, value)
+                ).format(hex(index_group), hex(index_offset), plc_datatype,
+                         value)
             )
 
             if index_group == constants.ADSIGRP_SYM_RELEASEHND:
                 return b""
 
             elif index_group == constants.ADSIGRP_SYM_VALBYHND:
-                self._named_data[index_offset].value = value
+                var = self.get_variable_by_handle(index_offset)
+                var.value = value
                 return b""
 
-            self._data[(index_group, index_offset)] = value
+            var = self.get_or_create_variable_by_indices(
+                index_group, index_offset)
+            var.value = value
 
             # no return value needed
             return b""
@@ -644,7 +687,7 @@ class AdvancedHandler(AbstractHandler):
             index_offset = struct.unpack("<I", data[4:8])[0]
             read_length = struct.unpack("<I", data[8:12])[0]
             write_length = struct.unpack("<I", data[12:16])[0]
-            write_data = data[16 : (16 + write_length)]
+            write_data = data[16:(16 + write_length)]
 
             logger.info(
                 (
@@ -652,27 +695,49 @@ class AdvancedHandler(AbstractHandler):
                     "(index group={}, index offset={}, read length={}, "
                     "write length={}, write data={})"
                 ).format(
-                    index_group, index_offset, read_length, write_length, write_data
+                    hex(index_group), hex(index_offset), read_length,
+                    write_length, write_data
                 )
             )
 
-            # Get variable handle by name if  demanded
-            # else just return the value stored
+            # Get variable handle by name if demanded
             if index_group == constants.ADSIGRP_SYM_HNDBYNAME:
 
                 var_name = write_data.decode()
 
-                # Try to find var name in named vars
-                names = [x.name for x in self._named_data]
+                var = self.get_variable_by_name(var_name)
 
-                try:
-                    handle = names.index(var_name)
-                except ValueError:
-                    self._named_data.append(PLCVariable(name=var_name, value=bytes(16)))
-                    handle = len(self._named_data) - 1
+                read_data = struct.pack("<I", var.handle)
 
-                read_data = struct.pack("<I", handle)
+            # Get the symbol if requested
+            elif index_group == constants.ADSIGRP_SYM_INFOBYNAMEEX:
 
+                var_name = write_data.decode()
+                var = self.get_variable_by_name(var_name)
+
+                entry_length = 120  # Pick something long
+
+                # str_buffer = var.name.encode('utf-8') + \
+                #              var.type_name.encode('utf-8')
+
+                read_data = struct.pack(
+                    "<IIIIIIHHH",
+                    entry_length,
+                    var.index_group,
+                    var.index_offset,
+                    var.size,
+                    constants.ADST_UINT16,
+                    0,
+                    len(var.name),
+                    len(var.type_name),
+                    0
+                )
+                # read_data = struct.pack(
+                #     "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_UINT8, 0, 0, 0,
+                #     0
+                # )  # < This works
+
+            # Else just return the value stored
             else:
 
                 # read stored data
@@ -737,7 +802,9 @@ class AdvancedHandler(AbstractHandler):
         # Try to map the command id to a function, else return error code
         try:
 
-            response_content = function_map[command_id]()
+            content = function_map[command_id]()
+
+            print('---debug---:', content)
 
         except KeyError:
             logger.info("Unknown Command: {0}".format(hex(command_id)))
@@ -747,9 +814,100 @@ class AdvancedHandler(AbstractHandler):
 
         # Set no error in response
         error_code = ("\x00" * 4).encode("utf-8")
-        response_data = error_code + response_content
+        response_data = error_code + content
 
-        return AmsResponseData(state, request.ams_header.error_code, response_data)
+        return AmsResponseData(state, request.ams_header.error_code,
+                               response_data)
+
+    def get_variable_by_handle(self, handle):
+        # type: (int) -> PLCVariable
+        """Get PLC variable by handle, throw error when not found"""
+
+        for idx, var in self._data.items():
+            if var.handle == handle:
+                return var
+
+        raise KeyError('Variable with handle {} not found - Create it first '
+                       'explicitly or write to it'.format(handle))
+
+    def get_variable_by_indices(self, index_group, index_offset):
+        # type: (int, int) -> PLCVariable
+        """Get PLC variable by handle, throw error when not found"""
+
+        tup = (index_group, index_offset)
+        return self._data[tup]
+
+    def get_or_create_variable_by_indices(self, index_group, index_offset):
+        # type: (int, int) -> PLCVariable
+        """Try to retrieve a variable by indices, create it if non-existent"""
+        try:
+            return self.get_variable_by_indices(index_group, index_offset)
+        except KeyError:
+            var = PLCVariable()
+            var.index_group = index_group
+            var.index_offset = index_offset
+            self.add_variable(var)
+            return var
+
+    def get_variable_by_name(self, name):
+        # type: (str) -> PLCVariable
+        """Get variable by name, throw error if not found"""
+        for key, var in self._data.items():
+            if var.name == name:
+                return var
+
+        raise KeyError('Variable with name {} not found - Create it first '
+                       'explicitly or write to it'.format(name))
+
+    def get_or_create_variable_by_name(self, name):
+        # type: (str) -> PLCVariable
+        """Try to retrieve a variable by indices, create it if non-existent"""
+        try:
+            return self.get_variable_by_name(name)
+        except KeyError:
+            var = PLCVariable(name=name)
+            self.add_variable(var)
+            return var
+
+    def add_variable(self, var):
+        # type: (PLCVariable) -> None
+        tup = (var.index_group, var.index_offset)
+        self._data[tup] = var
+
+    def find_variable_index_by_name(self, name):
+        # type: (str) -> Optional[int]
+        """Find a variable index based on its name in the current list of
+        fake variables
+
+        Returns `None` if it does not exist yet.
+        """
+        for idx, var in enumerate(self._named_data):
+            if var.name == name:
+                return idx
+
+        return None
+
+    def set_variable(self, name, value=None, plc_type=None):
+        # type: (str, Any, Any) -> int
+        """Create a fake ADS variable
+
+        Calling this is not essential, it will be done automatically on e.g.
+        a write by name.
+        If a variable with this name already exists, it will be updated by
+        any passed information.
+        Return the variable index (new or existent)
+        """
+        idx = self.find_variable_index_by_name(name)
+        if idx is not None:
+            if value is not None:
+                self._named_data[idx].value = value
+            if plc_type is not None:
+                self._named_data[idx].type = plc_type
+            return idx
+
+        var = PLCVariable(name, value=value, plc_type=plc_type)
+        self._named_data.append(var)
+        return len(self._named_data) - 1
 
 
 if __name__ == "__main__":
