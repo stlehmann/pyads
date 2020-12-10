@@ -84,16 +84,21 @@ class AdsSymbol:
             info = adsGetSymbolInfo(self._plc.port, self._plc.ams_addr,
                                     name)
 
+            print('AdsSymbol: info.type_name:', info.type_name)
+
             self.index_group = info.iGroup
             self.index_offset = info.iOffs
-            self.comment = comment
-            symtype = info.type_name  # Type name, e.g. 'LREAL'
+            self.comment = info.comment if info.comment is not None \
+                else comment
+            if info.type_name is not None and info.type_name:
+                symtype = info.type_name  # Type name, e.g. 'LREAL'
 
         if isinstance(symtype, str):
             self.type_name = symtype  # Store human-readable type name
             self.symtype = self.get_type_from_str(symtype)
         else:
-            self.type_name = symtype.__class__  # Try to find human-readable
+            self.type_name = symtype.__class__.__name__  # Try to find
+            # human-readable version
             self.symtype = symtype
 
     def read(self) -> Any:

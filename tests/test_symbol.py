@@ -18,6 +18,8 @@ from pyads.structs import NotificationAttrib
 from pyads import constants, structs, AdsSymbol
 from collections import OrderedDict
 
+import pprint
+
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
 TEST_SERVER_IP_ADDRESS = "127.0.0.1"
@@ -31,7 +33,9 @@ class AdsSymbolTestCase(unittest.TestCase):
     def setUpClass(cls):
         # type: () -> None
         """Setup the ADS testserver."""
-        cls.test_server = AdsTestServer(logging=True)
+        cls.test_server = AdsTestServer(handler=AdvancedHandler(),
+                                        logging=True)
+        # cls.test_server = AdsTestServer(logging=True)
         cls.test_server.start()
 
         # wait a bit otherwise error might occur
@@ -64,24 +68,52 @@ class AdsSymbolTestCase(unittest.TestCase):
         command_id = struct.unpack("<H", command_id)[0]
         self.assertEqual(command_id, target_id)
 
-    def test_init_name(self):
+    def test_get_all_symbols(self):
         handle_name = "TestHandle"
 
         with self.plc:
 
             self.plc.write(
-                value="1", index_group=123, index_offset=0,
+                value="f", index_group=1354, index_offset=0,
                 plc_datatype=constants.PLCTYPE_STRING
             )
+            self.plc.write(
+                value="m", index_group=5436, index_offset=0,
+                plc_datatype=constants.PLCTYPE_STRING
+            )
+            symbols = self.plc.get_all_symbols()
 
-            value = self.plc.read_by_name(handle_name, constants.PLCTYPE_BYTE)
-            print('Value:', value)
+            for symbol in symbols:
+                print('Symbol type:', symbol.type_name)
+                print('Index offset:', symbol.index_offset)
+                print('Index group:', symbol.index_group)
+
+        # requests = self.test_server.request_history
+        # for r in requests:
+        #     pprint.pprint(r)
+
+    def test_read_by_name(self):
+        handle_name = "TestHandle"
+
+        with self.plc:
+
+            self.plc.write_by_name(handle_name, 3.14, constants.PLCTYPE_LREAL)
+
+            read_value = self.plc.read_by_name(handle_name,
+                                               constants.PLCTYPE_LREAL)
+
+        print('Value:', read_value)
+
+    def test_init_by_name(self):
+        handle_name = "TestHandle"
+
+        with self.plc:
+            self.plc.write_by_name(handle_name, 7, constants.PLCTYPE_BYTE)
 
             symbol = AdsSymbol(self.plc, handle_name)
-            print('Value:', symbol)
+
+        print('Test: symbol.type_name:', symbol.type_name)
 
 
 if __name__ == "__main__":
     unittest.main()
-    if __name__ == "__main__":
-        unittest.main()

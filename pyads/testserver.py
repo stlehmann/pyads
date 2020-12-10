@@ -471,6 +471,7 @@ class BasicHandler(AbstractHandler):
                         "<IIIIIIHHH", 30, 0, 0, 2, constants.ADST_UINT8, 0, 0, 0, 0
                     )
                 else:
+                    logger.info("Packing ADST_UINT8...")
                     response_value = struct.pack(
                         "<IIIIIIHHH", 30, 0, 0, 1, constants.ADST_UINT8, 0, 0, 0, 0
                     )

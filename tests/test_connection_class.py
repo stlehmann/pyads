@@ -1248,6 +1248,8 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             self.assertEqual(len(symbols), 1)
             self.assertEqual(symbols[0].index_group, 123)
 
+            print('Symbol type:', symbols[0].type_name)
+
 
 if __name__ == "__main__":
     unittest.main()

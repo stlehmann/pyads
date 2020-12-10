@@ -720,6 +720,10 @@ class Connection(object):
                 comment_start_ptr = type_end_ptr + 1
                 comment_end_ptr = comment_start_ptr + comment_length
 
+                print('-- debug --')
+                print('name_length:', name_length)
+                print('type_length:', type_length)
+
                 name = decode_ads(symbol_list_msg[name_start_ptr:name_end_ptr])
                 symtype = decode_ads(symbol_list_msg[type_start_ptr:type_end_ptr])
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
