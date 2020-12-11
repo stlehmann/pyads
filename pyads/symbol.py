@@ -7,10 +7,10 @@ the circular dependencies.
 
 from typing import TYPE_CHECKING, Any, Union, Optional, Type, List, Tuple, \
     Callable
-# ads.Connection relies on structs.AdsSymbol (but type hints only), so use
-# this if to only include it when type hinting (False during execution)
+# ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
+# this 'if' to only include it when type hinting (False during execution)
 if TYPE_CHECKING:
-    from .ads import Connection
+    from .ads import Connection  # pragma: no cover
 import re
 from ctypes import sizeof
 
@@ -118,24 +118,39 @@ class AdsSymbol:
             self.comment = info.comment
 
         # info.dataType is an integer mapping to a type
-        if info.dataType:
-            self._type_hint = info.dataType  # type: int
-            # _type_hint should still be mapped to an actual ctypes
+        # However, this type ignores whether the variable is really an array!
+        # So are not going to be using this and instead rely on the textual
+        # type
+        self._type_hint = info.type_name
 
-        elif info.type_name:
-            # If no int-type was found but a valid string-type was:
-            self._type_hint = info.type_name  # Deduce it from the name
-            # instead
+        self.type_name = info.type_name  # Save the type as string
 
-        self.type_name = info.type_name  # Regardless, save the type as string
+    def read_write_check(self):
+        """Assert the current object is ready to read from/write to"""
+        if self.plc_type is None:
+            raise ValueError('Cannot read or write with invalid value for '
+                             'plc_type: `{}`'.format(self.plc_type))
+
+        if not self._plc or not self._plc.is_open:
+            raise ValueError('Cannot read or write data with missing or '
+                             'unopened Connection')
+
+        if not isinstance(self.index_group, int) or \
+                not isinstance(self.index_offset, int):
+            raise ValueError(
+                'Cannot read or write data with invalid values for group- and '
+                'offset index: ({}, {})'.format(self.index_group,
+                                                self.index_offset))
 
     def read(self) -> Any:
         """Read the current value of this symbol"""
+        self.read_write_check()
         return self._plc.read(self.index_group, self.index_offset,
                               self.plc_type)
 
     def write(self, new_value: Any):
         """Write a new value to the symbol"""
+        self.read_write_check()
         return self._plc.write(self.index_group, self.index_offset,
                                new_value, self.plc_type)
 
@@ -217,6 +232,22 @@ class AdsSymbol:
         if hasattr(constants, plc_name):
             # Map e.g. 'LREAL' to 'PLCTYPE_LREAL' directly based on the name
             return getattr(constants, plc_name)
+
+        # If ARRAY
+        reg_match = re.match(r'ARRAY \[(\d+)..(\d+)\] OF (.*)', type_str)
+        if reg_match is not None:
+
+            groups = reg_match.groups()
+            size = int(groups[1]) + 1 - int(groups[0])  # Estimate the size
+            scalar_type_str = groups[2]
+
+            # Find scalar type
+            scalar_type = AdsSymbol.get_type_from_str(scalar_type_str)
+
+            if scalar_type:
+                return scalar_type * size
+
+            # Fall to method default instead
 
         # If array/matrix (an 1D array is also called a matrix)
         reg_match = re.match(r'matrix_(\d+)_(.*)_T', type_str)

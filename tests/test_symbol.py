@@ -27,7 +27,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         # type: () -> None
         """Setup the ADS testserver."""
         cls.handler = AdvancedHandler()
-        cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
+        cls.test_server = AdsTestServer(handler=cls.handler, logging=True)
         cls.test_server.start()
 
         # wait a bit otherwise error might occur
@@ -52,7 +52,11 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         # Create PLC variable that is added by default
         self.test_var = PLCVariable(
-            'TestDouble', ads_type=constants.ADST_REAL64, type_name='LREAL')
+            'TestDouble',
+            ads_type=constants.ADST_REAL64,
+            type_name='LREAL'
+        )
+        self.test_var.comment = 'Some variable of type double'
         self.handler.add_variable(self.test_var)
 
         self.plc = pyads.Connection(
@@ -80,9 +84,118 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertEqual(self.test_var.index_offset, symbol.index_offset)
         self.assertEqual(self.test_var.plc_type, symbol.plc_type)
         self.assertEqual(self.test_var.type_name, symbol.type_name)
+        self.assertEqual(self.test_var.comment, symbol.comment)
 
         self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
         # been made
+
+    def test_init_by_name_array(self):
+        """Test symbol creation when it's an array"""
+
+        var = PLCVariable(
+            "ArrayVar",
+            ads_type=constants.ADST_INT16,  # dataType does not represent
+            # array unfortunately
+            type_name="ARRAY [1..5] OF INT"  # Array looks like this in PLC
+        )
+        var.plc_type = constants.PLCTYPE_ARR_INT(5)  # Have to do this
+        # manually
+        self.handler.add_variable(var)
+
+        self.plc.open()
+
+        symbol = AdsSymbol(self.plc, name=var.name)
+
+        # Verify looked up info
+        self.assertEqual(var.name, symbol.name)
+        self.assertEqual(var.index_group, symbol.index_group)
+        self.assertEqual(var.index_offset, symbol.index_offset)
+        self.assertEqual(var.plc_type, symbol.plc_type)
+        self.assertEqual(var.type_name, symbol.type_name)
+        self.assertIsNone(symbol.comment)
+
+        my_list = symbol.value
+
+        self.assertIsInstance(my_list, list)
+        self.assertEqual(5, len(my_list))
+
+        my_list[4] = 420
+
+        symbol.write(my_list)  # Modify array
+
+        my_list2 = symbol.read()  # Read again
+
+        self.assertEqual(my_list, my_list2)
+
+        self.assertAdsRequestsCount(4)  # A READWRITE (for info), READ,
+        # WRITE AND a READ again
+
+    def test_init_by_name_matrix_style(self):
+        """Test symbol creation when it's an array denoted as matrix
+
+        This is how an array originating from Simulink could look like.
+        """
+
+        var = PLCVariable(
+            "ArrayVar",
+            ads_type=0,
+            type_name="matrix_21_int8_T"  # Simulink array looks like this
+        )
+        var.plc_type = constants.PLCTYPE_ARR_SINT(21)  # Have to do this
+        # manually
+        var.index_group = 123
+        var.index_offset = 100
+        self.handler.add_variable(var)
+
+        self.plc.open()
+
+        symbol = AdsSymbol(self.plc, name=var.name,
+                           index_group=var.index_group,
+                           index_offset=var.index_offset,
+                           type_hint=var.type_name)  # No lookup
+
+        # Verify looked up info
+        self.assertEqual(var.plc_type, symbol.plc_type)
+        self.assertEqual(var.type_name, symbol.type_name)
+
+        self.assertAdsRequestsCount(0)  # No requests
+
+    def test_init_missing_datatype(self):
+        """Test symbol creation when integer datatype is missing"""
+
+        # Modify variable type
+        self.test_var.ads_type = 0
+        self.test_var.plc_type = constants.PLCTYPE_SINT
+        self.test_var.type_name = 'SINT'
+        # Variable is reference to database entry, so no saving required
+
+        with self.plc:
+            symbol = AdsSymbol(self.plc, name=self.test_var.name)
+
+        # Verify looked up info
+        self.assertEqual(self.test_var.plc_type, symbol.plc_type)
+        self.assertEqual(self.test_var.type_name, symbol.type_name)
+
+        self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
+        # been made
+
+    def test_init_invalid(self):
+        """Test symbol creation with missing info"""
+        with self.plc:
+
+            with self.assertRaises(ValueError):
+                AdsSymbol(self.plc,
+                          index_group=self.test_var.index_group,
+                          index_offset=self.test_var.index_offset)
+
+    def test_repr(self):
+        """Test debug string"""
+        with self.plc:
+            symbol = AdsSymbol(self.plc, name=self.test_var.name)
+            text = str(symbol)
+            self.assertIn(self.test_var.name, text)
+            self.assertIn(self.test_var.type_name, text)  # Make sure name
+            # and type are printed
 
     def test_type_resolve(self):
         """Test if PLCTYPE is resolved correctly"""
@@ -104,6 +217,10 @@ class AdsSymbolTestCase(unittest.TestCase):
                                 'UDINT')
             self.assertEqual(constants.PLCTYPE_UDINT, symbol3.plc_type)
             self.assertEqual('UDINT', symbol3.type_name)
+
+            symbol4 = AdsSymbol(self.plc, 'NonExistentVar', 123, 0,
+                                12345)
+            self.assertIsNone(symbol4.plc_type)
 
         self.assertAdsRequestsCount(0)  # No requests
 
@@ -127,6 +244,54 @@ class AdsSymbolTestCase(unittest.TestCase):
             self.assertEqual(12.3, symbol.value)
 
         self.assertAdsRequestsCount(2)  # Only a WRITE followed by a READ
+
+    def test_init_invalid_type(self):
+        """Test symbol lookup when type cannot be found"""
+
+        var = PLCVariable(
+            name='UnknownType',
+            ads_type=0,
+            type_name='non_existent_type'
+        )
+        var.index_group = 123
+        var.index_offset = 100
+        var.plc_type = constants.PLCTYPE_BYTE  # Set to something real
+
+        self.handler.add_variable(var)
+
+        with self.plc:
+
+            # Create symbol while providing everything:
+            symbol = AdsSymbol(self.plc, name=var.name)
+
+            self.assertEqual(var.type_name, symbol.type_name)
+            self.assertIsNone(symbol.plc_type)
+
+            with self.assertRaises(ValueError) as cm:
+                # Without type specified, it cannot read
+                symbol.read()
+
+            self.assertIn('Cannot read or write', str(cm.exception))
+
+        self.assertAdsRequestsCount(1)  # Only a WRITE followed by a READ
+
+    def test_read_write_errors(self):
+        """Test read/write on invalid AdsSymbol"""
+
+        symbol = AdsSymbol(self.plc, 'MySymbol', 123, 0,
+                           constants.PLCTYPE_BYTE)
+
+        with self.assertRaises(ValueError) as cm:
+            symbol.read()  # Cannot read with unopened Connection
+        self.assertIn('missing or unopened Connection', str(cm.exception))
+
+        self.plc.open()
+
+        symbol.index_offset = None  # Set index to something invalid
+
+        with self.assertRaises(ValueError) as cm:
+            symbol.read()  # Cannot read with invalid index
+        self.assertIn('invalid values for', str(cm.exception))
 
     def test_read(self):
         """Test symbol value reading"""
@@ -171,6 +336,39 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
         # been made
+
+    def test_add_notification(self):
+        """Test notification registering"""
+
+        def my_callback(*args):
+            return
+
+        with self.plc:
+
+            symbol = self.plc.get_symbol(self.test_var.name)
+
+            handles = symbol.add_device_notification(my_callback)
+            symbol.del_device_notification(handles)
+
+        self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
+
+    def test_add_notification_delete(self):
+        """Test notification registering"""
+
+        def my_callback(*args):
+            return
+
+        self.plc.open()
+
+        symbol = self.plc.get_symbol(self.test_var.name)
+
+        symbol.add_device_notification(my_callback)
+        # with `self.plc: ... ` without del_device_notification causes a
+        # socket write error
+
+        del symbol  # Force variable deletion
+
+        self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
 
 
 if __name__ == "__main__":

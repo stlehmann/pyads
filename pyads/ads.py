@@ -6,12 +6,7 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, \
-    TYPE_CHECKING
-# ads.Connection relies on structs.AdsSymbol (but type hints only), so use
-# this if to only include it when type hinting (False during execution)
-if TYPE_CHECKING:
-    from .symbol import AdsSymbol
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
 
 from datetime import datetime
 import struct

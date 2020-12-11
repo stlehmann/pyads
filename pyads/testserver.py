@@ -37,10 +37,10 @@ from pyads import constants
 logger = logging.getLogger(__name__)
 formatter = logging.Formatter("%(levelname)s:%(message)s")
 stdout_handler = logging.StreamHandler()
-stdout_handler.setLevel(logging.WARNING)
+stdout_handler.setLevel(logging.INFO)
 stdout_handler.setFormatter(formatter)
 logger.addHandler(stdout_handler)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 logger.propagate = False  # "Overwrite" default handler
 
 null_logger = logging.getLogger(__name__ + "_null")
@@ -577,6 +577,8 @@ class PLCVariable:
         self.index_offset = self.INDEX_OFFSET_BASE + self.handle  # We will
         # cheat by using the handle (since we know it will be unique)
 
+        self.comment = ''  # type: str
+
         self.size = 2  # Value size in bytes
 
         self.handle_count += 1  # Increment class property
@@ -588,8 +590,40 @@ class PLCVariable:
         However, the type_name string cannot be updated automatically!
         """
         self.ads_type = ads_type
-        self.plc_type = constants.ads_type_to_ctype[ads_type]
+        if ads_type in constants.ads_type_to_ctype:
+            self.plc_type = constants.ads_type_to_ctype[ads_type]
         self.type_name = type_name
+
+    def get_packed_info(self):
+        # type: () -> bytes
+        """Get bytes array of symbol info"""
+        # str_buffer = var.name.encode('utf-8') + \
+        #              var.type_name.encode('utf-8')
+        if self.comment is None:
+            self.comment = ""
+        name_bytes = self.name.encode('utf-8')
+        type_names_bytes = self.type_name.encode('utf-8')
+        comment_bytes = self.comment.encode('utf-8')
+
+        entry_length = 6 * 4 + 3 * 2 + len(name_bytes) \
+                             + 1 + len(type_names_bytes) + 1 \
+                             + len(comment_bytes)
+
+        read_data = struct.pack(
+            "<IIIIIIHHH",
+            entry_length,  # Number of packed bytes
+            self.index_group,
+            self.index_offset,
+            self.size,
+            self.ads_type,
+            0,  # Flags
+            len(name_bytes),
+            len(type_names_bytes),
+            len(comment_bytes)
+        ) + name_bytes + b'\x20' + type_names_bytes + b'\x20' \
+          + comment_bytes
+
+        return read_data
 
 
 class AdvancedHandler(AbstractHandler):
@@ -771,27 +805,7 @@ class AdvancedHandler(AbstractHandler):
                 var_name = write_data.decode()
                 var = self.get_variable_by_name(var_name)
 
-                # str_buffer = var.name.encode('utf-8') + \
-                #              var.type_name.encode('utf-8')
-
-                name_bytes = var.name.encode('utf-8')
-                type_names_bytes = var.type_name.encode('utf-8')
-
-                entry_length = 6 * 4 + 3 * 2 + len(name_bytes) \
-                               + 1 + len(type_names_bytes)
-
-                read_data = struct.pack(
-                    "<IIIIIIHHH",
-                    entry_length,  # Number of packed bytes
-                    var.index_group,
-                    var.index_offset,
-                    var.size,
-                    var.ads_type,
-                    0,  # Flags
-                    len(name_bytes),
-                    len(type_names_bytes),
-                    0
-                ) + name_bytes + b'\x20' + type_names_bytes
+                read_data = var.get_packed_info()
 
             # Else just return the value stored
             else:
