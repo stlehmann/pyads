@@ -13,7 +13,8 @@ import time
 import unittest
 import pyads
 import struct
-from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler
+from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler, \
+    PLCVariable
 from pyads.structs import NotificationAttrib
 from pyads import constants, structs, AdsSymbol
 from pyads.pyads_ex import adsGetSymbolInfo
@@ -35,7 +36,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         # type: () -> None
         """Setup the ADS testserver."""
         cls.handler = AdvancedHandler()
-        cls.test_server = AdsTestServer(cls.handler, logging=True)
+        cls.test_server = AdsTestServer(handler=cls.handler, logging=True)
         # cls.test_server = AdsTestServer(logging=True)
         cls.test_server.start()
 
@@ -55,7 +56,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         # type: () -> None
         """Establish connection to the testserver."""
         self.test_server.request_history = []
-        # self.test_server.handler.reset()
+        self.test_server.handler.reset()
         self.plc = pyads.Connection(
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT,
             TEST_SERVER_IP_ADDRESS
@@ -116,17 +117,30 @@ class AdsSymbolTestCase(unittest.TestCase):
         print('Test: symbol.type_name:', symbol.type_name)
 
     def test_get_symbol_info(self):
-        handle_name = "TestHandle"
+        handle_name = 'TestHandle'
 
-        # Initialize a remote variable
-        self.handler.set_variable(handle_name, value=3.14,
-                                  plc_type=constants.ADST_REAL64)
+        self.handler.add_variable(
+            PLCVariable(handle_name, ads_type=constants.ADST_REAL64,
+                        type_name='LREAL')
+        )
 
         with self.plc:
+
+            print(self.handler._data)
+
             symbol = AdsSymbol(self.plc, name=handle_name)
 
             print(symbol)
 
+    def test_read_and_write(self):
+
+        with self.plc:
+            self.plc.write(1234, 100, 3.14, constants.PLCTYPE_LREAL)
+
+            value = self.plc.read(1234, 100, constants.PLCTYPE_LREAL)
+            print('Value:', value)
+
 
 if __name__ == "__main__":
     unittest.main()
+

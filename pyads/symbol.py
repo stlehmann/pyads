@@ -26,12 +26,13 @@ class AdsSymbol:
     symbol. Also remembers a reference to a Connection to be able to
     read/write directly.
 
-    :param index_group: Index group of symbol
-    :param index_offset: Index offset of symbol
-    :param name: Name of symbol
-    :param symtype: String representation of symbol type
-    :param comment: Comment of symbol
-
+    :ivar index_group: Index group of symbol
+    :ivar index_offset: Index offset of symbol
+    :ivar name: Name of symbol
+    :ivar type_name: String representation of symbol type (PLC-style,
+                     e.g. "LREAL")
+    :ivar symtype: ctypes type of variable (from constants.PLCTYPE_*)
+    :ivar comment: Comment of symbol
     """
 
     def __init__(self,
@@ -39,7 +40,7 @@ class AdsSymbol:
                  name: Optional[str] = None,
                  index_group: Optional[int] = None,
                  index_offset: Optional[int] = None,
-                 symtype: Optional[Union[Type, str]] = None,
+                 symtype: Optional[Union[Type, str, int]] = None,
                  comment=None):
         """Create AdsSymbol instance
 
@@ -47,8 +48,8 @@ class AdsSymbol:
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `symtype` can be a PLCTYPE_* constant or a string representing a PLC
-        type (e.g. 'LREAL').
+        `symtype` can be a PLCTYPE_* constant, a string representing a PLC
+        type (e.g. 'LREAL') or a ADST_* constant.
 
         The virtual property `value` can be used to read from and write to
         the symbol.
@@ -88,6 +89,7 @@ class AdsSymbol:
             for field_info in info._fields_:
                 field = field_info[0]
                 print('info.{}:'.format(field), getattr(info, field))
+            print('info.type_name():', info.type_name)
 
             self.index_group = info.iGroup
             self.index_offset = info.iOffs
@@ -106,7 +108,7 @@ class AdsSymbol:
         else:
             self.type_name = symtype.__class__.__name__  # Try to find
             # human-readable version
-            self.symtype = symtype
+            self.symtype = symtype  # type: Any
 
     def read(self) -> Any:
         """Read the current value of this symbol"""
@@ -182,7 +184,7 @@ class AdsSymbol:
             self._handles_list.remove(handles)
 
     @staticmethod
-    def get_type_from_str(type_str: str) -> Optional[Type]:
+    def get_type_from_str(type_str: str) -> Any:
         """Get PLCTYPE_* from PLC name string
 
         If PLC name could not be mapped, return None. This is done on
