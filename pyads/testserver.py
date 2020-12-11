@@ -72,7 +72,8 @@ AmsHeader = namedtuple(
 AmsPacket = namedtuple("AmsPacket", ("tcp_header", "ams_header"))
 
 # Container for the data required to construct an AMS response given a request
-AmsResponseData = namedtuple("AmsResponseData", ("state_flags", "error_code", "data"))
+AmsResponseData = namedtuple("AmsResponseData",
+                             ("state_flags", "error_code", "data"))
 
 
 class AdsTestServer(threading.Thread):
@@ -85,7 +86,8 @@ class AdsTestServer(threading.Thread):
     """
 
     def __init__(
-        self, handler=None, ip_address="", port=ADS_PORT, logging=True, *args, **kwargs
+            self, handler=None, ip_address="", port=ADS_PORT,
+            logging=True, *args, **kwargs
     ):
         # type: (AbstractHandler, str, int, bool, Any, Any) -> None
         self.handler = handler or BasicHandler()
@@ -180,7 +182,8 @@ class AdsTestServer(threading.Thread):
 
                 # Delegate handling of connection to client thread
                 client_thread = AdsClientConnection(
-                    handler=self.handler, client=client, address=address, server=self
+                    handler=self.handler, client=client, address=address,
+                    server=self
                 )
                 client_thread.daemon = True
                 client_thread.start()
@@ -210,7 +213,8 @@ class AdsClientConnection(threading.Thread):
         """Stop the client thread."""
         if self._run:
             logger.info(
-                "Closing client connection {0}:{1}.".format(*self.client_address)
+                "Closing client connection {0}:{1}.".format(
+                    *self.client_address)
             )
             self._run = False
 
@@ -262,7 +266,8 @@ class AdsClientConnection(threading.Thread):
             if isinstance(response, (AmsResponseData,)):
                 # Convert request, response data (tuples) to a valid ADS
                 # response (bytes) to return to the client
-                response_bytes = self.construct_response(response, request_packet)
+                response_bytes = self.construct_response(response,
+                                                         request_packet)
 
                 self.client.send(response_bytes)
 
@@ -318,7 +323,8 @@ class AdsClientConnection(threading.Thread):
             )
         )
 
-        ams_tcp_header = "\x00\x00".encode("utf-8") + struct.pack("<I", len(ams_header))
+        ams_tcp_header = "\x00\x00".encode("utf-8") + struct.pack("<I", len(
+            ams_header))
 
         return ams_tcp_header + ams_header
 
@@ -399,16 +405,20 @@ class BasicHandler(AbstractHandler):
             device_name = "TestServer\x00".encode("utf-8")
 
             response_content = (
-                major_version + minor_version + version_build + device_name
+                    major_version + minor_version + version_build + device_name
             )
 
         elif command_id == constants.ADSCOMMAND_READ:
             logger.info("Command received: READ")
             # Parse requested data length
-            response_length = struct.unpack("<I", request.ams_header.data[8:12])[0]
+            response_length = \
+                struct.unpack("<I", request.ams_header.data[8:12])[0]
             # Create response of repeated 0x0F with a null terminator for strings
-            response_value = (("\x0F" * (response_length - 1)) + "\x00").encode("utf-8")
-            response_content = struct.pack("<I", len(response_value)) + response_value
+            response_value = (
+                    ("\x0F" * (response_length - 1)) + "\x00").encode(
+                "utf-8")
+            response_content = struct.pack("<I", len(
+                response_value)) + response_value
 
         elif command_id == constants.ADSCOMMAND_WRITE:
             logger.info("Command received: WRITE")
@@ -448,9 +458,11 @@ class BasicHandler(AbstractHandler):
             logger.info("Command received: READ_WRITE")
             # parse the request
             index_group = struct.unpack("<I", request.ams_header.data[:4])[0]
-            response_length = struct.unpack("<I", request.ams_header.data[8:12])[0]
-            write_length = struct.unpack("<I", request.ams_header.data[12:16])[0]
-            write_data = request.ams_header.data[16 : (16 + write_length)]
+            response_length = \
+                struct.unpack("<I", request.ams_header.data[8:12])[0]
+            write_length = struct.unpack("<I", request.ams_header.data[12:16])[
+                0]
+            write_data = request.ams_header.data[16: (16 + write_length)]
 
             if index_group == constants.ADSIGRP_SYM_INFOBYNAMEEX:
                 # Pack the structure in the same format as SAdsSymbolEntry.
@@ -458,7 +470,8 @@ class BasicHandler(AbstractHandler):
                 # Use fixed UINT8 type
                 if "str_" in write_data.decode():
                     response_value = struct.pack(
-                        "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_STRING, 0, 0, 0, 0
+                        "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_STRING, 0, 0,
+                        0, 0
                     )
                 # Non-existant type
                 elif "no_type" in write_data.decode():
@@ -468,18 +481,21 @@ class BasicHandler(AbstractHandler):
                 # Array
                 elif "ar_" in write_data.decode():
                     response_value = struct.pack(
-                        "<IIIIIIHHH", 30, 0, 0, 2, constants.ADST_UINT8, 0, 0, 0, 0
+                        "<IIIIIIHHH", 30, 0, 0, 2, constants.ADST_UINT8, 0, 0,
+                        0, 0
                     )
                 else:
                     logger.info("Packing ADST_UINT8...")
                     response_value = struct.pack(
-                        "<IIIIIIHHH", 30, 0, 0, 1, constants.ADST_UINT8, 0, 0, 0, 0
+                        "<IIIIIIHHH", 30, 0, 0, 1, constants.ADST_UINT8, 0, 0,
+                        0, 0
                     )
 
             elif index_group == constants.ADSIGRP_SUMUP_READ:
                 # Could be improved to handle variable length requests
                 response_value = struct.pack(
-                    "<IIIIBB4sB", 0, 0, 0, 1, 1, 2, ("test" + "\x00").encode("utf-8"), 0
+                    "<IIIIBB4sB", 0, 0, 0, 1, 1, 2,
+                    ("test" + "\x00").encode("utf-8"), 0
                 )
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
@@ -487,13 +503,15 @@ class BasicHandler(AbstractHandler):
 
             elif response_length > 0:
                 # Create response of repeated 0x0F with a null terminator for strings
-                response_value = (("\x0F" * (response_length - 1)) + "\x00").encode(
+                response_value = (
+                        ("\x0F" * (response_length - 1)) + "\x00").encode(
                     "utf-8"
                 )
             else:
                 response_value = b""
 
-            response_content = struct.pack("<I", len(response_value)) + response_value
+            response_content = struct.pack("<I", len(
+                response_value)) + response_value
 
         else:
             logger.info("Unknown Command: {0}".format(hex(command_id)))
@@ -505,7 +523,8 @@ class BasicHandler(AbstractHandler):
         error_code = ("\x00" * 4).encode("utf-8")
         response_data = error_code + response_content
 
-        return AmsResponseData(state, request.ams_header.error_code, response_data)
+        return AmsResponseData(state, request.ams_header.error_code,
+                               response_data)
 
 
 class PLCVariable:
@@ -518,33 +537,53 @@ class PLCVariable:
 
     handle_count = 0  # Keep track of the latest awarded handle
 
+    INDEX_GROUP = 12345
+    INDEX_OFFSET_BASE = 10000
+
     def __init__(self,
                  name="unnamed",
-                 value=0,
-                 plc_type=constants.PLCTYPE_BYTE):
-        # type: (str, Any, Optional[Any]) -> None
+                 value=bytes(16),
+                 ads_type=constants.ADST_UINT8,
+                 type_name='UINT'):
+        # type: (str, bytes, int, str) -> None
         """
 
         Handle and indices are set by default (to random but safe values)
 
         :param name:
         :param value:
-        :param plc_type: constants.PLCTYPE_*
+        :param ads_type: constants.PLCTYPE_*
+        :param type_name: PLC-style name of type
         """
         self.name = name
-        self.value = value
-        self.plc_type = plc_type
-        self.handle = self.handle_count
-        self.index_group = 12345  # Default value - shouldn't matter much
-        self.index_offset = self.handle  # We will cheat by using the handle
-        # (since we know it will be unique)
+        self.value = value  # type: bytes
+        # Variable value is stored in binary!
 
-        self.ads_type = constants.ADST_UINT16  # type: int
-        self.type_name = 'UINT'  # type: str
+        self.ads_type = None  # type: Optional[int]
+        self.type_name = None  # type: Optional[str]
+        self.plc_type = None  # type: Any
+
+        self.set_type(ads_type, type_name)
+
+        self.handle = self.handle_count
+        self.index_group = self.INDEX_GROUP  # Default value - shouldn't
+        # matter much
+        self.index_offset = self.INDEX_OFFSET_BASE + self.handle  # We will
+        # cheat by using the handle (since we know it will be unique)
 
         self.size = 2  # Value size in bytes
 
         self.handle_count += 1  # Increment class property
+
+    def set_type(self, ads_type, type_name):
+        # type: (int, str) -> None
+        """Set a new ADST_ variable type (also update PLCTYPE_
+
+        However, the type_name string cannot be updated automatically!
+        """
+        self.ads_type = ads_type
+        self.plc_type = constants.ads_type_to_ctype[ads_type]
+        self.type_name = type_name
 
 
 class AdvancedHandler(AbstractHandler):
@@ -554,6 +593,15 @@ class AdvancedHandler(AbstractHandler):
     read_write functions. There is a storage area for each symbol. The
     purpose of this handler to test read/write access and test basic
     interaction.
+    Variables can be read/write through indices, name and handle.
+
+    An error will be thrown when an attempt is made to read from a
+    non-existent variable. You can either: i) write the variable first (it
+    is implicitly created) or ii) create the variable yourself and place it
+    in the handler.
+    Note that the variable type cannot be set correctly in the implicit
+    creation! (It will default to UINT16.) Use explicit creation if a
+    non-default type is important.
     """
 
     def __init__(self):
@@ -596,7 +644,7 @@ class AdvancedHandler(AbstractHandler):
             device_name = "TestServer\x00".encode("utf-8")
 
             response_content = (
-                major_version + minor_version + version_build + device_name
+                    major_version + minor_version + version_build + device_name
             )
 
             return response_content
@@ -622,13 +670,13 @@ class AdvancedHandler(AbstractHandler):
 
                 # response_value = self._named_data[index_offset].value
                 response_value = self.get_variable_by_handle(
-                        index_offset).value
+                    index_offset).value
 
             elif index_group == constants.ADSIGRP_SYM_UPLOADINFO2:
                 symbol_count = len(self._data)
                 response_length = 120 * symbol_count
                 response_value = struct.pack(
-                        "II", symbol_count, response_length)
+                    "II", symbol_count, response_length)
 
             elif index_group == constants.ADSIGRP_SYM_UPLOAD:
                 response_value = b""
@@ -640,7 +688,7 @@ class AdvancedHandler(AbstractHandler):
                 # Create response of repeated 0x0F with a null
                 # terminator for strings
                 var = self.get_variable_by_indices(index_group, index_offset)
-                response_value = struct.pack("I", var.value)
+                response_value = var.value[:plc_datatype]
 
             return struct.pack("<I", len(response_value)) + response_value
 
@@ -705,7 +753,9 @@ class AdvancedHandler(AbstractHandler):
 
                 var_name = write_data.decode()
 
-                var = self.get_variable_by_name(var_name)
+                # This could be part of a write-by-name, so create the
+                # variable if it does not yet exist
+                var = self.get_or_create_variable_by_name(var_name)
 
                 read_data = struct.pack("<I", var.handle)
 
@@ -715,36 +765,37 @@ class AdvancedHandler(AbstractHandler):
                 var_name = write_data.decode()
                 var = self.get_variable_by_name(var_name)
 
-                entry_length = 120  # Pick something long
-
                 # str_buffer = var.name.encode('utf-8') + \
                 #              var.type_name.encode('utf-8')
 
+                name_bytes = var.name.encode('utf-8')
+                type_names_bytes = var.type_name.encode('utf-8')
+
+                entry_length = 6 * 4 + 3 * 2 + len(name_bytes) \
+                               + 1 + len(type_names_bytes)
+
                 read_data = struct.pack(
                     "<IIIIIIHHH",
-                    entry_length,
+                    entry_length,  # Number of packed bytes
                     var.index_group,
                     var.index_offset,
                     var.size,
-                    constants.ADST_UINT16,
-                    0,
-                    len(var.name),
-                    len(var.type_name),
+                    var.ads_type,
+                    0,  # Flags
+                    len(name_bytes),
+                    len(type_names_bytes),
                     0
-                )
-                # read_data = struct.pack(
-                #     "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_UINT8, 0, 0, 0,
-                #     0
-                # )  # < This works
+                ) + name_bytes + b'\x20' + type_names_bytes
 
             # Else just return the value stored
             else:
 
                 # read stored data
-                read_data = self._data[(index_group, index_offset)][:read_length]
+                var = self.get_variable_by_indices(index_group, index_offset)
+                read_data = var.value[:read_length]
 
                 # store write data
-                self._data[(index_group, index_offset)] = write_data
+                var.value = write_data
 
             return struct.pack("<I", len(read_data)) + read_data
 
@@ -800,13 +851,10 @@ class AdvancedHandler(AbstractHandler):
         }
 
         # Try to map the command id to a function, else return error code
-        try:
-
+        if command_id in function_map:
             content = function_map[command_id]()
 
-            print('---debug---:', content)
-
-        except KeyError:
+        else:
             logger.info("Unknown Command: {0}".format(hex(command_id)))
             # Set error code to 'unknown command ID'
             error_code = "\x08\x00\x00\x00".encode("utf-8")
@@ -827,7 +875,7 @@ class AdvancedHandler(AbstractHandler):
             if var.handle == handle:
                 return var
 
-        raise KeyError('Variable with handle {} not found - Create it first '
+        raise KeyError('Variable with handle `{}` not found - Create it first '
                        'explicitly or write to it'.format(handle))
 
     def get_variable_by_indices(self, index_group, index_offset):
@@ -835,7 +883,13 @@ class AdvancedHandler(AbstractHandler):
         """Get PLC variable by handle, throw error when not found"""
 
         tup = (index_group, index_offset)
-        return self._data[tup]
+
+        if tup in self._data:
+            return self._data[tup]
+
+        raise KeyError('Variable with indices ({}, {}) not found - Create '
+                       'it first explicitly or write to it'
+                       .format(index_group, index_offset))
 
     def get_or_create_variable_by_indices(self, index_group, index_offset):
         # type: (int, int) -> PLCVariable
@@ -852,11 +906,14 @@ class AdvancedHandler(AbstractHandler):
     def get_variable_by_name(self, name):
         # type: (str) -> PLCVariable
         """Get variable by name, throw error if not found"""
+
+        name = name.strip('\x00')
+
         for key, var in self._data.items():
             if var.name == name:
                 return var
 
-        raise KeyError('Variable with name {} not found - Create it first '
+        raise KeyError('Variable with name `{}` not found - Create it first '
                        'explicitly or write to it'.format(name))
 
     def get_or_create_variable_by_name(self, name):
@@ -874,46 +931,16 @@ class AdvancedHandler(AbstractHandler):
         tup = (var.index_group, var.index_offset)
         self._data[tup] = var
 
-    def find_variable_index_by_name(self, name):
-        # type: (str) -> Optional[int]
-        """Find a variable index based on its name in the current list of
-        fake variables
 
-        Returns `None` if it does not exist yet.
-        """
-        for idx, var in enumerate(self._named_data):
-            if var.name == name:
-                return idx
-
-        return None
-
-    def set_variable(self, name, value=None, plc_type=None):
-        # type: (str, Any, Any) -> int
-        """Create a fake ADS variable
-
-        Calling this is not essential, it will be done automatically on e.g.
-        a write by name.
-        If a variable with this name already exists, it will be updated by
-        any passed information.
-        Return the variable index (new or existent)
-        """
-        idx = self.find_variable_index_by_name(name)
-        if idx is not None:
-            if value is not None:
-                self._named_data[idx].value = value
-            if plc_type is not None:
-                self._named_data[idx].type = plc_type
-            return idx
-
-        var = PLCVariable(name, value=value, plc_type=plc_type)
-        self._named_data.append(var)
-        return len(self._named_data) - 1
-
-
-if __name__ == "__main__":
+def main():
+    """Main function (keep variable out of global scope)"""
     server = AdsTestServer(handler=AdvancedHandler())
     try:
         server.start()
         server.join()
     except:
         server.close()
+
+
+if __name__ == "__main__":
+    main()
