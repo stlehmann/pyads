@@ -15,7 +15,15 @@ if TYPE_CHECKING:
 
 from datetime import datetime
 import struct
-from ctypes import memmove, addressof, c_ubyte, Array, Structure, sizeof, create_string_buffer
+from ctypes import (
+    memmove,
+    addressof,
+    c_ubyte,
+    Array,
+    Structure,
+    sizeof,
+    create_string_buffer,
+)
 from collections import OrderedDict
 from functools import partial
 
@@ -334,7 +342,7 @@ def dict_from_bytes(
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
-                        bytearray(byte_list[index: (index + (str_len + 1))])
+                        bytearray(byte_list[index : (index + (str_len + 1))])
                         .partition(b"\0")[0]
                         .decode("utf-8")
                     )
@@ -346,7 +354,7 @@ def dict_from_bytes(
                     var_array.append(
                         struct.unpack(
                             DATATYPE_MAP[plc_datatype],
-                            bytearray(byte_list[index: (index + n_bytes)]),
+                            bytearray(byte_list[index : (index + n_bytes)]),
                         )[0]
                     )
                     index += n_bytes
@@ -712,10 +720,10 @@ class Connection(object):
 
             for idx in range(sym_count):
                 read_length, index_group, index_offset = struct.unpack(
-                    "III", symbol_list_msg[ptr + 0: ptr + 12]
+                    "III", symbol_list_msg[ptr + 0 : ptr + 12]
                 )
                 name_length, type_length, comment_length = struct.unpack(
-                    "HHH", symbol_list_msg[ptr + 24: ptr + 30]
+                    "HHH", symbol_list_msg[ptr + 24 : ptr + 30]
                 )
 
                 name_start_ptr = ptr + 30

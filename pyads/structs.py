@@ -377,8 +377,4 @@ class SAdsSumRequest(Structure):
     """
 
     _pack_ = 1
-    _fields_ = [
-        ("iGroup", c_uint32),
-        ("iOffset", c_uint32),
-        ("size", c_uint32),
-    ]
+    _fields_ = [("iGroup", c_uint32), ("iOffset", c_uint32), ("size", c_uint32)]
