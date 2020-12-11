@@ -6,21 +6,12 @@
 :created on: 2020-11-16
 
 """
-import ctypes
-from ctypes import addressof, memmove, resize, sizeof, pointer
-import datetime
 import time
 import unittest
 import pyads
-import struct
 from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler, \
     PLCVariable
-from pyads.structs import NotificationAttrib
-from pyads import constants, structs, AdsSymbol
-from pyads.pyads_ex import adsGetSymbolInfo
-from collections import OrderedDict
-
-import pprint
+from pyads import constants, AdsSymbol
 
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
@@ -36,8 +27,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         # type: () -> None
         """Setup the ADS testserver."""
         cls.handler = AdvancedHandler()
-        cls.test_server = AdsTestServer(handler=cls.handler, logging=True)
-        # cls.test_server = AdsTestServer(logging=True)
+        cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
         cls.test_server.start()
 
         # wait a bit otherwise error might occur
@@ -55,90 +45,132 @@ class AdsSymbolTestCase(unittest.TestCase):
     def setUp(self):
         # type: () -> None
         """Establish connection to the testserver."""
+
+        # Clear test server and handler
         self.test_server.request_history = []
-        self.test_server.handler.reset()
+        self.handler.reset()
+
+        # Create PLC variable that is added by default
+        self.test_var = PLCVariable(
+            'TestDouble', ads_type=constants.ADST_REAL64, type_name='LREAL')
+        self.handler.add_variable(self.test_var)
+
         self.plc = pyads.Connection(
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT,
             TEST_SERVER_IP_ADDRESS
         )
 
-    def assert_command_id(self, request, target_id):
-        # type: (AmsPacket, int) -> None
-        """Assert command_id and target_id."""
-        # Check the request code received by the server
-        command_id = request.ams_header.command_id
-        command_id = struct.unpack("<H", command_id)[0]
-        self.assertEqual(command_id, target_id)
-
-    def test_get_all_symbols(self):
-        handle_name = "TestHandle"
-
-        with self.plc:
-
-            self.plc.write(
-                value="f", index_group=1354, index_offset=0,
-                plc_datatype=constants.PLCTYPE_STRING
-            )
-            self.plc.write(
-                value="m", index_group=5436, index_offset=0,
-                plc_datatype=constants.PLCTYPE_STRING
-            )
-            symbols = self.plc.get_all_symbols()
-
-            for symbol in symbols:
-                print('Symbol type:', symbol.type_name)
-                print('Index offset:', symbol.index_offset)
-                print('Index group:', symbol.index_group)
-
-        # requests = self.test_server.request_history
-        # for r in requests:
-        #     pprint.pprint(r)
-
-    def test_read_by_name(self):
-        handle_name = "TestHandle"
-
-        with self.plc:
-
-            self.plc.write_by_name(handle_name, 3.14, constants.PLCTYPE_LREAL)
-
-            read_value = self.plc.read_by_name(handle_name,
-                                               constants.PLCTYPE_LREAL)
-
-        print('Value:', read_value)
-
-    def test_init_by_name(self):
-        handle_name = "TestHandle"
-
-        with self.plc:
-            self.plc.write_by_name(handle_name, 0, constants.PLCTYPE_BYTE)
-
-            symbol = AdsSymbol(self.plc, handle_name)
-
-        print('Test: symbol.type_name:', symbol.type_name)
-
-    def test_get_symbol_info(self):
-        handle_name = 'TestHandle'
-
-        self.handler.add_variable(
-            PLCVariable(handle_name, ads_type=constants.ADST_REAL64,
-                        type_name='LREAL')
+    def assertAdsRequestsCount(self, expected):
+        real = len(self.test_server.request_history)
+        self.assertEqual(
+            expected,
+            real,
+            msg='Expected {} requests, but {} have been made'.format(
+                expected, real)
         )
 
+    def test_init_by_name(self):
+        """Test symbol creation by name"""
+        with self.plc:
+            symbol = AdsSymbol(self.plc, name=self.test_var.name)
+
+        # Verify looked up info
+        self.assertEqual(self.test_var.name, symbol.name)
+        self.assertEqual(self.test_var.index_group, symbol.index_group)
+        self.assertEqual(self.test_var.index_offset, symbol.index_offset)
+        self.assertEqual(self.test_var.plc_type, symbol.plc_type)
+        self.assertEqual(self.test_var.type_name, symbol.type_name)
+
+        self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
+        # been made
+
+    def test_type_resolve(self):
+        """Test if PLCTYPE is resolved correctly"""
         with self.plc:
 
-            print(self.handler._data)
+            symbol1 = AdsSymbol(self.plc, 'NonExistentVar', 123, 0,
+                                constants.PLCTYPE_UDINT)
+            self.assertEqual(constants.PLCTYPE_UDINT, symbol1.plc_type)
+            # Human-readable cannot be found:
+            self.assertEqual('PyCSimpleType', symbol1.type_name)
 
-            symbol = AdsSymbol(self.plc, name=handle_name)
+            symbol2 = AdsSymbol(self.plc, 'NonExistentVar', 123, 0,
+                                constants.ADST_UINT32)
+            self.assertEqual(constants.PLCTYPE_UDINT, symbol2.plc_type)
+            # Human-readable cannot be found:
+            self.assertEqual('PyCSimpleType', symbol2.type_name)
 
-            print(symbol)
+            symbol3 = AdsSymbol(self.plc, 'NonExistentVar', 123, 0,
+                                'UDINT')
+            self.assertEqual(constants.PLCTYPE_UDINT, symbol3.plc_type)
+            self.assertEqual('UDINT', symbol3.type_name)
 
-    def test_read_and_write(self):
+        self.assertAdsRequestsCount(0)  # No requests
+
+    def test_init_manual(self):
+        """Test symbol without lookup"""
+        with self.plc:
+
+            # Create symbol while providing everything:
+            symbol = AdsSymbol(self.plc,
+                               name=self.test_var.name,
+                               index_group=self.test_var.index_group,
+                               index_offset=self.test_var.index_offset,
+                               type_hint=self.test_var.plc_type)
+
+            self.assertAdsRequestsCount(0)  # No requests yet
+
+            self.plc.write(
+                self.test_var.index_group, self.test_var.index_offset, 12.3,
+                self.test_var.plc_type)
+
+            self.assertEqual(12.3, symbol.value)
+
+        self.assertAdsRequestsCount(2)  # Only a WRITE followed by a READ
+
+    def test_read(self):
+        """Test symbol value reading"""
 
         with self.plc:
-            self.plc.write(1234, 100, 3.14, constants.PLCTYPE_LREAL)
 
-            value = self.plc.read(1234, 100, constants.PLCTYPE_LREAL)
-            print('Value:', value)
+            self.plc.write(
+                self.test_var.index_group, self.test_var.index_offset, 420.0,
+                self.test_var.plc_type)
+
+            symbol = AdsSymbol(self.plc, name=self.test_var.name)
+
+            self.assertEqual(420.0, symbol.value)
+
+        self.assertAdsRequestsCount(3)  # WRITE, READWRITE for info and
+        # final read
+
+    def test_write(self):
+        """Test symbol value writing"""
+        with self.plc:
+
+            symbol = AdsSymbol(self.plc, name=self.test_var.name)
+
+            symbol.value = 3.14  # Write
+
+            r_value = self.plc.read(
+                self.test_var.index_group, self.test_var.index_offset,
+                self.test_var.plc_type)
+
+            self.assertEqual(3.14, r_value)
+
+        self.assertAdsRequestsCount(3)  # READWRITE for info, WRITE and
+        # test read
+
+    def test_get_symbol(self):
+        """Test symbol by Connection method"""
+        with self.plc:
+            symbol = self.plc.get_symbol(self.test_var.name)
+
+        # Verify looked up info
+        self.assertEqual(self.test_var.name, symbol.name)
+
+        self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
+        # been made
 
 
 if __name__ == "__main__":

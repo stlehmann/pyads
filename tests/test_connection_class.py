@@ -36,7 +36,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
     def setUpClass(cls):
         # type: () -> None
         """Setup the ADS testserver."""
-        cls.test_server = AdsTestServer(logging=True)
+        cls.test_server = AdsTestServer(logging=False)
         cls.test_server.start()
 
         # wait a bit otherwise error might occur
@@ -1242,13 +1242,12 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_get_all_symbols_single(self):
         with self.plc:
             self.plc.write(
-                value="1", index_group=123, index_offset=0, plc_datatype=constants.PLCTYPE_STRING
+                value="1", index_group=123, index_offset=0,
+                plc_datatype=constants.PLCTYPE_STRING
             )
             symbols = self.plc.get_all_symbols()
             self.assertEqual(len(symbols), 1)
             self.assertEqual(symbols[0].index_group, 123)
-
-            print('Symbol type:', symbols[0].type_name)
 
 
 if __name__ == "__main__":

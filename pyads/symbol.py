@@ -26,12 +26,16 @@ class AdsSymbol:
     symbol. Also remembers a reference to a Connection to be able to
     read/write directly.
 
+    The virtual property `value` can be used to read from and write to
+    the symbol.
+
     :ivar index_group: Index group of symbol
     :ivar index_offset: Index offset of symbol
     :ivar name: Name of symbol
     :ivar type_name: String representation of symbol type (PLC-style,
                      e.g. "LREAL")
-    :ivar symtype: ctypes type of variable (from constants.PLCTYPE_*)
+    :ivar _type_hint: Object from which the symtype will be deduced
+    :ivar plc_type: ctypes type of variable (from constants.PLCTYPE_*)
     :ivar comment: Comment of symbol
     """
 
@@ -40,85 +44,100 @@ class AdsSymbol:
                  name: Optional[str] = None,
                  index_group: Optional[int] = None,
                  index_offset: Optional[int] = None,
-                 symtype: Optional[Union[Type, str, int]] = None,
+                 type_hint: Optional[Union[Type, str, int]] = None,
                  comment=None):
         """Create AdsSymbol instance
 
-        Specify either the variable name or the index_group _and_
+        Specify either the variable name or the index_group **and**
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `symtype` can be a PLCTYPE_* constant, a string representing a PLC
+        `_type_hint` can be a PLCTYPE_* constant, a string representing a PLC
         type (e.g. 'LREAL') or a ADST_* constant.
-
-        The virtual property `value` can be used to read from and write to
-        the symbol.
 
         :param plc: Connection instance
         :param name:
         :param index_group:
         :param index_offset:
-        :param symtype:
+        :param type_hint: Hint from which the real ctypes type can be deduced
         :param comment:
-
         """
         self._plc = plc
+
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
 
         do_lookup = True
 
-        if index_group is None or index_offset is None or symtype is None:
+        if index_group is None or index_offset is None or type_hint is None:
             if name is None:
                 raise ValueError('Please specify either `name`, or '
                                  '`index_group`, `index_offset` and '
-                                 'symtype')
-            else:
-                self.name = name
+                                 'plc_type')
         else:
-            self.index_offset = index_offset
-            self.index_group = index_group
-            self.name = name
-            self.comment = comment
-            do_lookup = False  # Have what we need already
+            # We have an address and the type, so we don't need to do a lookup
+            do_lookup = False
+
+        self.name = name
+        self.index_offset = index_offset
+        self.index_group = index_group
+        self.type_name = None  # type: Optional[str]
+        self._type_hint = type_hint
+        self.comment = comment
 
         if do_lookup:
-            info = adsGetSymbolInfo(self._plc.port, self._plc.ams_addr,
-                                    name)
+            self.get_symbol_info()  # Perform remote lookup
 
-            print('---AdsSymbol---:')
-            for field_info in info._fields_:
-                field = field_info[0]
-                print('info.{}:'.format(field), getattr(info, field))
-            print('info.type_name():', info.type_name)
+        # Now `self._type_hint` must have a value, find the actual PLCTYPE
+        # from it.
+        # This is relevant for both lookup and full user definition.
 
-            self.index_group = info.iGroup
-            self.index_offset = info.iOffs
-            self.comment = info.comment if info.comment is not None \
-                else comment
-            if info.type_name is not None and info.type_name:
-                symtype = info.type_name  # Type name, e.g. 'LREAL'
-
-        if isinstance(symtype, str):
-            self.type_name = symtype  # Store human-readable type name
-            self.symtype = self.get_type_from_str(symtype)
-        elif isinstance(symtype, int):
-            self.type_name = symtype  # This will be a number, but no way to
-            # get it back to a sensible string
-            self.symtype = constants.ads_type_to_ctype[symtype]
+        if isinstance(self._type_hint, str):
+            self.plc_type = self.get_type_from_str(self._type_hint)
+            self.type_name = self._type_hint
+        elif isinstance(self._type_hint, int):
+            self.plc_type = self.get_type_from_int(self._type_hint)
         else:
-            self.type_name = symtype.__class__.__name__  # Try to find
+            # Set directly from user input
+            self.plc_type = self._type_hint  # type: Any
+
+        if not self.type_name:
+            self.type_name = self.plc_type.__class__.__name__  # Try to find
             # human-readable version
-            self.symtype = symtype  # type: Any
+
+    def get_symbol_info(self):
+        """Look up remaining info from the remote
+
+        The name must already be present.
+        Other values will already have a default value (mostly None).
+        """
+        info = adsGetSymbolInfo(self._plc.port, self._plc.ams_addr, self.name)
+
+        self.index_group = info.iGroup
+        self.index_offset = info.iOffs
+        if info.comment:
+            self.comment = info.comment
+
+        # info.dataType is an integer mapping to a type
+        if info.dataType:
+            self._type_hint = info.dataType  # type: int
+            # _type_hint should still be mapped to an actual ctypes
+
+        elif info.type_name:
+            # If no int-type was found but a valid string-type was:
+            self._type_hint = info.type_name  # Deduce it from the name
+            # instead
+
+        self.type_name = info.type_name  # Regardless, save the type as string
 
     def read(self) -> Any:
         """Read the current value of this symbol"""
         return self._plc.read(self.index_group, self.index_offset,
-                              self.symtype)
+                              self.plc_type)
 
     def write(self, new_value: Any):
         """Write a new value to the symbol"""
         return self._plc.write(self.index_group, self.index_offset,
-                               new_value, self.symtype)
+                               new_value, self.plc_type)
 
     @property
     def value(self):
@@ -157,7 +176,7 @@ class AdsSymbol:
         """
 
         if attr is None:
-            attr = NotificationAttrib(length=sizeof(self.symtype))
+            attr = NotificationAttrib(length=sizeof(self.plc_type))
 
         handles = self._plc.add_device_notification(
                 (self.index_group, self.index_offset),
@@ -212,5 +231,16 @@ class AdsSymbol:
 
         # We allow unmapped types at this point - Instead we will throw  an
         # error when they are being addressed
+
+        return None
+
+    @staticmethod
+    def get_type_from_int(type_int: int) -> Any:
+        """Get PLCTYPE_* from a number
+
+        Also see `get_type_from_string()`
+        """
+        if type_int in constants.ads_type_to_ctype:
+            return constants.ads_type_to_ctype[type_int]
 
         return None

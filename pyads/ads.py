@@ -679,6 +679,11 @@ class Connection(object):
 
         return None
 
+    def get_symbol(self, name: str) -> AdsSymbol:
+        """Get a single symbol"""
+
+        return AdsSymbol(self, name)
+
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
         
@@ -721,14 +726,16 @@ class Connection(object):
                 comment_end_ptr = comment_start_ptr + comment_length
 
                 name = decode_ads(symbol_list_msg[name_start_ptr:name_end_ptr])
-                symtype = decode_ads(symbol_list_msg[type_start_ptr:type_end_ptr])
-                comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
+                type_name = decode_ads(symbol_list_msg[
+                                   type_start_ptr:type_end_ptr])
+                comment = decode_ads(symbol_list_msg[
+                                     comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
                 symbol = AdsSymbol(plc=self, name=name,
                                    index_group=index_group,
                                    index_offset=index_offset,
-                                   symtype=symtype, comment=comment)
+                                   type_hint=type_name, comment=comment)
                 symbols.append(symbol)
         return symbols
 
