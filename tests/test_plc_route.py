@@ -147,8 +147,8 @@ class PLCRouteTestCase(unittest.TestCase):
                 response += struct.pack(">3s", b"\x00\x04\x07")  # Password Incorrect
             response += struct.pack(">2s", b"\x00\x00")  # Block of unknown protocol
 
-            # Send our response to 55189
-            sock.sendto(response, (self.PLC_IP, 55189))
+            # Send our response back to sender
+            sock.sendto(response, addr)
 
     def test_correct_route(self):
         if platform_is_linux():

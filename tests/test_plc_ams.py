@@ -32,8 +32,8 @@ class PLCAMSTestCase(unittest.TestCase):
             # Don't care about the rest, so just fill the remaining bytes with garbage
             response += struct.pack(">377s", b"\x00" * 377)
 
-            # Send our response to 55189
-            sock.sendto(response, (self.PLC_IP, 55189))
+            # Send our response back to sender
+            sock.sendto(response, addr)
 
     def test_get_ams(self):
         # Start receiving listener

@@ -187,8 +187,8 @@ def send_raw_udp_message(
     :expected_return_length: number of bytes to expect in response
     """
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
-        # Listen on 55189 for the response from the PLC
-        sock.bind(("", 55189))
+        # Listen on any available port for the response from the PLC
+        sock.bind(("", 0))
 
         # Send our data to 48899 on the PLC
         sock.sendto(message, (ip_address, 48899))

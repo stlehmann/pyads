@@ -176,15 +176,15 @@ def set_local_address(ams_netid: Union[str, SAmsNetId]) -> None:
         )  # pragma: no cover
 
 
-def add_route(adr: Union[str, AmsAddr], ip_address: str) -> None:
+def add_route(adr: Optional[Union[str, AmsAddr]], ip_address: str) -> None:
     """Establish a new route in the AMS Router (linux Only).
 
-    :param adr: AMS Address of routing endpoint as str or AmsAddr object. If an
-        empty string is provided, the net id of the PLC will be discovered.
+    :param adr: AMS Address of routing endpoint as str or AmsAddr object. If
+        None is provided, the net id of the PLC will be discovered.
     :param str ip_address: ip address of the routing endpoint
 
     """
-    if not adr:
+    if adr is None:
         adr = adsGetNetIdForPLC(ip_address)
     if isinstance(adr, str):
         adr = AmsAddr(adr)
