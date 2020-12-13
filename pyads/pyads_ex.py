@@ -190,7 +190,8 @@ def send_raw_udp_message(
         # Listen on any available port for the response from the PLC
         sock.bind(("", 0))
 
-        # Send our data to 48899 on the PLC
+        # Send our data to 48899 on the PLC, which is where ADS expects UDP
+        # messages
         sock.sendto(message, (ip_address, 48899))
 
         # Response should come in in less than .5 seconds, but wait longer to account for slow
