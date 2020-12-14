@@ -4,6 +4,7 @@ import socket
 import struct
 from contextlib import closing
 from pyads import add_route_to_plc
+from pyads.constants import PORT_REMOTE_UDP
 from pyads.utils import platform_is_linux
 
 
@@ -26,8 +27,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
     def plc_route_receiver(self):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
-            # Listen on 48899 for communication
-            sock.bind(("", 48899))
+            sock.bind(("", PORT_REMOTE_UDP))
 
             # Keep looping until we get an add address packet
             addr = [0]

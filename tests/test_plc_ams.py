@@ -4,6 +4,7 @@ import threading
 import unittest
 from contextlib import closing
 
+from pyads.constants import PORT_REMOTE_UDP
 from pyads.pyads_ex import adsGetNetIdForPLC
 
 
@@ -14,8 +15,7 @@ class PLCAMSTestCase(unittest.TestCase):
 
     def plc_ams_request_receiver(self):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
-            # Listen on 48899 for communication
-            sock.bind(("", 48899))
+            sock.bind(("", PORT_REMOTE_UDP))
 
             # Keep looping until we get an add address packet
             addr = [0]

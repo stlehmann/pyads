@@ -299,7 +299,11 @@ def adsAddRouteToPLC(
 
 
 def adsGetNetIdForPLC(ip_address: str) -> Optional[str]:
-    """Get AMS Net ID from IP address."""
+    """Get AMS Net ID from IP address.
+    
+    :param str ip_address: ip address of the PLC
+    
+    """
     # The head of the UDP AMS packet containing host routing information
     data_header = struct.pack(
         ">12s", b"\x03\x66\x14\x71\x00\x00\x00\x00\x01\x00\x00\x00"
