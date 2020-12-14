@@ -42,6 +42,7 @@ from .constants import (
     ADSIGRP_SYM_VALBYHND,
     ADSIGRP_SYM_RELEASEHND,
     PORT_SYSTEMSERVICE,
+    PORT_REMOTE_UDP,
     ADSIGRP_SUMUP_READ,
     ADSIGRP_SUMUP_WRITE,
     DATATYPE_MAP,
@@ -190,9 +191,8 @@ def send_raw_udp_message(
         # Listen on any available port for the response from the PLC
         sock.bind(("", 0))
 
-        # Send our data to 48899 on the PLC, which is where ADS expects UDP
-        # messages
-        sock.sendto(message, (ip_address, 48899))
+        # Send our data to the PLC
+        sock.sendto(message, (ip_address, PORT_REMOTE_UDP))
 
         # Response should come in in less than .5 seconds, but wait longer to account for slow
         # communications
@@ -224,6 +224,7 @@ def adsAddRouteToPLC(
     :param str password: password for PLC
     :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
+    :returns: True if the provided credentials are correct, False otherwise
 
     """
     # ALL SENT STRINGS MUST BE NULL TERMINATED
@@ -302,6 +303,7 @@ def adsGetNetIdForPLC(ip_address: str) -> Optional[str]:
     """Get AMS Net ID from IP address.
     
     :param str ip_address: ip address of the PLC
+    :returns: net id of the device at the provided ip address
     
     """
     # The head of the UDP AMS packet containing host routing information
