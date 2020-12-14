@@ -180,11 +180,11 @@ def adsAddRoute(net_id: SAmsNetId, ip_address: str) -> None:
 def send_raw_udp_message(
     ip_address: str, message: bytes, expected_return_length: int
 ) -> Tuple[bytes, str]:
-    """Send a raw UDP message to the PLC and return the response
+    """Send a raw UDP message to the PLC and return the response.
 
     :param str ip_address: ip address of the PLC
-    :param message: the message to send to the PLC
-    :expected_return_length: number of bytes to expect in response
+    :param bytes message: the message to send to the PLC
+    :param int expected_return_length: number of bytes to expect in response
     """
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on any available port for the response from the PLC
@@ -298,8 +298,8 @@ def adsAddRouteToPLC(
     raise RuntimeError("Unexpected response from PLC")
 
 
-def adsGetNetIdForPLC(ip_address: str):
-    """Get AMS Net ID from IP address"""
+def adsGetNetIdForPLC(ip_address: str) -> Optional[str]:
+    """Get AMS Net ID from IP address."""
     # The head of the UDP AMS packet containing host routing information
     data_header = struct.pack(
         ">12s", b"\x03\x66\x14\x71\x00\x00\x00\x00\x01\x00\x00\x00"
