@@ -88,8 +88,7 @@ from .structs import (
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
-    SAdsSumRequest,
-    SAdsSymbolEntry,
+    SAdsSumRequest
 )
 
 # custom types
@@ -483,14 +482,6 @@ class Connection(object):
             )
         self._adr.port = port
 
-    @property
-    def port(self) -> int:
-        return self._port
-
-    @property
-    def ams_addr(self) -> AmsAddr:
-        return self._adr
-
     def __enter__(self) -> "Connection":
         """Open on entering with-block."""
         self.open()
@@ -536,6 +527,15 @@ class Connection(object):
             return adsGetLocalAddressEx(self._port)
 
         return None
+
+    def get_symbol_info(self, name: str):
+        """Get information struct of a symbol by its name.
+
+        To create a symbol instance, use Connection.get_symbol() instead.
+        """
+        # Wrap this function inside the class so self._port does not have to
+        # be exposed.
+        return adsGetSymbolInfo(self._port, self._adr, name)
 
     def read_state(self) -> Optional[Tuple[int, int]]:
         """Read the current ADS-state and the machine-state.
@@ -683,7 +683,7 @@ class Connection(object):
         return None
 
     def get_symbol(self, name: str) -> AdsSymbol:
-        """Get a single symbol"""
+        """Get a single symbol by its name."""
 
         return AdsSymbol(self, name)
 

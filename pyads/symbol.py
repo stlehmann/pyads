@@ -85,7 +85,7 @@ class AdsSymbol:
         self.comment = comment
 
         if do_lookup:
-            self.get_symbol_info()  # Perform remote lookup
+            self.make_symbol_from_info()  # Perform remote lookup
 
         # Now `self._type_hint` must have a value, find the actual PLCTYPE
         # from it.
@@ -104,13 +104,13 @@ class AdsSymbol:
             self.type_name = self.plc_type.__class__.__name__  # Try to find
             # human-readable version
 
-    def get_symbol_info(self):
+    def make_symbol_from_info(self):
         """Look up remaining info from the remote
 
         The name must already be present.
         Other values will already have a default value (mostly None).
         """
-        info = adsGetSymbolInfo(self._plc.port, self._plc.ams_addr, self.name)
+        info = self._plc.get_symbol_info(self.name)
 
         self.index_group = info.iGroup
         self.index_offset = info.iOffs

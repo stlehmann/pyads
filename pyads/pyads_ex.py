@@ -71,8 +71,7 @@ if platform_is_windows():  # pragma: no cover, skip Windows test
             dll_path += "\\x64"
         dlldir_handle = os.add_dll_directory(dll_path)
     try:
-        # _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
-        _adsDLL = ctypes.WinDLL("C:/TwinCAT/AdsApi/TcAdsDll/TcAdsDll.dll")
+        _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
     finally:
         if dlldir_handle:
             # Do not clobber the load path for other modules
