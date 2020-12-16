@@ -228,7 +228,7 @@ def adsAddRouteToPLC(
     :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
     :rtype: bool
-    :returns: True if the provided credentials are correct, False otherwise
+    :return: True if the provided credentials are correct, False otherwise
 
     """
     # ALL SENT STRINGS MUST BE NULL TERMINATED
