@@ -224,6 +224,7 @@ def adsAddRouteToPLC(
     :param str password: password for PLC
     :param str route_name: PLC side name for route, defaults to adding_host_name or the current hostname of this PC
     :param pyads.structs.SAmsNetId added_net_id: net id that is being added to the PLC, defaults to sending_net_id
+    :rtype: bool
     :returns: True if the provided credentials are correct, False otherwise
 
     """
@@ -296,14 +297,15 @@ def adsAddRouteToPLC(
             return False
 
     # If we fell through the whole way to the bottom, then we got a weird response
-    raise RuntimeError("Unexpected response from PLC")
+    raise RuntimeError(f"Unexpected response from PLC: {data!r}")
 
 
-def adsGetNetIdForPLC(ip_address: str) -> Optional[str]:
+def adsGetNetIdForPLC(ip_address: str) -> str:
     """Get AMS Net ID from IP address.
     
     :param str ip_address: ip address of the PLC
-    :returns: net id of the device at the provided ip address
+    :rtype: str
+    :return: net id of the device at the provided ip address
     
     """
     # The head of the UDP AMS packet containing host routing information
@@ -327,6 +329,9 @@ def adsGetNetIdForPLC(ip_address: str) -> Optional[str]:
     if struct.unpack(">B", rcvd_packet_header[-1:])[0] == 0x80:
         ams_id_tuple = struct.unpack(">6B", data[12:18])  # AMS ID of PLC
         return ".".join(map(str, ams_id_tuple))
+
+    # If we fell through the whole way to the bottom, then we got a weird response
+    raise RuntimeError(f"Unexpected response from PLC: {data!r}")
 
 
 @router_function
