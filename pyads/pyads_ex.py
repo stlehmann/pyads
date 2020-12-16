@@ -180,12 +180,15 @@ def adsAddRoute(net_id: SAmsNetId, ip_address: str) -> None:
 
 def send_raw_udp_message(
     ip_address: str, message: bytes, expected_return_length: int
-) -> Tuple[bytes, str]:
+) -> Tuple[bytes, Tuple[str, int]]:
     """Send a raw UDP message to the PLC and return the response.
 
     :param str ip_address: ip address of the PLC
     :param bytes message: the message to send to the PLC
     :param int expected_return_length: number of bytes to expect in response
+    :rtype: Tuple[bytes, Tuple[str, int]]
+    :return: A tuple containing the response and a tuple containing the IP address and port of the
+             sending socket
     """
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:  # UDP
         # Listen on any available port for the response from the PLC
