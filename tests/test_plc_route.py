@@ -4,6 +4,7 @@ import socket
 import struct
 from contextlib import closing
 from pyads import add_route_to_plc
+from pyads.constants import PORT_REMOTE_UDP
 from pyads.utils import platform_is_linux
 
 
@@ -26,8 +27,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
     def plc_route_receiver(self):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
-            # Listen on 48899 for communication
-            sock.bind(("", 48899))
+            sock.bind(("", PORT_REMOTE_UDP))
 
             # Keep looping until we get an add address packet
             addr = [0]
@@ -147,8 +147,8 @@ class PLCRouteTestCase(unittest.TestCase):
                 response += struct.pack(">3s", b"\x00\x04\x07")  # Password Incorrect
             response += struct.pack(">2s", b"\x00\x00")  # Block of unknown protocol
 
-            # Send our response to 55189
-            sock.sendto(response, (self.PLC_IP, 55189))
+            # Send our response back to sender
+            sock.sendto(response, addr)
 
     def test_correct_route(self):
         if platform_is_linux():

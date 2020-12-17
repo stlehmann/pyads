@@ -73,7 +73,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             pyads.Connection()
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(TypeError):
             pyads.Connection(None, None)
 
     def test_no_ip_address(self):
