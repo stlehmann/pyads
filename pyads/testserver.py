@@ -550,7 +550,7 @@ class PLCVariable:
                  name="unnamed",
                  value=bytes(16),
                  ads_type=constants.ADST_UINT8,
-                 type_name='UINT'):
+                 symbol_type='UINT'):
         # type: (str, bytes, int, str) -> None
         """
 
@@ -559,17 +559,17 @@ class PLCVariable:
         :param name:
         :param value:
         :param ads_type: constants.PLCTYPE_*
-        :param type_name: PLC-style name of type
+        :param symbol_type: PLC-style name of type
         """
         self.name = name
         self.value = value  # type: bytes
         # Variable value is stored in binary!
 
         self.ads_type = None  # type: Optional[int]
-        self.type_name = None  # type: Optional[str]
+        self.symbol_type = None  # type: Optional[str]
         self.plc_type = None  # type: Any
 
-        self.set_type(ads_type, type_name)
+        self.set_type(ads_type, symbol_type)
 
         self.handle = self.handle_count
         self.index_group = self.INDEX_GROUP  # Default value - shouldn't
@@ -587,22 +587,22 @@ class PLCVariable:
         # type: (int, str) -> None
         """Set a new ADST_ variable type (also update PLCTYPE_
 
-        However, the type_name string cannot be updated automatically!
+        However, the symbol_type string cannot be updated automatically!
         """
         self.ads_type = ads_type
         if ads_type in constants.ads_type_to_ctype:
             self.plc_type = constants.ads_type_to_ctype[ads_type]
-        self.type_name = type_name
+        self.symbol_type = type_name
 
     def get_packed_info(self):
         # type: () -> bytes
         """Get bytes array of symbol info"""
         # str_buffer = var.name.encode('utf-8') + \
-        #              var.type_name.encode('utf-8')
+        #              var.symbol_type.encode('utf-8')
         if self.comment is None:
             self.comment = ""
         name_bytes = self.name.encode('utf-8')
-        type_names_bytes = self.type_name.encode('utf-8')
+        type_names_bytes = self.symbol_type.encode('utf-8')
         comment_bytes = self.comment.encode('utf-8')
 
         entry_length = 6 * 4 + 3 * 2 + len(name_bytes) \

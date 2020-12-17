@@ -5,18 +5,16 @@ Separate file because it depends on many other files, so we try to simplify
 the circular dependencies.
 """
 
-from typing import TYPE_CHECKING, Any, Union, Optional, Type, List, Tuple, \
-    Callable
+import re
+from ctypes import sizeof
+from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable
+from .pyads_ex import adsGetSymbolInfo
+from .structs import NotificationAttrib
+from . import constants  # To access all constants, use package notation
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
 if TYPE_CHECKING:
     from .ads import Connection  # pragma: no cover
-import re
-from ctypes import sizeof
-
-from .pyads_ex import adsGetSymbolInfo
-from .structs import NotificationAttrib
-from . import constants  # To access all constants, use package notation
 
 
 class AdsSymbol:
@@ -32,9 +30,8 @@ class AdsSymbol:
     :ivar index_group: Index group of symbol
     :ivar index_offset: Index offset of symbol
     :ivar name: Name of symbol
-    :ivar type_name: String representation of symbol type (PLC-style,
+    :ivar symbol_type: String representation of symbol type (PLC-style,
                      e.g. "LREAL")
-    :ivar _type_hint: Object from which the symtype will be deduced
     :ivar plc_type: ctypes type of variable (from constants.PLCTYPE_*)
     :ivar comment: Comment of symbol
     """
@@ -44,7 +41,7 @@ class AdsSymbol:
                  name: Optional[str] = None,
                  index_group: Optional[int] = None,
                  index_offset: Optional[int] = None,
-                 type_hint: Optional[Union[Type, str, int]] = None,
+                 symbol_type: Optional[str] = None,
                  comment=None):
         """Create AdsSymbol instance
 
@@ -52,14 +49,14 @@ class AdsSymbol:
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `_type_hint` can be a PLCTYPE_* constant, a string representing a PLC
-        type (e.g. 'LREAL') or a ADST_* constant.
+        `symbol_type` should be a string representing a PLC type (e.g.
+        'LREAL').
 
         :param plc: Connection instance
         :param name:
         :param index_group:
         :param index_offset:
-        :param type_hint: Hint from which the real ctypes type can be deduced
+        :param symbol_type: PLC variable type (e.g. 'LREAL')
         :param comment:
         """
         self._plc = plc
@@ -68,7 +65,7 @@ class AdsSymbol:
 
         do_lookup = True
 
-        if index_group is None or index_offset is None or type_hint is None:
+        if index_group is None or index_offset is None or symbol_type is None:
             if name is None:
                 raise ValueError('Please specify either `name`, or '
                                  '`index_group`, `index_offset` and '
@@ -80,8 +77,7 @@ class AdsSymbol:
         self.name = name
         self.index_offset = index_offset
         self.index_group = index_group
-        self.type_name = None  # type: Optional[str]
-        self._type_hint = type_hint
+        self.symbol_type = symbol_type
         self.comment = comment
 
         if do_lookup:
@@ -91,18 +87,11 @@ class AdsSymbol:
         # from it.
         # This is relevant for both lookup and full user definition.
 
-        if isinstance(self._type_hint, str):
-            self.plc_type = self.get_type_from_str(self._type_hint)
-            self.type_name = self._type_hint
-        elif isinstance(self._type_hint, int):
-            self.plc_type = self.get_type_from_int(self._type_hint)
+        if self.symbol_type is not None:
+            self.plc_type = self.get_type_from_str(self.symbol_type)
         else:
             # Set directly from user input
-            self.plc_type = self._type_hint  # type: Any
-
-        if not self.type_name:
-            self.type_name = self.plc_type.__class__.__name__  # Try to find
-            # human-readable version
+            self.plc_type = self.symbol_type  # type: Any
 
     def make_symbol_from_info(self):
         """Look up remaining info from the remote
@@ -110,20 +99,19 @@ class AdsSymbol:
         The name must already be present.
         Other values will already have a default value (mostly None).
         """
-        info = self._plc.get_symbol_info(self.name)
+        info = adsGetSymbolInfo(self._plc._port, self._plc._adr, self.name)
 
         self.index_group = info.iGroup
         self.index_offset = info.iOffs
         if info.comment:
             self.comment = info.comment
 
-        # info.dataType is an integer mapping to a type
+        # info.dataType is an integer mapping to a type in
+        # constants.ads_type_to_ctype.
         # However, this type ignores whether the variable is really an array!
         # So are not going to be using this and instead rely on the textual
         # type
-        self._type_hint = info.type_name
-
-        self.type_name = info.type_name  # Save the type as string
+        self.symbol_type = info.type_name  # Save the type as string
 
     def read_write_check(self):
         """Assert the current object is ready to read from/write to"""
@@ -156,10 +144,12 @@ class AdsSymbol:
 
     @property
     def value(self):
+        """Equivalent to AdsSymbol.read()"""
         return self.read()
 
     @value.setter
     def value(self, new_value):
+        """Equivalent to AdsSymbol.write()"""
         self.write(new_value)
 
     def __repr__(self):
@@ -167,7 +157,7 @@ class AdsSymbol:
         t = type(self)
         return '<{}.{} object at {}, name: {}, type: {}>'.format(
             t.__module__, t.__qualname__, hex(id(self)),
-            self.name, self.type_name)
+            self.name, self.symbol_type)
 
     def __del__(self):
         """Destructor"""
@@ -177,7 +167,7 @@ class AdsSymbol:
             self,
             callback: Callable,
             attr: Optional[NotificationAttrib] = None,
-            user_handle:  Optional[int] = None
+            user_handle: Optional[int] = None
     ) -> Optional[Tuple[int, int]]:
         """Add on-change callback to symbol
 
@@ -194,10 +184,10 @@ class AdsSymbol:
             attr = NotificationAttrib(length=sizeof(self.plc_type))
 
         handles = self._plc.add_device_notification(
-                (self.index_group, self.index_offset),
-                attr,
-                callback,
-                user_handle
+            (self.index_group, self.index_offset),
+            attr,
+            callback,
+            user_handle
         )
 
         self._handles_list.append(handles)

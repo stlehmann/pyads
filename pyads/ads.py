@@ -88,7 +88,7 @@ from .structs import (
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
-    SAdsSumRequest
+    SAdsSumRequest,
 )
 
 # custom types
@@ -528,15 +528,6 @@ class Connection(object):
 
         return None
 
-    def get_symbol_info(self, name: str):
-        """Get information struct of a symbol by its name.
-
-        To create a symbol instance, use Connection.get_symbol() instead.
-        """
-        # Wrap this function inside the class so self._port does not have to
-        # be exposed.
-        return adsGetSymbolInfo(self._port, self._adr, name)
-
     def read_state(self) -> Optional[Tuple[int, int]]:
         """Read the current ADS-state and the machine-state.
 
@@ -729,7 +720,7 @@ class Connection(object):
                 comment_end_ptr = comment_start_ptr + comment_length
 
                 name = decode_ads(symbol_list_msg[name_start_ptr:name_end_ptr])
-                type_name = decode_ads(symbol_list_msg[
+                type_hint = decode_ads(symbol_list_msg[
                                    type_start_ptr:type_end_ptr])
                 comment = decode_ads(symbol_list_msg[
                                      comment_start_ptr:comment_end_ptr])
@@ -738,7 +729,7 @@ class Connection(object):
                 symbol = AdsSymbol(plc=self, name=name,
                                    index_group=index_group,
                                    index_offset=index_offset,
-                                   type_hint=type_name, comment=comment)
+                                   symbol_type=type_hint, comment=comment)
                 symbols.append(symbol)
         return symbols
 
