@@ -583,7 +583,7 @@ class PLCVariable:
 
         self.handle_count += 1  # Increment class property
 
-    def set_type(self, ads_type, type_name):
+    def set_type(self, ads_type, symbol_type):
         # type: (int, str) -> None
         """Set a new ADST_ variable type (also update PLCTYPE_
 
@@ -592,7 +592,7 @@ class PLCVariable:
         self.ads_type = ads_type
         if ads_type in constants.ads_type_to_ctype:
             self.plc_type = constants.ads_type_to_ctype[ads_type]
-        self.symbol_type = type_name
+        self.symbol_type = symbol_type
 
     def get_packed_info(self):
         # type: () -> bytes
@@ -602,11 +602,11 @@ class PLCVariable:
         if self.comment is None:
             self.comment = ""
         name_bytes = self.name.encode('utf-8')
-        type_names_bytes = self.symbol_type.encode('utf-8')
+        symbol_type_bytes = self.symbol_type.encode('utf-8')
         comment_bytes = self.comment.encode('utf-8')
 
         entry_length = 6 * 4 + 3 * 2 + len(name_bytes) \
-                             + 1 + len(type_names_bytes) + 1 \
+                             + 1 + len(symbol_type_bytes) + 1 \
                              + len(comment_bytes)
 
         read_data = struct.pack(
@@ -618,9 +618,9 @@ class PLCVariable:
             self.ads_type,
             0,  # Flags
             len(name_bytes),
-            len(type_names_bytes),
+            len(symbol_type_bytes),
             len(comment_bytes)
-        ) + name_bytes + b'\x20' + type_names_bytes + b'\x20' \
+        ) + name_bytes + b'\x20' + symbol_type_bytes + b'\x20' \
           + comment_bytes
 
         return read_data

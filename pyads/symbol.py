@@ -81,19 +81,17 @@ class AdsSymbol:
         self.comment = comment
 
         if do_lookup:
-            self.make_symbol_from_info()  # Perform remote lookup
+            self.create_symbol_from_info()  # Perform remote lookup
 
-        # Now `self._type_hint` must have a value, find the actual PLCTYPE
+        # Now `self.symbol_type` should have a value, find the actual PLCTYPE
         # from it.
         # This is relevant for both lookup and full user definition.
 
+        self.plc_type: Optional[Any] = None
         if self.symbol_type is not None:
             self.plc_type = self.get_type_from_str(self.symbol_type)
-        else:
-            # Set directly from user input
-            self.plc_type = self.symbol_type  # type: Any
 
-    def make_symbol_from_info(self):
+    def create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
 
         The name must already be present.
@@ -111,7 +109,7 @@ class AdsSymbol:
         # However, this type ignores whether the variable is really an array!
         # So are not going to be using this and instead rely on the textual
         # type
-        self.symbol_type = info.type_name  # Save the type as string
+        self.symbol_type = info.symbol_type  # Save the type as string
 
     def read_write_check(self):
         """Assert the current object is ready to read from/write to"""

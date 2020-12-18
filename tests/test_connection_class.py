@@ -1160,7 +1160,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
     def test_ads_symbol_entry(self):
         symbol_name = "Test_Symbol"
-        type_name = "UINT8"
+        symbol_type = "UINT8"
         comment = "Test Comment"
 
         t_byte_buffer = ctypes.c_ubyte * 768
@@ -1170,24 +1170,24 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             str(len(symbol_name)) + "s", Buf, 0, symbol_name.encode("utf-8")
         )
         struct.pack_into(
-            str(len(type_name)) + "s",
+            str(len(symbol_type)) + "s",
             Buf,
             len(symbol_name) + 1,
-            type_name.encode("utf-8"),
+            symbol_type.encode("utf-8"),
         )
         struct.pack_into(
             str(len(comment)) + "s",
             Buf,
-            len(symbol_name) + len(type_name) + 2,
+            len(symbol_name) + len(symbol_type) + 2,
             comment.encode("utf-8"),
         )
 
         test_struct = structs.SAdsSymbolEntry(
-            0, 0, 0, 0, 0, 0, len(symbol_name), len(type_name), len(comment), Buf
+            0, 0, 0, 0, 0, 0, len(symbol_name), len(symbol_type), len(comment), Buf
         )
 
         self.assertEqual(symbol_name, test_struct.name)
-        self.assertEqual(type_name, test_struct.type_name)
+        self.assertEqual(symbol_type, test_struct.symbol_type)
         self.assertEqual(comment, test_struct.comment)
 
 

@@ -324,12 +324,13 @@ class SAdsSymbolEntry(Structure):
                                 # Concatenation of all string info
         bytes(info.stringBuffer): b'GVL.counter\x00UINT\x00 Counter (in '
                                   'pulses)\x00\x95\x19\x07\x18\x00\x00\x00\x00'
-        bytes(info.stringBuffer).encode(): "GVL.counter UINT (in pulses)"
+        bytes(info.stringBuffer).encode(): "GVL.counter UINT Counter (in
+                                            pulses)"
 
-        info.name(): "GVL.counter"      # The name section from the buffer
-        info.symbol_type(): "UINT"        # The symbol_type section from the
-                                          buffer
-        info.comment(): " Counter (in pulses)"  # The comment (if any)
+        info.name: "GVL.counter"    # The name section from the buffer
+        info.symbol_type: "UINT"    # The symbol_type section from the
+                                      buffer
+        info.comment: " Counter (in pulses)"  # The comment (if any)
     """
 
     _pack_ = 1
@@ -356,7 +357,7 @@ class SAdsSymbolEntry(Structure):
         return self._get_string(0, self.nameLength)
 
     @property
-    def type_name(self):
+    def symbol_type(self):
         """The qualified type name, including the namespace."""
         return self._get_string(self.nameLength + 1, self.typeLength)
 
