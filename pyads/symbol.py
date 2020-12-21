@@ -39,7 +39,7 @@ class AdsSymbol:
 
     def __init__(
         self,
-        plc: Connection,
+        plc: "Connection",
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
