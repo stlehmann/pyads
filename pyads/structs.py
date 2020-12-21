@@ -56,7 +56,7 @@ class SAmsAddr(Structure):
     _fields_ = [("netId", SAmsNetId), ("port", c_uint16)]
 
 
-class AmsAddr(object):
+class AmsAddr:
     """Wrapper for SAmsAddr-structure to address an ADS device.
 
     :type _ams_addr: SAmsAddr
@@ -155,7 +155,7 @@ class AmsAddr(object):
         return "<AmsAddress {}:{}>".format(self.netid, self.port)
 
 
-class NotificationAttrib(object):
+class NotificationAttrib:
     """Notification Attribute."""
 
     def __init__(
@@ -349,20 +349,26 @@ class SAdsSymbolEntry(Structure):
     ]
 
     def _get_string(self, offset, length):
-        return bytes(self.stringBuffer[offset : offset + length]).decode("utf-8")
+        # type: (int, int) -> str
+        """Get portion of the bigger string buffer"""
+        return bytes(self.stringBuffer[offset:(offset + length)])\
+                    .decode("utf-8")
 
     @property
     def name(self):
+        # type: () -> str
         """The symbol name."""
         return self._get_string(0, self.nameLength)
 
     @property
     def symbol_type(self):
+        # type: () -> str
         """The qualified type name, including the namespace."""
         return self._get_string(self.nameLength + 1, self.typeLength)
 
     @property
     def comment(self):
+        # type: () -> str
         """User-defined comment."""
         return self._get_string(
             self.nameLength + self.typeLength + 2, self.commentLength
@@ -371,7 +377,7 @@ class SAdsSymbolEntry(Structure):
 
 class SAdsSumRequest(Structure):
     """ADS sum request structure.
-    
+
     :ivar iGroup: indexGroup of request
     :ivar iOffs: indexOffset of request
     :ivar size: size of request

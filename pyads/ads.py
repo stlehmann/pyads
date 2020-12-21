@@ -88,6 +88,7 @@ from .structs import (
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
+    SAdsSymbolEntry,
     SAdsSumRequest,
 )
 
@@ -433,7 +434,7 @@ def bytes_from_dict(
     return byte_list
 
 
-class Connection(object):
+class Connection:
     """Class for managing the connection to an ADS device.
 
     :ivar str ams_net_id: AMS net id of the remote device
@@ -720,10 +721,8 @@ class Connection(object):
                 comment_end_ptr = comment_start_ptr + comment_length
 
                 name = decode_ads(symbol_list_msg[name_start_ptr:name_end_ptr])
-                symbol_type = decode_ads(symbol_list_msg[
-                                   type_start_ptr:type_end_ptr])
-                comment = decode_ads(symbol_list_msg[
-                                     comment_start_ptr:comment_end_ptr])
+                symbol_type = decode_ads(symbol_list_msg[type_start_ptr:type_end_ptr])
+                comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
                 symbol = AdsSymbol(plc=self, name=name,
