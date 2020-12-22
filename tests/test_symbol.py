@@ -9,8 +9,7 @@
 import time
 import unittest
 import pyads
-from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler, \
-    PLCVariable
+from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
 from pyads import constants, AdsSymbol
 
 # These are pretty arbitrary
@@ -25,7 +24,7 @@ class AdsSymbolTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # type: () -> None
-        """Setup the ADS testserver."""
+        """Setup the ADS test server."""
         cls.handler = AdvancedHandler()
         cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
         cls.test_server.start()
@@ -36,7 +35,7 @@ class AdsSymbolTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # type: () -> None
-        """Tear down the testserver."""
+        """Tear down the test server."""
         cls.test_server.stop()
 
         # wait a bit for server to shutdown
@@ -44,7 +43,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
     def setUp(self):
         # type: () -> None
-        """Establish connection to the testserver."""
+        """Establish connection to the test server."""
 
         # Clear test server and handler
         self.test_server.request_history = []
@@ -114,7 +113,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertEqual(var.symbol_type, symbol.symbol_type)
         self.assertIsNone(symbol.comment)
 
-        my_list = symbol.value
+        my_list = symbol.read()
 
         self.assertIsInstance(my_list, list)
         self.assertEqual(5, len(my_list))
@@ -228,7 +227,7 @@ class AdsSymbolTestCase(unittest.TestCase):
                 self.test_var.index_group, self.test_var.index_offset, 12.3,
                 self.test_var.plc_type)
 
-            self.assertEqual(12.3, symbol.value)
+            self.assertEqual(12.3, symbol.read())
 
         self.assertAdsRequestsCount(2)  # Only a WRITE followed by a READ
 
@@ -269,7 +268,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError) as cm:
             symbol.read()  # Cannot read with unopened Connection
-        self.assertIn('missing or unopened Connection', str(cm.exception))
+        self.assertIn('missing or closed Connection', str(cm.exception))
 
         self.plc.open()
 
@@ -290,7 +289,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
             symbol = AdsSymbol(self.plc, name=self.test_var.name)
 
-            self.assertEqual(420.0, symbol.value)
+            self.assertEqual(420.0, symbol.read())
 
         self.assertAdsRequestsCount(3)  # WRITE, READWRITE for info and
         # final read
@@ -301,7 +300,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
             symbol = AdsSymbol(self.plc, name=self.test_var.name)
 
-            symbol.value = 3.14  # Write
+            symbol.write(3.14)  # Write
 
             r_value = self.plc.read(
                 self.test_var.index_group, self.test_var.index_offset,
@@ -311,6 +310,29 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertAdsRequestsCount(3)  # READWRITE for info, WRITE and
         # test read
+
+    def test_value(self):
+        """Test the buffer property"""
+
+        with self.plc:
+            symbol = AdsSymbol(self.plc, name=self.test_var.name)
+
+            symbol.value = 420.0  # Shouldn't change anything yet
+
+            self.assertAdsRequestsCount(1)  # Only a READWRITE for info
+
+            symbol.write()
+
+            self.assertAdsRequestsCount(2)  # Written from buffer
+
+            symbol.read()
+
+            for i in range(10):
+                custom_buffer = symbol.value
+
+            self.assertEqual(420.0, symbol.value)
+
+            self.assertAdsRequestsCount(3)  # Read only once
 
     def test_get_symbol(self):
         """Test symbol by Connection method"""
@@ -326,7 +348,7 @@ class AdsSymbolTestCase(unittest.TestCase):
     def test_add_notification(self):
         """Test notification registering"""
 
-        def my_callback(*args):
+        def my_callback(*_):
             return
 
         with self.plc:
@@ -341,7 +363,7 @@ class AdsSymbolTestCase(unittest.TestCase):
     def test_add_notification_delete(self):
         """Test notification registering"""
 
-        def my_callback(*args):
+        def my_callback(*_):
             return
 
         self.plc.open()
@@ -359,4 +381,3 @@ class AdsSymbolTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

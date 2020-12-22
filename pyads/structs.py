@@ -56,7 +56,7 @@ class SAmsAddr(Structure):
     _fields_ = [("netId", SAmsNetId), ("port", c_uint16)]
 
 
-class AmsAddr:
+class AmsAddr(object):
     """Wrapper for SAmsAddr-structure to address an ADS device.
 
     :type _ams_addr: SAmsAddr
@@ -155,7 +155,7 @@ class AmsAddr:
         return "<AmsAddress {}:{}>".format(self.netid, self.port)
 
 
-class NotificationAttrib:
+class NotificationAttrib(object):
     """Notification Attribute."""
 
     def __init__(

@@ -434,7 +434,7 @@ def bytes_from_dict(
     return byte_list
 
 
-class Connection:
+class Connection(object):
     """Class for managing the connection to an ADS device.
 
     :ivar str ams_net_id: AMS net id of the remote device

@@ -35,6 +35,8 @@ class AdsSymbol:
                      e.g. "LREAL")
     :ivar plc_type: ctypes type of variable (from constants.PLCTYPE_*)
     :ivar comment: Comment of symbol
+    :ivar value: Buffered value, i.e. the most recently read or written
+                    value for this symbol
     """
 
     def __init__(
@@ -85,6 +87,8 @@ class AdsSymbol:
         self.symbol_type = symbol_type
         self.comment = comment
 
+        self.value = None  # type: Any
+
         if do_lookup:
             self.create_symbol_from_info()  # Perform remote lookup
 
@@ -94,7 +98,7 @@ class AdsSymbol:
 
         self.plc_type: Optional[Any] = None
         if self.symbol_type is not None:
-            self.plc_type = self.get_type_from_str(self.symbol_type)
+            self.plc_type = self._get_type_from_str(self.symbol_type)
 
     def create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
@@ -126,7 +130,7 @@ class AdsSymbol:
 
         if not self._plc or not self._plc.is_open:
             raise ValueError(
-                "Cannot read or write data with missing or " "unopened Connection"
+                "Cannot read or write data with missing or closed Connection"
             )
 
         if not isinstance(self.index_group, int) or not isinstance(
@@ -138,26 +142,31 @@ class AdsSymbol:
             )
 
     def read(self) -> Any:
-        """Read the current value of this symbol"""
-        self.read_write_check()
-        return self._plc.read(self.index_group, self.index_offset, self.plc_type)
+        """Read the current value of this symbol.
 
-    def write(self, new_value: Any):
-        """Write a new value to the symbol"""
+        The new read value is also saved in the buffer.
+        """
         self.read_write_check()
-        return self._plc.write(
+        self.value = self._plc.read(self.index_group, self.index_offset,
+                                    self.plc_type)
+        return self.value
+
+    def write(self, new_value: Optional[Any] = None):
+        """Write a new value or the buffered value to the symbol.
+
+        When a new value was written, the buffer is updated.
+
+        :param new_value    Value to be written to symbol (if None,
+                            the buffered value is send instead)
+        """
+        self.read_write_check()
+        if new_value is None:
+            new_value = self.value  # Send buffered value instead
+        else:
+            self.value = new_value  # Update buffer with new value
+        self._plc.write(
             self.index_group, self.index_offset, new_value, self.plc_type
         )
-
-    @property
-    def value(self):
-        """Equivalent to AdsSymbol.read()"""
-        return self.read()
-
-    @value.setter
-    def value(self, new_value):
-        """Equivalent to AdsSymbol.write()"""
-        self.write(new_value)
 
     def __repr__(self):
         """Debug string"""
@@ -211,8 +220,7 @@ class AdsSymbol:
             self._plc.del_device_notification(*handles)
             self._handles_list.remove(handles)
 
-    @staticmethod
-    def get_type_from_str(type_str: str) -> Any:
+    def _get_type_from_str(self, type_str: str) -> Any:
         """Get PLCTYPE_* from PLC name string
 
         If PLC name could not be mapped, return None. This is done on
@@ -236,7 +244,7 @@ class AdsSymbol:
             scalar_type_str = groups[2]
 
             # Find scalar type
-            scalar_type = AdsSymbol.get_type_from_str(scalar_type_str)
+            scalar_type = self._get_type_from_str(scalar_type_str)
 
             if scalar_type:
                 return scalar_type * size
@@ -256,16 +264,5 @@ class AdsSymbol:
 
         # We allow unmapped types at this point - Instead we will throw  an
         # error when they are being addressed
-
-        return None
-
-    @staticmethod
-    def get_type_from_int(type_int: int) -> Any:
-        """Get PLCTYPE_* from a number
-
-        Also see `get_type_from_string()`
-        """
-        if type_int in constants.ads_type_to_ctype:
-            return constants.ads_type_to_ctype[type_int]
 
         return None
