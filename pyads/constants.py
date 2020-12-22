@@ -110,6 +110,11 @@ ads_type_to_ctype = {
 
 def PLCTYPE_ARR_REAL(n: int) -> Type[Array]:
     """Return an array with n float values."""
+
+    print()
+    print('I got called!')
+    print()
+
     return c_float * n
 
 

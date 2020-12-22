@@ -7,6 +7,7 @@
 
 """
 import time
+from ctypes import sizeof
 import unittest
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
@@ -377,6 +378,30 @@ class AdsSymbolTestCase(unittest.TestCase):
         del symbol  # Force variable deletion
 
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
+
+
+class TypesTestCase(unittest.TestCase):
+    """Basic test to cover the PLCTYPE_ARR_* functions"""
+
+    def assertSizeOf(self, target, num_bytes):
+        self.assertEqual(
+            sizeof(target),
+            num_bytes,
+            'The size in bytes ({}), is not '
+            'like expected: {}'.format(sizeof(target), num_bytes))
+
+    def test_arrays(self):
+        n = 7
+        self.assertSizeOf(constants.PLCTYPE_ARR_REAL(n), 4 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_LREAL(n), 8 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_BOOL(n), 1 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_INT(n), 2 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_UINT(n), 2 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_SHORT(n), 2 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_USHORT(n), 2 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_DINT(n), 4 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_UDINT(n), 4 * n)
+        self.assertSizeOf(constants.PLCTYPE_ARR_USINT(n), 1 * n)
 
 
 if __name__ == "__main__":
