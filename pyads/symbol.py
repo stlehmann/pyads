@@ -32,11 +32,11 @@ class AdsSymbol:
     :ivar index_offset: Index offset of symbol
     :ivar name: Name of symbol
     :ivar symbol_type: String representation of symbol type (PLC-style,
-                     e.g. "LREAL")
+        e.g. "LREAL")
     :ivar plc_type: ctypes type of variable (from constants.PLCTYPE_*)
     :ivar comment: Comment of symbol
     :ivar value: Buffered value, i.e. the most recently read or written
-                    value for this symbol
+        value for this symbol
     """
 
     def __init__(
@@ -87,10 +87,10 @@ class AdsSymbol:
         self.symbol_type = symbol_type
         self.comment = comment
 
-        self.value = None  # type: Any
+        self.value: Any = None
 
         if do_lookup:
-            self.create_symbol_from_info()  # Perform remote lookup
+            self._create_symbol_from_info()  # Perform remote lookup
 
         # Now `self.symbol_type` should have a value, find the actual PLCTYPE
         # from it.
@@ -100,7 +100,7 @@ class AdsSymbol:
         if self.symbol_type is not None:
             self.plc_type = self._get_type_from_str(self.symbol_type)
 
-    def create_symbol_from_info(self) -> None:
+    def _create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
 
         The name must already be present.
@@ -185,7 +185,7 @@ class AdsSymbol:
         attr: Optional[NotificationAttrib] = None,
         user_handle: Optional[int] = None,
     ) -> Optional[Tuple[int, int]]:
-        """Add on-change callback to symbol
+        """Add on-change callback to symbol.
 
         See Connection.add_device_notification(...).
 
