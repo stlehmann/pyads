@@ -120,25 +120,14 @@ class AdsSymbol:
         # type
         self.symbol_type = info.symbol_type  # Save the type as string
 
-    def read_write_check(self):
-        """Assert the current object is ready to read from/write to"""
-        if self.plc_type is None:
-            raise ValueError(
-                "Cannot read or write with invalid value for "
-                "plc_type: `{}`".format(self.plc_type)
-            )
+    def _read_write_check(self):
+        """Assert the current object is ready to read from/write to.
 
+        This checks only if the Connection is open.
+        """
         if not self._plc or not self._plc.is_open:
             raise ValueError(
                 "Cannot read or write data with missing or closed Connection"
-            )
-
-        if not isinstance(self.index_group, int) or not isinstance(
-            self.index_offset, int
-        ):
-            raise ValueError(
-                "Cannot read or write data with invalid values for group- and "
-                "offset index: ({}, {})".format(self.index_group, self.index_offset)
             )
 
     def read(self) -> Any:
@@ -146,7 +135,7 @@ class AdsSymbol:
 
         The new read value is also saved in the buffer.
         """
-        self.read_write_check()
+        self._read_write_check()
         self.value = self._plc.read(self.index_group, self.index_offset,
                                     self.plc_type)
         return self.value
@@ -159,7 +148,7 @@ class AdsSymbol:
         :param new_value    Value to be written to symbol (if None,
                             the buffered value is send instead)
         """
-        self.read_write_check()
+        self._read_write_check()
         if new_value is None:
             new_value = self.value  # Send buffered value instead
         else:
