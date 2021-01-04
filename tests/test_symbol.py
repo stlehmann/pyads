@@ -7,11 +7,14 @@
 
 """
 import time
-from ctypes import sizeof
+import struct
+from ctypes import sizeof, pointer
 import unittest
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
 from pyads import constants, AdsSymbol
+
+from tests.test_connection_class import create_notification_struct
 
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
@@ -52,16 +55,13 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         # Create PLC variable that is added by default
         self.test_var = PLCVariable(
-            'TestDouble',
-            ads_type=constants.ADST_REAL64,
-            symbol_type='LREAL'
+            "TestDouble", ads_type=constants.ADST_REAL64, symbol_type="LREAL"
         )
-        self.test_var.comment = 'Some variable of type double'
+        self.test_var.comment = "Some variable of type double"
         self.handler.add_variable(self.test_var)
 
         self.plc = pyads.Connection(
-            TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT,
-            TEST_SERVER_IP_ADDRESS
+            TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
         )
 
     def assertAdsRequestsCount(self, expected):
@@ -69,8 +69,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertEqual(
             expected,
             real,
-            msg='Expected {} requests, but {} have been made'.format(
-                expected, real)
+            msg="Expected {} requests, but {} have been made".format(expected, real),
         )
 
     def test_init_by_name(self):
@@ -96,7 +95,7 @@ class AdsSymbolTestCase(unittest.TestCase):
             "ArrayVar",
             ads_type=constants.ADST_INT16,  # dataType does not represent
             # array unfortunately
-            symbol_type="ARRAY [1..5] OF INT"  # Array looks like this in PLC
+            symbol_type="ARRAY [1..5] OF INT",  # Array looks like this in PLC
         )
         var.plc_type = constants.PLCTYPE_ARR_INT(5)  # Have to do this
         # manually
@@ -139,7 +138,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         var = PLCVariable(
             "ArrayVar",
             ads_type=0,
-            symbol_type="matrix_21_int8_T"  # Simulink array looks like this
+            symbol_type="matrix_21_int8_T",  # Simulink array looks like this
         )
         var.plc_type = constants.PLCTYPE_ARR_SINT(21)  # Have to do this
         # manually
@@ -149,10 +148,13 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.plc.open()
 
-        symbol = AdsSymbol(self.plc, name=var.name,
-                           index_group=var.index_group,
-                           index_offset=var.index_offset,
-                           symbol_type=var.symbol_type)  # No lookup
+        symbol = AdsSymbol(
+            self.plc,
+            name=var.name,
+            index_group=var.index_group,
+            index_offset=var.index_offset,
+            symbol_type=var.symbol_type,
+        )  # No lookup
 
         # Verify looked up info
         self.assertEqual(var.plc_type, symbol.plc_type)
@@ -166,7 +168,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         # Modify variable type
         self.test_var.ads_type = 0
         self.test_var.plc_type = constants.PLCTYPE_SINT
-        self.test_var.symbol_type = 'SINT'
+        self.test_var.symbol_type = "SINT"
         # Variable is reference to database entry, so no saving required
 
         with self.plc:
@@ -184,9 +186,11 @@ class AdsSymbolTestCase(unittest.TestCase):
         with self.plc:
 
             with self.assertRaises(ValueError):
-                AdsSymbol(self.plc,
-                          index_group=self.test_var.index_group,
-                          index_offset=self.test_var.index_offset)
+                AdsSymbol(
+                    self.plc,
+                    index_group=self.test_var.index_group,
+                    index_offset=self.test_var.index_offset,
+                )
 
     def test_repr(self):
         """Test debug string"""
@@ -201,12 +205,13 @@ class AdsSymbolTestCase(unittest.TestCase):
         """Test if PLCTYPE is resolved correctly"""
         with self.plc:
 
-            symbol_str = AdsSymbol(self.plc, 'NonExistentVar', 123, 0, 'UDINT')
+            symbol_str = AdsSymbol(self.plc, "NonExistentVar", 123, 0, "UDINT")
             self.assertEqual(constants.PLCTYPE_UDINT, symbol_str.plc_type)
-            self.assertEqual('UDINT', symbol_str.symbol_type)
+            self.assertEqual("UDINT", symbol_str.symbol_type)
 
-            symbol_missing = AdsSymbol(self.plc, 'NonExistentVar', 123, 0,
-                                       'INCORRECT_TYPE')
+            symbol_missing = AdsSymbol(
+                self.plc, "NonExistentVar", 123, 0, "INCORRECT_TYPE"
+            )
             self.assertIsNone(symbol_missing.plc_type)
 
         self.assertAdsRequestsCount(0)  # No requests
@@ -216,29 +221,36 @@ class AdsSymbolTestCase(unittest.TestCase):
         with self.plc:
 
             # Create symbol while providing everything:
-            symbol = AdsSymbol(self.plc,
-                               name=self.test_var.name,
-                               index_group=self.test_var.index_group,
-                               index_offset=self.test_var.index_offset,
-                               symbol_type=self.test_var.symbol_type)
+            symbol = AdsSymbol(
+                self.plc,
+                name=self.test_var.name,
+                index_group=self.test_var.index_group,
+                index_offset=self.test_var.index_offset,
+                symbol_type=self.test_var.symbol_type,
+            )
 
             self.assertAdsRequestsCount(0)  # No requests yet
 
             self.plc.write(
-                self.test_var.index_group, self.test_var.index_offset, 12.3,
-                self.test_var.plc_type)
+                self.test_var.index_group,
+                self.test_var.index_offset,
+                12.3,
+                self.test_var.plc_type,
+            )
 
             self.assertEqual(12.3, symbol.read())
 
         self.assertAdsRequestsCount(2)  # Only a WRITE followed by a READ
 
     def test_init_invalid_type(self):
-        """Test symbol lookup when type cannot be found"""
+        """Test symbol lookup when type cannot be found
+
+        There was a read/write check that verifies the plc_typ was not None,
+        but this was removed.
+        """
 
         var = PLCVariable(
-            name='UnknownType',
-            ads_type=0,
-            symbol_type='non_existent_type'
+            name="UnknownType", ads_type=0, symbol_type="non_existent_type"
         )
         var.index_group = 123
         var.index_offset = 100
@@ -254,30 +266,42 @@ class AdsSymbolTestCase(unittest.TestCase):
             self.assertEqual(var.symbol_type, symbol.symbol_type)
             self.assertIsNone(symbol.plc_type)
 
-            with self.assertRaises(ValueError) as cm:
-                # Without type specified, it cannot read
-                symbol.read()
+            # with self.assertRaises(ValueError) as cm:
+            #     # Without type specified, it cannot read
+            #     symbol.read()
+            # self.assertIn('Cannot read or write', str(cm.exception))
 
-            self.assertIn('Cannot read or write', str(cm.exception))
+            with self.assertRaises(TypeError) as cm:
+                # Error is thrown inside pyads_ex
+                symbol.read()
+            self.assertIn("NoneType", str(cm.exception))
 
         self.assertAdsRequestsCount(1)  # Only a WRITE followed by a READ
 
     def test_read_write_errors(self):
-        """Test read/write on invalid AdsSymbol"""
+        """Test read/write on invalid AdsSymbol
 
-        symbol = AdsSymbol(self.plc, 'MySymbol', 123, 0, 'BYTE')
+        There was a read/write check that verifies the plc_typ was not None,
+        but this was removed.
+        """
+
+        symbol = AdsSymbol(self.plc, "MySymbol", 123, 0, "BYTE")
 
         with self.assertRaises(ValueError) as cm:
             symbol.read()  # Cannot read with unopened Connection
-        self.assertIn('missing or closed Connection', str(cm.exception))
+        self.assertIn("missing or closed Connection", str(cm.exception))
 
         self.plc.open()
 
         symbol.index_offset = None  # Set index to something invalid
 
-        with self.assertRaises(ValueError) as cm:
-            symbol.read()  # Cannot read with invalid index
-        self.assertIn('invalid values for', str(cm.exception))
+        # with self.assertRaises(ValueError) as cm:
+        #     symbol.read()  # Cannot read with invalid index
+        # self.assertIn('invalid values for', str(cm.exception))
+
+        with self.assertRaises(TypeError) as cm:
+            symbol.read()  # Catch error inside pyads_ex
+        self.assertIn("integer is required", str(cm.exception))
 
     def test_read(self):
         """Test symbol value reading"""
@@ -285,8 +309,11 @@ class AdsSymbolTestCase(unittest.TestCase):
         with self.plc:
 
             self.plc.write(
-                self.test_var.index_group, self.test_var.index_offset, 420.0,
-                self.test_var.plc_type)
+                self.test_var.index_group,
+                self.test_var.index_offset,
+                420.0,
+                self.test_var.plc_type,
+            )
 
             symbol = AdsSymbol(self.plc, name=self.test_var.name)
 
@@ -304,8 +331,10 @@ class AdsSymbolTestCase(unittest.TestCase):
             symbol.write(3.14)  # Write
 
             r_value = self.plc.read(
-                self.test_var.index_group, self.test_var.index_offset,
-                self.test_var.plc_type)
+                self.test_var.index_group,
+                self.test_var.index_offset,
+                self.test_var.plc_type,
+            )
 
             self.assertEqual(3.14, r_value)
 
@@ -379,6 +408,28 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
 
+    def test_auto_update(self):
+        """Test auto-update feature"""
+        self.plc.open()
+
+        symbol = self.plc.get_symbol(self.test_var.name)
+        self.assertIsNone(symbol._auto_update_handle)
+
+        symbol.enable_auto_update(True)
+        self.assertIsNotNone(symbol._auto_update_handle)
+
+        # Simulate value callback
+        notification = create_notification_struct(struct.pack("<d", 5334.1545))
+        symbol._value_callback(
+            pointer(notification),
+            (self.test_var.index_group, self.test_var.index_offset),
+        )
+
+        self.assertEqual(symbol.value, 5334.1545)
+
+        symbol.enable_auto_update(False)
+        self.assertIsNone(symbol._auto_update_handle)
+
 
 class TypesTestCase(unittest.TestCase):
     """Basic test to cover the PLCTYPE_ARR_* functions"""
@@ -387,8 +438,9 @@ class TypesTestCase(unittest.TestCase):
         self.assertEqual(
             sizeof(target),
             num_bytes,
-            'The size in bytes ({}), is not '
-            'like expected: {}'.format(sizeof(target), num_bytes))
+            "The size in bytes ({}), is not "
+            "like expected: {}".format(sizeof(target), num_bytes),
+        )
 
     def test_arrays(self):
         n = 7

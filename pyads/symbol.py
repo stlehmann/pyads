@@ -65,21 +65,20 @@ class AdsSymbol:
         :param comment:
         """
         self._plc = plc
-
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
+        self._auto_update_handle: Optional[Tuple[int, int]] = None
 
-        do_lookup = True
+        # Check if the required info is present:
+        missing_info = (
+            index_group is None or index_offset is None or symbol_type is None
+        )
 
-        if index_group is None or index_offset is None or symbol_type is None:
+        if missing_info:
             if name is None:
                 raise ValueError(
-                    "Please specify either `name`, or "
-                    "`index_group`, `index_offset` and "
-                    "plc_type"
+                    "Please specify either `name`, or `index_group`, "
+                    "`index_offset` and plc_type"
                 )
-        else:
-            # We have an address and the type, so we don't need to do a lookup
-            do_lookup = False
 
         self.name = name
         self.index_offset = index_offset
@@ -89,7 +88,7 @@ class AdsSymbol:
 
         self.value: Any = None
 
-        if do_lookup:
+        if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
 
         # Now `self.symbol_type` should have a value, find the actual PLCTYPE
@@ -136,8 +135,7 @@ class AdsSymbol:
         The new read value is also saved in the buffer.
         """
         self._read_write_check()
-        self.value = self._plc.read(self.index_group, self.index_offset,
-                                    self.plc_type)
+        self.value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
         return self.value
 
     def write(self, new_value: Optional[Any] = None):
@@ -153,9 +151,7 @@ class AdsSymbol:
             new_value = self.value  # Send buffered value instead
         else:
             self.value = new_value  # Update buffer with new value
-        self._plc.write(
-            self.index_group, self.index_offset, new_value, self.plc_type
-        )
+        self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
     def __repr__(self):
         """Debug string"""
@@ -170,7 +166,7 @@ class AdsSymbol:
 
     def add_device_notification(
         self,
-        callback: Callable,
+        callback: Callable[[Any, Any], None],
         attr: Optional[NotificationAttrib] = None,
         user_handle: Optional[int] = None,
     ) -> Optional[Tuple[int, int]]:
@@ -203,11 +199,39 @@ class AdsSymbol:
                 self._plc.del_device_notification(*handles)
             self._handles_list = []  # Clear the list
 
+        self._auto_update_handle = None  # If auto-update was enabled,
+        # it won't work anymore
+
     def del_device_notification(self, handles: Tuple[int, int]):
         """Remove a single device notification by handles"""
         if handles in self._handles_list:
             self._plc.del_device_notification(*handles)
             self._handles_list.remove(handles)
+
+    def enable_auto_update(self, auto_update: bool) -> None:
+        """Enable or disable auto-update of buffered value
+
+        This automatic update is done through a device notification. This
+        can be efficient when a remote variables changes its values less often
+        than your code run.
+        Clearing all device notifications will also disable auto-update.
+        Automatic update is disabled by default.
+        """
+        if auto_update and self._auto_update_handle is None:
+            self._auto_update_handle = self.add_device_notification(
+                self._value_callback
+            )
+        elif not auto_update and self._auto_update_handle is not None:
+            self.del_device_notification(self._auto_update_handle)
+            self._auto_update_handle = None
+
+    def _value_callback(self, notification: Any, data_name: Any):
+        """Internal callback used by auto-update"""
+
+        _handle, _datetime, value = self._plc.parse_notification(
+            notification, self.plc_type
+        )
+        self.value = value
 
     def _get_type_from_str(self, type_str: str) -> Any:
         """Get PLCTYPE_* from PLC name string

@@ -25,6 +25,22 @@ TEST_SERVER_IP_ADDRESS = "127.0.0.1"
 TEST_SERVER_AMS_PORT = pyads.PORT_SPS1
 
 
+def create_notification_struct(payload: bytes) -> \
+        structs.SAdsNotificationHeader:
+    """Create notification callback structure"""
+    buf = b"\x00" * 12  # hNotification, nTimeStamp
+    buf += struct.pack("<i", len(payload))
+    buf += payload
+    notification = structs.SAdsNotificationHeader()
+    resize(notification, len(buf))
+    memmove(
+        pointer(notification),
+        (ctypes.c_ubyte * len(buf)).from_buffer_copy(buf),
+        sizeof(notification),
+    )
+    return notification
+
+
 class _Struct(ctypes.Structure):
     _fields_ = [("x", ctypes.c_int32), ("y", ctypes.c_int32)]
 
@@ -823,20 +839,6 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             plc.write_by_name("a", 1, pyads.PLCTYPE_INT)
             plc.del_device_notification(*handles)
 
-    def create_notification_struct(self, payload):
-        # type: (bytes) -> structs.SAdsNotificationHeader
-        buf = b"\x00" * 12  # hNotification, nTimeStamp
-        buf += struct.pack("<i", len(payload))
-        buf += payload
-        notification = structs.SAdsNotificationHeader()
-        resize(notification, len(buf))
-        memmove(
-            pointer(notification),
-            (ctypes.c_ubyte * len(buf)).from_buffer_copy(buf),
-            sizeof(notification),
-        )
-        return notification
-
     def test_notification_decorator(self):
         # type: () -> None
         """Test decoding of header by notification decorator"""
@@ -877,7 +879,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         def callback(handle, name, timestamp, value):
             self.assertEqual(value, "Hello world!")
 
-        notification = self.create_notification_struct(b"Hello world!\x00\x00\x00\x00")
+        notification = create_notification_struct(b"Hello world!\x00\x00\x00\x00")
         callback(pointer(notification), "")
 
     def test_notification_decorator_lreal(self):
@@ -888,7 +890,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         def callback(handle, name, timestamp, value):
             self.assertEqual(value, 1234.56789012345)
 
-        notification = self.create_notification_struct(
+        notification = create_notification_struct(
             struct.pack("<d", 1234.56789012345)
         )
         callback(pointer(notification), "")
@@ -903,7 +905,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             self.assertEqual(value.revision, 1)
             self.assertEqual(value.build, 3040)
 
-        notification = self.create_notification_struct(
+        notification = create_notification_struct(
             bytes(structs.SAdsVersion(version=3, revision=1, build=3040))
         )
         callback(pointer(notification), "")
@@ -916,7 +918,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         def callback(handle, name, timestamp, value):
             self.assertEqual(value, [0, 1, 2, 3, 4])
 
-        notification = self.create_notification_struct(
+        notification = create_notification_struct(
             b"\x00\x00\x01\x00\x02\x00\x03\x00\x04\x00"
         )
         callback(pointer(notification), "")
@@ -938,7 +940,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         data = b""
         for i in range(4):
             data += bytes(structs.SAdsVersion(version=i, revision=1, build=3040))
-        notification = self.create_notification_struct(data)
+        notification = create_notification_struct(data)
         callback(pointer(notification), "")
 
     def test_multiple_connect(self):

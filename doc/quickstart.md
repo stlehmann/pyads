@@ -160,6 +160,8 @@ symbol.value = 3.14
 symbol.write()
 ```
 
+The symbol can be set to auto-update through a device notification. See the subsection below.
+
 #### Device notifications through symbols
 
 Notifications (function callbacks) can also be attached directly to a symbol:
@@ -180,13 +182,33 @@ symbol.del_device_notification(handles)
 symbol.clear_device_notifications()
 ```
 
-Like `plc.add_device_notification()`, through the symbol interface you can specify an optional notification attribute and/or user handle:
+`symbol.add_device_notification` will automatically create a notification attribute object with the right variable length.
+
+Like `plc.add_device_notification()`, through the symbol interface you can also specify an optional notification attribute and/or user handle:
 
 ```python
 attr = NotificationAttrib(length=sizeof(pyads.PLCTYPE_BOOL), max_delay=1.0, cycle_time=1.0)
 user_handle = 123
-mbol.add_device_notification(my_func, attr=attr, user_handle=user_handle)
+symbol.add_device_notification(my_func, attr=attr, user_handle=user_handle)
 ```
+
+#### Auto-update
+
+A built-in notification is available to automatically update the symbol buffer based on the remote value. This is disabled by default, enable it with:
+
+```python
+symbol.enable_auto_update(True)
+```
+
+This will create a new notification callback to update `symbol.value`. This can be efficient if the remote variable changes less frequently then your code runs. The number of notification callbacks will then be less than what the number of read operations would have been. 
+
+It can be disabled again with:
+
+```python
+symbol.enable_auto_update(False)
+```
+
+Take care that `symbol.clear_notifications()` will *also* remove the auto-update notification. Like all symbol notifications, the auto-update will also be cleared automatically in the object destructor.
 
 ### Read and write values by name
 
