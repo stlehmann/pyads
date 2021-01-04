@@ -674,10 +674,31 @@ class Connection(object):
 
         return None
 
-    def get_symbol(self, name: str) -> AdsSymbol:
-        """Get a single symbol by its name."""
+    def get_symbol(self,
+        name: Optional[str] = None,
+        index_group: Optional[int] = None,
+        index_offset: Optional[int] = None,
+        symbol_type: Optional[str] = None,
+        comment: Optional[str] = None,) -> AdsSymbol:
+        """Create a symbol instance
 
-        return AdsSymbol(self, name)
+        Specify either the variable name or the index_group **and**
+        index_offset so the symbol can be located.
+        If the name was specified but not all other attributes were,
+        the other attributes will be looked up from the connection.
+        `symbol_type` should be a string representing a PLC type (e.g.
+        'LREAL').
+
+        :param plc: Connection instance
+        :param name:
+        :param index_group:
+        :param index_offset:
+        :param symbol_type: PLC variable type (e.g. 'LREAL')
+        :param comment:
+        """
+
+        return AdsSymbol(self, name, index_group, index_offset, symbol_type,
+                         comment)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.

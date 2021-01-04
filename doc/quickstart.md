@@ -120,11 +120,11 @@ The address and type of the symbol will be automatically determined using a READ
 >>> import pyads
 >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
 >>> plc.open()
-# Identical to `plc.get_symbol('global.bool_value')`, remaining info will be looked up:
->>> symbol = pyads.AdsSymbol(plc, 'global.bool_value')
+# Remaining info will be looked up:
+>>> symbol = plc.get_symbol('global.bool_value')
 # Alternatively, specify all information and no lookup will be done:
->>> symbol = pyads.AdsSymbol(plc, 'global.bool_value', index_group=123,
-                             index_offset=12345, symbol_type='BOOL')
+>>> symbol = plc.get_symbol('global.bool_value', index_group=123,
+                            index_offset=12345, symbol_type='BOOL')
 ```
 
 Here the indices are same as used in `plc.read()` and `plc.write()`. The symbol type is a string of the variable type in PLC-style, e.g. 'LREAL', 'INT', 'UDINT', etc.
