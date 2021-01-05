@@ -39,6 +39,9 @@ class AdsSymbol:
         value for this symbol
     """
 
+    _regex_array = re.compile(r"ARRAY \[(\d+)..(\d+)\] OF (.*)")
+    _regex_matrix = re.compile(r"matrix_(\d+)_(.*)_T")
+
     def __init__(
         self,
         plc: "Connection",
@@ -97,7 +100,7 @@ class AdsSymbol:
 
         self.plc_type: Optional[Any] = None
         if self.symbol_type is not None:
-            self.plc_type = self._get_type_from_str(self.symbol_type)
+            self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
 
     def _create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
@@ -208,7 +211,7 @@ class AdsSymbol:
             self._plc.del_device_notification(*handles)
             self._handles_list.remove(handles)
 
-    def enable_auto_update(self, auto_update: bool) -> None:
+    def set_auto_update(self, auto_update: bool) -> None:
         """Enable or disable auto-update of buffered value
 
         This automatic update is done through a device notification. This
@@ -233,7 +236,8 @@ class AdsSymbol:
         )
         self.value = value
 
-    def _get_type_from_str(self, type_str: str) -> Any:
+    @staticmethod
+    def get_type_from_str(type_str: str) -> Any:
         """Get PLCTYPE_* from PLC name string
 
         If PLC name could not be mapped, return None. This is done on
@@ -249,7 +253,7 @@ class AdsSymbol:
             return getattr(constants, plc_name)
 
         # If ARRAY
-        reg_match = re.match(r"ARRAY \[(\d+)..(\d+)\] OF (.*)", type_str)
+        reg_match = AdsSymbol._regex_array.match(type_str)
         if reg_match is not None:
 
             groups = reg_match.groups()
@@ -257,7 +261,7 @@ class AdsSymbol:
             scalar_type_str = groups[2]
 
             # Find scalar type
-            scalar_type = self._get_type_from_str(scalar_type_str)
+            scalar_type = AdsSymbol.get_type_from_str(scalar_type_str)
 
             if scalar_type:
                 return scalar_type * size
@@ -265,7 +269,7 @@ class AdsSymbol:
             # Fall to method default instead
 
         # If array/matrix (an 1D array is also called a matrix)
-        reg_match = re.match(r"matrix_(\d+)_(.*)_T", type_str)
+        reg_match = AdsSymbol._regex_matrix.match(type_str)
         if reg_match is not None:
 
             groups = reg_match.groups()

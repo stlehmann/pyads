@@ -197,7 +197,7 @@ symbol.add_device_notification(my_func, attr=attr, user_handle=user_handle)
 A built-in notification is available to automatically update the symbol buffer based on the remote value. This is disabled by default, enable it with:
 
 ```python
-symbol.enable_auto_update(True)
+symbol.set_auto_update(True)
 ```
 
 This will create a new notification callback to update `symbol.value`. This can be efficient if the remote variable changes less frequently then your code runs. The number of notification callbacks will then be less than what the number of read operations would have been. 
@@ -205,7 +205,7 @@ This will create a new notification callback to update `symbol.value`. This can 
 It can be disabled again with:
 
 ```python
-symbol.enable_auto_update(False)
+symbol.set_auto_update(False)
 ```
 
 Take care that `symbol.clear_notifications()` will *also* remove the auto-update notification. Like all symbol notifications, the auto-update will also be cleared automatically in the object destructor.
