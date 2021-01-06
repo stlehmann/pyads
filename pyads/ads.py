@@ -679,7 +679,8 @@ class Connection(object):
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
         symbol_type: Optional[str] = None,
-        comment: Optional[str] = None,) -> AdsSymbol:
+        comment: Optional[str] = None,
+        auto_update: bool = False) -> AdsSymbol:
         """Create a symbol instance
 
         Specify either the variable name or the index_group **and**
@@ -695,10 +696,12 @@ class Connection(object):
         :param index_offset:
         :param symbol_type: PLC variable type (e.g. 'LREAL')
         :param comment:
+        :param auto_update: Create notification to update buffer (same as
+            `set_auto_update(True)`)
         """
 
         return AdsSymbol(self, name, index_group, index_offset, symbol_type,
-                         comment)
+                         comment, auto_update=auto_update)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
