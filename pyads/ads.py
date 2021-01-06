@@ -497,6 +497,14 @@ class Connection(object):
         """Close on leaving with-block."""
         self.close()
 
+    def __del__(self) -> None:
+        """Class destructor.
+
+        Make sure to close the connection when an instance runs out of scope.
+        """
+        # If the connection is already closed, nothing new will happen
+        self.close()
+
     def open(self) -> None:
         """Connect to the TwinCAT message router."""
         if self._open:
