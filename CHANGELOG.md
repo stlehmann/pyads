@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#169](https://github.com/stlehmann/pyads/pull/169) Add adsGetNetIdForPLC to pyads_ex
+* [#179](https://github.com/stlehmann/pyads/pull/179) Added destructor to `pyads.Connection`
 
 ### Changed
 

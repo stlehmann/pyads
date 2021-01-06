@@ -101,6 +101,19 @@ the route to the testserver needs to be added from another python console.
 >>> plc.close()
 ```
 
+The connection will also be closed automatically when the object runs out of scope, making `plc.close()` optional.
+
+A context notation (using `with:`) can also be used to open the connection:
+
+```python
+import pyads
+plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+with plc:
+    # ...
+```
+
+The context manager will make sure the connection is closed, either when the `with` clause runs out, or an uncaught error is thrown.
+
 ### Read and write values by name
 
 ```python
