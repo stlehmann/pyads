@@ -50,7 +50,7 @@ class AdsSymbol:
         index_offset: Optional[int] = None,
         symbol_type: Optional[str] = None,
         comment: Optional[str] = None,
-        auto_update: bool = False
+        auto_update: bool = False,
     ) -> None:
         """Create AdsSymbol instance
 
@@ -127,7 +127,7 @@ class AdsSymbol:
         # type
         self.symbol_type = info.symbol_type  # Save the type as string
 
-    def _read_write_check(self):
+    def _read_write_check(self) -> None:
         """Assert the current object is ready to read from/write to.
 
         This checks only if the Connection is open.
@@ -146,7 +146,7 @@ class AdsSymbol:
         self.value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
         return self.value
 
-    def write(self, new_value: Optional[Any] = None):
+    def write(self, new_value: Optional[Any] = None) -> None:
         """Write a new value or the buffered value to the symbol.
 
         When a new value was written, the buffer is updated.
@@ -200,7 +200,7 @@ class AdsSymbol:
 
         return handles
 
-    def clear_device_notifications(self):
+    def clear_device_notifications(self) -> None:
         """Remove all registered notifications"""
         if self._handles_list:
             for handles in self._handles_list:
@@ -210,7 +210,7 @@ class AdsSymbol:
         self._auto_update_handle = None  # If auto-update was enabled,
         # it won't work anymore
 
-    def del_device_notification(self, handles: Tuple[int, int]):
+    def del_device_notification(self, handles: Tuple[int, int]) -> None:
         """Remove a single device notification by handles"""
         if handles in self._handles_list:
             self._plc.del_device_notification(*handles)
@@ -233,7 +233,7 @@ class AdsSymbol:
             self.del_device_notification(self._auto_update_handle)
             self._auto_update_handle = None
 
-    def _value_callback(self, notification: Any, data_name: Any):
+    def _value_callback(self, notification: Any, data_name: Any) -> None:
         """Internal callback used by auto-update"""
 
         _handle, _datetime, value = self._plc.parse_notification(
