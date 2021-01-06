@@ -50,6 +50,7 @@ class AdsSymbol:
         index_offset: Optional[int] = None,
         symbol_type: Optional[str] = None,
         comment: Optional[str] = None,
+        auto_update: bool = False
     ) -> None:
         """Create AdsSymbol instance
 
@@ -66,6 +67,8 @@ class AdsSymbol:
         :param index_offset:
         :param symbol_type: PLC variable type (e.g. 'LREAL')
         :param comment:
+        :param auto_update: Create notification to update buffer (same as
+            `set_auto_update(True)`)
         """
         self._plc = plc
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
@@ -101,6 +104,8 @@ class AdsSymbol:
         self.plc_type: Optional[Any] = None
         if self.symbol_type is not None:
             self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
+
+        self.set_auto_update(auto_update)
 
     def _create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
