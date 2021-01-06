@@ -674,13 +674,15 @@ class Connection(object):
 
         return None
 
-    def get_symbol(self,
+    def get_symbol(
+        self,
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
         symbol_type: Optional[str] = None,
         comment: Optional[str] = None,
-        auto_update: bool = False) -> AdsSymbol:
+        auto_update: bool = False,
+    ) -> AdsSymbol:
         """Create a symbol instance
 
         Specify either the variable name or the index_group **and**
