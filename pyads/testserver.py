@@ -37,19 +37,14 @@ from pyads import constants
 logger = logging.getLogger(__name__)
 formatter = logging.Formatter("%(levelname)s:%(message)s")
 stdout_handler = logging.StreamHandler()
-stdout_handler.setLevel(logging.INFO)
+stdout_handler.setLevel(logging.DEBUG)
 stdout_handler.setFormatter(formatter)
 logger.addHandler(stdout_handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.propagate = False  # "Overwrite" default handler
 
 null_logger = logging.getLogger(__name__ + "_null")
 null_logger.addHandler(logging.NullHandler())
-
-logging.getLogger('socket.socket').setLevel(logging.ERROR)
-logging.getLogger('socket').setLevel(logging.ERROR)
-logging.getLogger('socketio').setLevel(logging.ERROR)
-logging.getLogger('engineio').setLevel(logging.ERROR)
 
 ADS_PORT = 0xBF02
 
