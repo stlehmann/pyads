@@ -8,7 +8,7 @@
 :last modified time: 2018-07-12 14:33:11
 
 """
-import typing
+
 from ctypes import Structure, Union, c_ubyte, c_uint16, c_uint32, c_uint64
 
 from .constants import ADSTRANS_SERVERONCHA
@@ -40,27 +40,6 @@ class AdsVersion:
         self.version = stAdsVersion.version
         self.revision = stAdsVersion.revision
         self.build = stAdsVersion.build
-
-
-class AdsSymbol:
-    """Contains index group, index offset, name, symbol type, comment of ADS 
-    symbol.
-
-    :param index_group: Index group of symbol
-    :param index_offset: Index offset of symbol
-    :param name: Name of symbol
-    :param symtype: String representation of symbol type
-    :param comment: Comment of symbol
-
-    """
-
-    def __init__(self, index_group, index_offset, name, symtype, comment):
-        # type: (int, int, str, str, str) -> None
-        self.index_group = index_group
-        self.index_offset = index_offset
-        self.name = name
-        self.symtype = symtype
-        self.comment = comment
 
 
 class SAmsNetId(Structure):
@@ -123,7 +102,7 @@ class AmsAddr(object):
 
     @netid.setter
     def netid(self, value):
-        # type: (typing.Union[str, SAmsNetId]) -> None
+        # type: (Union[str, SAmsNetId]) -> None
         # Check if the value is already an instance of the SAmsNetId struct
         if isinstance(value, SAmsNetId):
             self._ams_addr.netId = value
@@ -327,6 +306,31 @@ class SAdsSymbolEntry(Structure):
     :ivar typeLength: length of type name
     :ivar commentLength: length of comment
 
+    A complete example could be:
+
+        value: 57172            # Current value
+        info.entryLength: 88    # Total storage space for this symbol
+        info.iGroup: 16448      # Group index
+        info.iOffs: 385000      # Offset index inside group
+        info.size: 2            # Number of bytes needed for the value
+        info.dataType: 18       # Symbol type, in this case
+                                  constants.ADST_UINT16 (18)
+        info.flags: 8           # TwinCAT byte flags
+        info.nameLength: 11     # Number of characters in the name
+        info.typeLength: 4      # Number of characters in the PLC string
+                                  representation of the type
+        info.commentLength: 20  # Number of characters in the comment
+        info.stringBuffer: <pyads.structs.c_ubyte_Array_768 object>
+                                # Concatenation of all string info
+        bytes(info.stringBuffer): b'GVL.counter\x00UINT\x00 Counter (in '
+                                  'pulses)\x00\x95\x19\x07\x18\x00\x00\x00\x00'
+        bytes(info.stringBuffer).encode(): "GVL.counter UINT Counter (in
+                                            pulses)"
+
+        info.name: "GVL.counter"    # The name section from the buffer
+        info.symbol_type: "UINT"    # The symbol_type section from the
+                                      buffer
+        info.comment: " Counter (in pulses)"  # The comment (if any)
     """
 
     _pack_ = 1
@@ -345,21 +349,27 @@ class SAdsSymbolEntry(Structure):
     ]
 
     def _get_string(self, offset, length):
-        return bytes(self.stringBuffer[offset : offset + length]).decode("utf-8")
+        # type: (int, int) -> str
+        """Get portion of the bigger string buffer"""
+        return bytes(self.stringBuffer[offset:(offset + length)])\
+                    .decode("utf-8")
 
     @property
     def name(self):
-        "The symbol name"
+        # type: () -> str
+        """The symbol name."""
         return self._get_string(0, self.nameLength)
 
     @property
-    def type_name(self):
-        "The qualified type name, including the namespace"
+    def symbol_type(self):
+        # type: () -> str
+        """The qualified type name, including the namespace."""
         return self._get_string(self.nameLength + 1, self.typeLength)
 
     @property
     def comment(self):
-        "User-defined comment"
+        # type: () -> str
+        """User-defined comment."""
         return self._get_string(
             self.nameLength + self.typeLength + 2, self.commentLength
         )
@@ -367,7 +377,7 @@ class SAdsSymbolEntry(Structure):
 
 class SAdsSumRequest(Structure):
     """ADS sum request structure.
-    
+
     :ivar iGroup: indexGroup of request
     :ivar iOffs: indexOffset of request
     :ivar size: size of request

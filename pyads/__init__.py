@@ -114,4 +114,6 @@ from .constants import (
     ADSTRANS_SERVERONCHA,
 )
 
+from .symbol import AdsSymbol
+
 __version__ = '3.3.0'

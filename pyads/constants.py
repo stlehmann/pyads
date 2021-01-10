@@ -7,7 +7,7 @@
 :created on 2018-06-11 18:15:53
 
 """
-from typing import Type, Dict
+from typing import Type, Dict, Callable
 from ctypes import (
     Array,
     c_bool,
@@ -67,6 +67,7 @@ DATATYPE_MAP: Dict[Type, str] = {
     PLCTYPE_WORD: "<H",
 }
 
+
 # ADS data types
 ADST_VOID = 0
 ADST_INT8 = 16
@@ -117,9 +118,29 @@ def PLCTYPE_ARR_LREAL(n: int) -> Type[Array]:
     return c_double * n
 
 
+def PLCTYPE_ARR_BOOL(n: int) -> Type[Array]:
+    """Return an array with n boolean values."""
+    return c_bool * n
+
+
 def PLCTYPE_ARR_INT(n: int) -> Type[Array]:
     """Return an array with n int16 values."""
     return c_int16 * n
+
+
+def PLCTYPE_ARR_UINT(n: int) -> Type[Array]:
+    """Return an array with n uint16 values."""
+    return c_uint16 * n
+
+
+def PLCTYPE_ARR_SHORT(n: int) -> Type[Array]:
+    """Return an array with n short values."""
+    return c_int16 * n
+
+
+def PLCTYPE_ARR_USHORT(n: int) -> Type[Array]:
+    """Return an array with n ushort values."""
+    return c_uint16 * n
 
 
 def PLCTYPE_ARR_DINT(n: int) -> Type[Array]:
@@ -127,9 +148,32 @@ def PLCTYPE_ARR_DINT(n: int) -> Type[Array]:
     return c_int32 * n
 
 
-def PLCTYPE_ARR_SHORT(n: int) -> Type[Array]:
-    """Return an array with n short values."""
-    return c_int16 * n
+def PLCTYPE_ARR_UDINT(n: int) -> Type[Array]:
+    """Return an array with n uint32 values."""
+    return c_uint32 * n
+
+
+def PLCTYPE_ARR_SINT(n: int) -> Type[Array]:
+    """Return an array with n int8 values."""
+    return c_int8 * n
+
+
+def PLCTYPE_ARR_USINT(n: int) -> Type[Array]:
+    """Return an array with n uint8 values."""
+    return c_uint8 * n
+
+
+# Map c-type array names to PLCTYPE_* arrays
+PLC_ARRAY_MAP: Dict[str, Callable] = {
+    'real': PLCTYPE_ARR_LREAL,  # LREAL, not REAL
+    'boolean': PLCTYPE_ARR_BOOL,
+    'int32': PLCTYPE_ARR_DINT,
+    'uint32': PLCTYPE_ARR_UDINT,
+    'int16': PLCTYPE_ARR_INT,
+    'uint16': PLCTYPE_ARR_UINT,
+    'int8': PLCTYPE_ARR_SINT,
+    'uint8': PLCTYPE_ARR_USINT,
+}
 
 
 # Index Group

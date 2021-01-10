@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## 3.3.1 [unreleased]
+* [#174](https://github.com/stlehmann/pyads/pull/174) Add `AdsSymbol` class for pythonic access
 
 ### Added
 * [#169](https://github.com/stlehmann/pyads/pull/169) Add adsGetNetIdForPLC to pyads_ex

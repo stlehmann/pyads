@@ -7,6 +7,7 @@
 
 """
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
+
 from datetime import datetime
 import struct
 from ctypes import (
@@ -23,6 +24,8 @@ from functools import partial
 
 from .utils import decode_ads, platform_is_linux
 from .filetimes import filetime_to_dt
+
+from .symbol import AdsSymbol
 
 from .pyads_ex import (
     adsAddRoute,
@@ -81,12 +84,12 @@ from .constants import (
 )
 
 from .structs import (
-    AdsSymbol,
     AmsAddr,
     SAmsNetId,
     AdsVersion,
     NotificationAttrib,
     SAdsNotificationHeader,
+    SAdsSymbolEntry,
     SAdsSumRequest,
 )
 
@@ -690,6 +693,37 @@ class Connection(object):
 
         return None
 
+    def get_symbol(
+        self,
+        name: Optional[str] = None,
+        index_group: Optional[int] = None,
+        index_offset: Optional[int] = None,
+        symbol_type: Optional[str] = None,
+        comment: Optional[str] = None,
+        auto_update: bool = False,
+    ) -> AdsSymbol:
+        """Create a symbol instance
+
+        Specify either the variable name or the index_group **and**
+        index_offset so the symbol can be located.
+        If the name was specified but not all other attributes were,
+        the other attributes will be looked up from the connection.
+        `symbol_type` should be a string representing a PLC type (e.g.
+        'LREAL').
+
+        :param plc: Connection instance
+        :param name:
+        :param index_group:
+        :param index_offset:
+        :param symbol_type: PLC variable type (e.g. 'LREAL')
+        :param comment:
+        :param auto_update: Create notification to update buffer (same as
+            `set_auto_update(True)`)
+        """
+
+        return AdsSymbol(self, name, index_group, index_offset, symbol_type,
+                         comment, auto_update=auto_update)
+
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
         
@@ -732,11 +766,14 @@ class Connection(object):
                 comment_end_ptr = comment_start_ptr + comment_length
 
                 name = decode_ads(symbol_list_msg[name_start_ptr:name_end_ptr])
-                symtype = decode_ads(symbol_list_msg[type_start_ptr:type_end_ptr])
+                symbol_type = decode_ads(symbol_list_msg[type_start_ptr:type_end_ptr])
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
-                symbol = AdsSymbol(index_group, index_offset, name, symtype, comment)
+                symbol = AdsSymbol(plc=self, name=name,
+                                   index_group=index_group,
+                                   index_offset=index_offset,
+                                   symbol_type=symbol_type, comment=comment)
                 symbols.append(symbol)
         return symbols
 
