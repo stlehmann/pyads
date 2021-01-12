@@ -107,7 +107,7 @@ With the subsystem installed, open a Linux shell in your clone directory and run
 1. `sudo apt install python3 python3-pip`
 1. `cd adslib && make && sudo make install && cd ..`
 1. `python3 -m pip install tox`
-1. `ptyhon3 -m tox -e py36` (Ubuntu 18.04 comes with Python 3.6, 20.04 with Python 3.8)
+1. `python3 -m tox -e py36` (Ubuntu 18.04 comes with Python 3.6, 20.04 with Python 3.8)
 
 ## Documentation contributions
 
