@@ -3,11 +3,20 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-## 3.3.2 [unreleased]
+## 3.3.3 [unreleased]
 
 ### Added
 
 ### Changed
+
+### Removed
+
+## 3.3.2
+
+### Added
+
+### Changed
+* fixed error with source distribution not containing adslib directory
 
 ### Removed
 
