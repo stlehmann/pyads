@@ -1173,6 +1173,27 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assertEqual(errors, expected_result)
         self.assertEqual(errors2, expected_result)
 
+    def test_read_structure_list(self):
+        variables = ["TestStructure", "TestVar"]
+        structure_defs = {"TestStructure": (("xVar", pyads.PLCTYPE_BYTE, 1),)}
+
+        with self.plc:
+            actual_result = self.plc.read_list_by_name(variables, cache_symbol_info=False,
+                                                       structure_defs=structure_defs)
+
+        requests = self.test_server.request_history
+        self.assertEqual(len(requests), 3)
+
+        # Assert that all commands are read write - 2x symbol info, 1x sum write
+        for request in requests:
+            self.assert_command_id(request, constants.ADSCOMMAND_READWRITE)
+
+        expected_result = {
+            "TestStructure": {"xVar": 1},
+            "TestVar": 2,
+        }
+        self.assertEqual(actual_result, expected_result)
+
     def test_write_list(self):
         variables = {
             "i1": 1,

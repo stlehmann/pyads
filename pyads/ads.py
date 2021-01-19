@@ -856,6 +856,7 @@ class Connection(object):
         data_names: List[str],
         cache_symbol_info: bool = True,
         ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+        structure_defs: Optional[Dict[str, StructureDef]] = None
     ) -> Dict[str, Any]:
         """Read a list of variables.
 
@@ -869,6 +870,9 @@ class Connection(object):
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
         :param int ads_sub_commands: Max number of ADS-Sub commands used to read the variables in a single ADS call.
             A larger number can be used but may jitter the PLC execution!
+        :param dict structure_defs: for structured variables, optional mapping of
+            data name to special tuple defining the structure and
+            types contained within it according to PLCTYPE constants
 
         :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
         :rtype dict(str, Any)
@@ -886,13 +890,23 @@ class Connection(object):
                 i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
             }
 
+        structure_defs = structure_defs or {}
+        def sum_read(port, adr, data_names, data_symbols):
+            result = adsSumRead(port, adr, data_names, data_symbols,
+                                list(structure_defs.keys()))
+
+            for data_name, structure_def in structure_defs.items():
+                result[data_name] = dict_from_bytes(result[data_name], structure_def)
+
+            return result
+
         if len(data_names) <= ads_sub_commands:
-            return adsSumRead(self._port, self._adr, data_names, data_symbols)
+            return sum_read(self._port, self._adr, data_names, data_symbols)
 
         return_data: Dict[str, Any] = {}
         for data_names_slice in _list_slice_generator(data_names, ads_sub_commands):
             return_data.update(
-                adsSumRead(self._port, self._adr, data_names_slice, data_symbols)
+                sum_read(self._port, self._adr, data_names_slice, data_symbols)
             )
         return return_data
 
