@@ -105,7 +105,7 @@ the route to the testserver needs to be added from another python console.
 
 #### Symbol creation
 
-Reading from or writing to an ADS variable (= an ADS symbol) can be done through an `AdsSybmol` instance:
+Reading from or writing to an ADS variable (= an ADS symbol) can be done through an `AdsSymbol` instance:
 
 ```python
 >>> import pyads
@@ -460,7 +460,7 @@ can be seen here:
 ```
 
 This examples uses the default values for NotificationAttrib. The default
-behaviout is that you get notified when the value of the variable changes on the
+behaviour is that you get notified when the value of the variable changes on the
 server. If you want to change this behaviour you can set `trans_mode` attribute
 to one of the following values:
 
