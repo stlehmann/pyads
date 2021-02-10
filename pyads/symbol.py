@@ -104,7 +104,7 @@ class AdsSymbol:
         if self.symbol_type is not None:
             self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
 
-        self.set_auto_update(auto_update)
+        self.auto_update = auto_update
 
     def _create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
@@ -215,23 +215,6 @@ class AdsSymbol:
             self._plc.del_device_notification(*handles)
             self._handles_list.remove(handles)
 
-    def set_auto_update(self, auto_update: bool) -> None:
-        """Enable or disable auto-update of buffered value
-
-        This automatic update is done through a device notification. This
-        can be efficient when a remote variables changes its values less often
-        than your code run.
-        Clearing all device notifications will also disable auto-update.
-        Automatic update is disabled by default.
-        """
-        if auto_update and self._auto_update_handle is None:
-            self._auto_update_handle = self.add_device_notification(
-                self._value_callback
-            )
-        elif not auto_update and self._auto_update_handle is not None:
-            self.del_device_notification(self._auto_update_handle)
-            self._auto_update_handle = None
-
     def _value_callback(self, notification: Any, data_name: Any) -> None:
         """Internal callback used by auto-update"""
 
@@ -287,6 +270,30 @@ class AdsSymbol:
         # error when they are being addressed
 
         return None
+
+    @property
+    def auto_update(self) -> Any:
+        """Return True if auto_update is enabled for this symbol."""
+        return self._auto_update_handle is not None
+
+    @auto_update.setter
+    def auto_update(self, value: bool) -> None:
+        """Enable or disable auto-update of the buffered value.
+
+        This automatic update is done through a device notification. This
+        can be efficient when a remote variables changes its values less often
+        than your code run.
+
+        Clearing all device notifications will also disable auto-update.
+        Automatic update is disabled by default.
+        """
+        if value and self._auto_update_handle is None:
+            self._auto_update_handle = self.add_device_notification(
+                self._value_callback
+            )
+        elif not value and self._auto_update_handle is not None:
+            self.del_device_notification(self._auto_update_handle)
+            self._auto_update_handle = None
 
     @property
     def value(self) -> Any:
