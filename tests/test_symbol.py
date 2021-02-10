@@ -425,11 +425,27 @@ class AdsSymbolTestCase(unittest.TestCase):
             pointer(notification),
             (self.test_var.index_group, self.test_var.index_offset),
         )
-
         self.assertEqual(symbol.value, 5334.1545)
+
+        # test immediate writing to plc if auto_update is True
+        symbol.value = 123.456
+        r_value = self.plc.read(
+            symbol.index_group,
+            symbol.index_offset,
+            symbol.plc_type,
+        )
+        self.assertEqual(symbol.value, r_value)
 
         symbol.auto_update = False
         self.assertIsNone(symbol._auto_update_handle)
+        symbol.value = 0.0
+        r_value = self.plc.read(
+            symbol.index_group,
+            symbol.index_offset,
+            symbol.plc_type,
+        )
+        self.assertEqual(r_value, 123.456)
+
 
 
 class TypesTestCase(unittest.TestCase):
