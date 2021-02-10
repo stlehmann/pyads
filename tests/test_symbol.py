@@ -415,8 +415,9 @@ class AdsSymbolTestCase(unittest.TestCase):
         symbol = self.plc.get_symbol(self.test_var.name)
         self.assertIsNone(symbol._auto_update_handle)
 
-        symbol.set_auto_update(True)
+        symbol.auto_update = True
         self.assertIsNotNone(symbol._auto_update_handle)
+        self.assertEqual(symbol.auto_update, True)
 
         # Simulate value callback
         notification = create_notification_struct(struct.pack("<d", 5334.1545))
@@ -427,7 +428,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertEqual(symbol.value, 5334.1545)
 
-        symbol.set_auto_update(False)
+        symbol.auto_update = False
         self.assertIsNone(symbol._auto_update_handle)
 
 
