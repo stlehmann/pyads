@@ -91,8 +91,7 @@ class AdsSymbol:
         self.index_group = index_group
         self.symbol_type = symbol_type
         self.comment = comment
-
-        self.value: Any = None
+        self._value: Any = None
 
         if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
@@ -143,8 +142,8 @@ class AdsSymbol:
         The new read value is also saved in the buffer.
         """
         self._read_write_check()
-        self.value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
-        return self.value
+        self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
+        return self._value
 
     def write(self, new_value: Optional[Any] = None) -> None:
         """Write a new value or the buffered value to the symbol.
@@ -156,9 +155,9 @@ class AdsSymbol:
         """
         self._read_write_check()
         if new_value is None:
-            new_value = self.value  # Send buffered value instead
+            new_value = self._value  # Send buffered value instead
         else:
-            self.value = new_value  # Update buffer with new value
+            self._value = new_value  # Update buffer with new value
         self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
     def __repr__(self):
@@ -239,7 +238,7 @@ class AdsSymbol:
         _handle, _datetime, value = self._plc.parse_notification(
             notification, self.plc_type
         )
-        self.value = value
+        self._value = value
 
     @staticmethod
     def get_type_from_str(type_str: str) -> Any:
@@ -288,3 +287,20 @@ class AdsSymbol:
         # error when they are being addressed
 
         return None
+
+    @property
+    def value(self) -> Any:
+        """Return the current value of the symbol."""
+        return self._value
+
+    @value.setter
+    def value(self, val: Any) -> None:
+        """Set the current value of the symbol.
+
+        If auto_update is True then the the write command will be called automatically.
+
+        """
+        self._value = val
+        # write value to plc if auto_update is enabled
+        if self._auto_update_handle is not None:
+            self.write(val)
