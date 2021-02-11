@@ -8,8 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 ### Changed
+* [#192](https://github.com/stlehmann/pyads/pull/192) Make AdsSymbol even more pythonic
+  * Replace AdsSymbol.set_auto_update function by AdsSymbol.auto_update property
+  * Make AdsSymbol.value a property
+  * AdsSymbol.value setter writes to plc if AdsSymbol.auto_update is True
 
 ### Removed
+* [#193](https://github.com/stlehmann/pyads/pull/193) Remove testserver_ex package which is still in development. 
+  The testserver_ex package can be found in the [testserver_ex branch](https://github.
+  com/stlehmann/pyads/tree/testserver_ex).
 
 ## 3.3.2
 
@@ -17,10 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 * fixed error with source distribution not containing adslib directory
-* [#192](https://github.com/stlehmann/pyads/pull/192) make AdsSymbol even more pythonic
-  * replace AdsSymbol.set_auto_update function by AdsSymbol.auto_update property
-  * make AdsSymbol.value a property
-  * AdsSymbol.value setter writes to plc if AdsSymbol.auto_update is True  
  
 ### Removed
 
