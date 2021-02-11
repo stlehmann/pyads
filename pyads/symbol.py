@@ -8,9 +8,10 @@ the circular dependencies.
 import re
 from ctypes import sizeof
 from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable
+
+from . import constants  # To access all constants, use package notation
 from .pyads_ex import adsGetSymbolInfo
 from .structs import NotificationAttrib
-from . import constants  # To access all constants, use package notation
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
