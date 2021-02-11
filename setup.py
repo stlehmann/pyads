@@ -157,7 +157,7 @@ setup(
     long_description_content_type='text/markdown',
     author="Stefan Lehmann",
     author_email="Stefan.St.Lehmann@gmail.com",
-    packages=["pyads", "pyads.testserver_ex"],
+    packages=["pyads"],
     package_data={'pyads': ['adslib.so']},
     requires=[],
     install_requires=[],
