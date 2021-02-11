@@ -8,9 +8,10 @@ the circular dependencies.
 import re
 from ctypes import sizeof
 from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable
+
+from . import constants  # To access all constants, use package notation
 from .pyads_ex import adsGetSymbolInfo
 from .structs import NotificationAttrib
-from . import constants  # To access all constants, use package notation
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
@@ -91,8 +92,7 @@ class AdsSymbol:
         self.index_group = index_group
         self.symbol_type = symbol_type
         self.comment = comment
-
-        self.value: Any = None
+        self._value: Any = None
 
         if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
@@ -105,7 +105,7 @@ class AdsSymbol:
         if self.symbol_type is not None:
             self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
 
-        self.set_auto_update(auto_update)
+        self.auto_update = auto_update
 
     def _create_symbol_from_info(self) -> None:
         """Look up remaining info from the remote
@@ -143,8 +143,8 @@ class AdsSymbol:
         The new read value is also saved in the buffer.
         """
         self._read_write_check()
-        self.value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
-        return self.value
+        self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
+        return self._value
 
     def write(self, new_value: Optional[Any] = None) -> None:
         """Write a new value or the buffered value to the symbol.
@@ -156,9 +156,9 @@ class AdsSymbol:
         """
         self._read_write_check()
         if new_value is None:
-            new_value = self.value  # Send buffered value instead
+            new_value = self._value  # Send buffered value instead
         else:
-            self.value = new_value  # Update buffer with new value
+            self._value = new_value  # Update buffer with new value
         self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
     def __repr__(self):
@@ -216,30 +216,13 @@ class AdsSymbol:
             self._plc.del_device_notification(*handles)
             self._handles_list.remove(handles)
 
-    def set_auto_update(self, auto_update: bool) -> None:
-        """Enable or disable auto-update of buffered value
-
-        This automatic update is done through a device notification. This
-        can be efficient when a remote variables changes its values less often
-        than your code run.
-        Clearing all device notifications will also disable auto-update.
-        Automatic update is disabled by default.
-        """
-        if auto_update and self._auto_update_handle is None:
-            self._auto_update_handle = self.add_device_notification(
-                self._value_callback
-            )
-        elif not auto_update and self._auto_update_handle is not None:
-            self.del_device_notification(self._auto_update_handle)
-            self._auto_update_handle = None
-
     def _value_callback(self, notification: Any, data_name: Any) -> None:
         """Internal callback used by auto-update"""
 
         _handle, _datetime, value = self._plc.parse_notification(
             notification, self.plc_type
         )
-        self.value = value
+        self._value = value
 
     @staticmethod
     def get_type_from_str(type_str: str) -> Any:
@@ -288,3 +271,45 @@ class AdsSymbol:
         # error when they are being addressed
 
         return None
+
+    @property
+    def auto_update(self) -> Any:
+        """Return True if auto_update is enabled for this symbol."""
+        return self._auto_update_handle is not None
+
+    @auto_update.setter
+    def auto_update(self, value: bool) -> None:
+        """Enable or disable auto-update of the buffered value.
+
+        This automatic update is done through a device notification. This
+        can be efficient when a remote variables changes its values less often
+        than your code run.
+
+        Clearing all device notifications will also disable auto-update.
+        Automatic update is disabled by default.
+        """
+        if value and self._auto_update_handle is None:
+            self._auto_update_handle = self.add_device_notification(
+                self._value_callback
+            )
+        elif not value and self._auto_update_handle is not None:
+            self.del_device_notification(self._auto_update_handle)
+            self._auto_update_handle = None
+
+    @property
+    def value(self) -> Any:
+        """Return the current value of the symbol."""
+        return self._value
+
+    @value.setter
+    def value(self, val: Any) -> None:
+        """Set the current value of the symbol.
+
+        If auto_update is True then the the write command will be called automatically.
+
+        """
+        self._value = val
+
+        # write value to plc if auto_update is enabled
+        if self.auto_update:
+            self.write(val)
