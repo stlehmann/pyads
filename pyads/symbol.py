@@ -308,6 +308,7 @@ class AdsSymbol:
 
         """
         self._value = val
+
         # write value to plc if auto_update is enabled
-        if self._auto_update_handle is not None:
+        if self.auto_update:
             self.write(val)
