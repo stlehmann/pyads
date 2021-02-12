@@ -4,8 +4,8 @@ Symbols
 Symbol creation
 ^^^^^^^^^^^^^^^
 
-Reading from or writing to an ADS variable (= an ADS symbol) can be done
-through an ``AdsSymbol`` instance:
+Reading from or writing to an ADS variable (= an ADS symbol) can be done even more pythonic
+through an :py:class:`.AdsSymbol` instance:
 
 .. code:: python
 
@@ -30,9 +30,12 @@ provided:
    >>> symbol = plc.get_symbol('global.bool_value', index_group=123,
                                index_offset=12345, symbol_type='BOOL')
 
-Here the indices are same as used in ``plc.read()`` and ``plc.write()``.
-The symbol type is a string of the variable type in PLC-style,
-e.g. ‘LREAL’, ‘INT’, ‘UDINT’, etc.
+Here the indices are same as used in :py:meth:`.Connection.read` and :py:meth:`.Connection.write`.
+The symbol type is a string of the variable type in PLC-style, e.g. ‘LREAL’, ‘INT’, ‘UDINT’, etc.
+
+.. warning::
+
+  Symbols don't work with structs or lists of structs.
 
 Read and write through symbols
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

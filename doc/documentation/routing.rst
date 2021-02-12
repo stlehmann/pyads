@@ -37,7 +37,7 @@ It connects to the target and creates a route to it on your client.
 
   You still need to create a route from the target to the client. You
   can do this manually on your target or you can use the function
-  :py:func:`pyads.ads.add_route_to_plc` as explained below!
+  :py:func:`.add_route_to_plc` as explained below!
 
 Get the AMS address of the local machine. This may need to be added to
 the routing table of the remote machine.
@@ -45,7 +45,7 @@ the routing table of the remote machine.
 .. note::
 
   On Linux machines at least one route must be added before the
-  call to :py:func:`pyads.ads.get_local_address` will function properly.
+  call to :py:func:`.get_local_address` will function properly.
 
 Optionally, a local AmsNetId can be manually set before adding a route.
 Set this to match the expected AMS ID in the remote machine’s routing
@@ -65,7 +65,7 @@ ADS requires you to create a route in the routing tables of both your
 client and your target. How you add a route to your client is handled in
 the section above. To create a route on your target you can either use
 TwinCAT or you can make use of the convenience function
-:py:func:`pyads.ads.add_route_to_plc`.
+:py:func:`.add_route_to_plc`.
 
 Here is an example of adding a route to a target (e.g. remote plc) to
 allow connections to a PC with the Hostname “MyPC”
