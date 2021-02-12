@@ -1,6 +1,11 @@
 Connections
 ~~~~~~~~~~~
 
+.. important::
+
+    Before starting a connection to a target make sure you created proper routes on the
+    client and the target like described in the :doc:`routing` chapter.
+
 Connect to a remote device
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -236,8 +241,6 @@ future use.
    >>> plc.write_list_by_name(write_dict)
    {'MAIN.b_Execute': 'no error', 'MAIN.str_TestString': 'no error', 'MAIN.r32_TestReal': 'no error'}
 
-
-
 Device Notifications
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -270,18 +273,18 @@ for an integer variable can be seen here:
        # function.
    >>> plc.del_device_notification(*handles)
 
-This examples uses the default values for NotificationAttrib. The
+This examples uses the default values for :py:class:`.NotificationAttrib`. The
 default behaviour is that you get notified when the value of the
 variable changes on the server. If you want to change this behaviour you
-can set ``trans_mode`` attribute to one of the following values:
+can set the :py:attr:`.NotificationAttrib.trans_mode` attribute to one of the
+following values:
 
-**``ADSTRANS_SERVERONCHA``** This is the default. A notification will be
-sent everytime the value of the specified variable changes.
-
-**``ADSTRANS_SERVERCYCLE``** A notification will be sent on a cyclic
-base. The interval is specified by the\ ``cycle_time`` property.
-
-**``ADSTRANS_NOTRANS``** No notifications will be sent.
+* :py:const:`.ADSTRANS_SERVERONCHA` *(default)*
+    a notification will be sent everytime the value of the specified variable changes
+* :py:const:`.ADSTRANS_SERVERCYCLE`
+    a notification will be sent on a cyclic base, the interval is specified by the :py:attr:`cycle_time` property
+* :py:const:`.ADSTRANS_NOTRANS`
+    no notifications will be sent
 
 For more information about the NotificationAttrib settings have a look
 at `Beckhoffs specification of the AdsNotificationAttrib
