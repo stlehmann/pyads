@@ -138,3 +138,18 @@ Using auto_update will also write the value immediately to the plc when
     auto-update notification. Like all symbol notifications, the auto-update
     will be cleared automatically in the object destructor.
 
+Get all symbols
+^^^^^^^^^^^^^^^
+
+In order to get a list of the device’s declared variables, use the
+``get_all_symbols`` method.
+
+.. code:: python
+
+   >>> symbols = plc.get_all_symbols()
+   >>> print('\n'.join("%s: %s" % item for item in vars(symbols[0]).items()))
+   index_group: 16448
+   index_offset: 384800
+   name: Constants.bFPUSupport
+   symtype: BOOL
+   comment: Does the target support multiple cores?
