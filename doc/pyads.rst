@@ -44,6 +44,14 @@ pyads\.structs module
     :undoc-members:
     :show-inheritance:
 
+pyads\.symbol module
+-------------------
+
+.. automodule:: pyads.symbol
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pyads\.testserver module
 ------------------------
 
