@@ -20,6 +20,7 @@ The documentation for the ADS API is available on `infosys.beckhoff.com`_.
 
    installation
    quickstart
+   documentation/index
    changelog
    pyads
 

@@ -2,76 +2,6 @@
 
 Make sure you followed the installation instructions before carrying on.
 
-## Creating routes
-
-ADS uses its own address system named AmsNetId to identify devices. The
-assignment of a devices to an AmsNetId happens via routing. Routing
-is handled differently on Windows and Linux.
-
-### Creating routes on Linux
-
-Open a port and create an AmsAddr object for the remote machine.
-
-```python
->>> import pyads
->>> pyads.open_port()
-32828
-```
-
-Add a route to the remote machine (Linux only - Windows routes must be
-added in the TwinCat Router UI).
-
-```python
->>> pyads.add_route("192.168.0.100.1.1", "192.168.0.100")
-```
-
-A better option is to use the Connection class.
-```python
->>> import pyads
->>> remote_ip = '192.168.0.100'
->>> remote_ads = '5.12.82.20.1.1'
->>> with pyads.Connection(remote_ads, pyads.PORT_SPS1, remote_ip) as plc:
->>>     plc.read_by_name('.TAG_NAME', pyads.PLCTYPE_INT)
-```
-
-Get the AMS address of the local machine. This may need to be added to
-the routing table of the remote machine.
-**NOTE: On Linux machines at least one route must be added before the call
-to `get_local_address()` will function properly.**
-
-Optionally, a local AmsNetId can be manually set before adding a route.
-Set this to match the expected AMS ID in the remote machine's routing table.
-```python
->>> import pyads
->>> pyads.open_port()
->>> pyads.set_local_address('1.2.3.4.1.1')
->>> pyads.close_port()
-```
-
-### Adding routes to a PLC on Linux
-Beckhoff PLCs require that a route be added to the routing table of the PLC. On Windows this is handled in the TwinCAT router, but on Linux there is no such option.
-This only needs to be done once when initially setting up a connection to a remote PLC.
-
-Adding a route to a remote PLC to allow connections to a PC with the Hostname "MyPC"
-```python
->>> import pyads
->>> SENDER_AMS = '1.2.3.4.1.1'
->>> PLC_IP = '192.168.0.100'
->>> PLC_USERNAME = 'plc_username'
->>> PLC_PASSWORD = 'plc_password'
->>> ROUTE_NAME = 'RouteToMyPC'
->>> HOSTNAME = 'MyPC'  # or IP
->>> PLC_AMS_ID = '11.22.33.44.1.1'
->>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, PLC_USERNAME, PLC_PASSWORD, route_name=ROUTE_NAME)
-```
-
-### Creating routes on Windows
-
-On Windows you don't need to manually add the routes with pyads but instead you
-use the TwinCAT Router UI (TcSystemManager) which comes with the TwinCAT
-installation. Have a look at the TwinCAT documentation
-[infosys.beckhoff.com TcSystemManager][0] for further details.
-
 ## Testserver
 
 For first tests you can use the simple testserver that is provided with
@@ -100,130 +30,6 @@ the route to the testserver needs to be added from another python console.
 >>> plc.open()
 >>> plc.close()
 ```
-
-### ADS Symbol
-
-#### Symbol creation
-
-Reading from or writing to an ADS variable (= an ADS symbol) can be done through an `AdsSymbol` instance:
-
-```python
->>> import pyads
->>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
->>> plc.open()
->>> symbol = plc.get_symbol('global.bool_value')
-```
-
-The address and type of the symbol will be automatically determined using a READ_WRITE request to the ADS server, based on the variable name. This lookup is skipped when all the information has already been provided:
-
-```python
->>> import pyads
->>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
->>> plc.open()
-# Remaining info will be looked up:
->>> symbol = plc.get_symbol('global.bool_value')
-# Alternatively, specify all information and no lookup will be done:
->>> symbol = plc.get_symbol('global.bool_value', index_group=123,
-                            index_offset=12345, symbol_type='BOOL')
-```
-
-Here the indices are same as used in `plc.read()` and `plc.write()`. The symbol type is a string of the variable type in PLC-style, e.g. 'LREAL', 'INT', 'UDINT', etc.
-
-#### Read and write through symbols
-
-Reading from and writing to symbols is straightforward:
-
-```python
->>> symbol.read()
-True
->>> symbol.write(False)
->>> symbol.read()
-False
->>> plc.close()
-```
-
-The symbol objects have the `value` property, which is the buffered symbol value:
-
-```python
-if symbol.read() > 0.5:
-    print(symbol.value)
-```
-
-The example above will perform a single READ request. `value` is updated on every read and write of the symbol.  
-When `None` is passed to `symbol.write()` (the default parameter), the buffer will be written:
-
-```python
-symbol.write(3.14)
-
-# Is identical to:
-symbol.value = 3.14
-symbol.write()
-```
-
-The symbol can be set to auto-update through a device notification. See the subsection below.
-
-#### Device notifications through symbols
-
-Notifications (function callbacks) can also be attached directly to a symbol:
-
-```python
-symbol.add_device_notification(my_func)
-```
-
-The symbol will track the handles of the notifications attached to it and free them up when the object runs out of scope.
-
-You can delete specific notifications or clear all of them:
-
-```python
-handles = symbol.add_device_notification(my_func)
-symbol.del_device_notification(handles)
-
-# Or clear all:
-symbol.clear_device_notifications()
-```
-
-`symbol.add_device_notification` will automatically create a notification attribute object with the right variable length.
-
-Like `plc.add_device_notification()`, through the symbol interface you can also specify an optional notification attribute and/or user handle:
-
-```python
-attr = NotificationAttrib(length=sizeof(pyads.PLCTYPE_BOOL), max_delay=1.0, cycle_time=1.0)
-user_handle = 123
-symbol.add_device_notification(my_func, attr=attr, user_handle=user_handle)
-```
-
-#### Auto-update
-
-A built-in notification is available to automatically update the symbol buffer based on the remote value. This is disabled by default, enable it with:
-
-```python
-symbol.auto_update = True
-```
-
-This will create a new notification callback to update `symbol.value`. This can be efficient if the remote variable changes less frequently then your code runs. The number of notification callbacks will then be less than what the number of read operations would have been. 
-
-It can be disabled again with:
-
-```python
-symbol.auto_update = False
-```
-
-Using auto_update will also write the value immediately to the plc when `symbol.value` is changed.
-
-Take care that `symbol.clear_notifications()` will *also* remove the auto-update notification. Like all symbol notifications, the auto-update will also be cleared automatically in the object destructor.
-
-The connection will also be closed automatically when the object runs out of scope, making `plc.close()` optional.
-
-A context notation (using `with:`) can also be used to open the connection:
-
-```python
-import pyads
-plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
-with plc:
-    # ...
-```
-
-The context manager will make sure the connection is closed, either when the `with` clause runs out, or an uncaught error is thrown.
 
 ### Read and write values by name
 
@@ -255,7 +61,6 @@ For reading strings the maximum buffer length is 1024.
 >>> plc.read_by_name(adr, 'global.sample_string', pyads.PLCTYPE_STRING)
 'abc'
 ```
-
 ### Read and write arrays by name
 
 You can also read/write arrays. For this you simply need to multiply the datatype by
@@ -568,5 +373,4 @@ an example below:
 
 ```
 
-[0]: https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=
 [1]: https://infosys.beckhoff.de/content/1033/tcadsdll2/html/tcadsdll_strucadsnotificationattrib.htm
