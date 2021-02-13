@@ -509,6 +509,22 @@ class Connection(object):
         # If the connection is already closed, nothing new will happen
         self.close()
 
+    def _query_plc_datatype_from_name(self, data_name: str, cache_symbol_info: bool) -> Type:
+        """Return the plc_datatype by reading SymbolInfo from the target.
+
+        If cache_symbol_info is True then the SymbolInfo will be cached and adsGetSymbolInfo
+        will only used once.
+
+        """
+        if cache_symbol_info:
+            info: SAdsSymbolEntry = self._symbol_info_cache.get(data_name)
+            if info is None:
+                info = adsGetSymbolInfo(self._port, self._adr, data_name)
+                self._symbol_info_cache[data_name] = info
+        else:
+            info: SAdsSymbolEntry = adsGetSymbolInfo(self._port, self._adr, data_name)
+        return AdsSymbol.get_type_from_str(info.symbol_type)
+
     def open(self) -> None:
         """Connect to the TwinCAT message router."""
         if self._open:
@@ -821,22 +837,15 @@ class Connection(object):
             obtained to speed up reading (default: None)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)
-        :param bool cache_symbol_info: when True, symbol info will be cached for future reading, only relevant if plc_datatype is None (default: True)
+        :param bool cache_symbol_info: when True, symbol info will be cached for
+            future reading, only relevant if plc_datatype is None (default: True)
         :return: value: **value**
         """
         if not self._port:
             return
 
         if plc_datatype is None:
-            if cache_symbol_info:
-                info: SAdsSymbolEntry = self._symbol_info_cache.get(data_name)
-                if info is None:
-                    print("get symbol info")
-                    info = adsGetSymbolInfo(self._port, self._adr, data_name)
-                    self._symbol_info_cache[data_name] = info
-            else:
-                info: SAdsSymbolEntry = adsGetSymbolInfo(self._port, self._adr, data_name)
-            plc_datatype = AdsSymbol.get_type_from_str(info.symbol_type)
+            plc_datatype = self._query_plc_datatype_from_name(data_name, cache_symbol_info)
 
         return adsSyncReadByNameEx(
             self._port,
@@ -960,22 +969,34 @@ class Connection(object):
         self,
         data_name: str,
         value: Any,
-        plc_datatype: Type,
+        plc_datatype: Optional[Type] = None,
         handle: Optional[int] = None,
+        cache_symbol_info: bool = True,
     ) -> None:
         """Send data synchronous to an ADS-device from data name.
 
         :param string data_name: data name, can be empty string if handle is used
         :param value: value to write to the storage address of the PLC
-        :param int plc_datatype: type of the data given to the PLC,
-            according to PLCTYPE constants
+        :param int plc_datatype: type of the data given to the PLC, according
+            to PLCTYPE constants, if None the datatype will be read from the target
+            with adsGetSymbolInfo (default: None)
         :param int handle: PLC-variable handle, pass in handle if previously
             obtained to speed up writing (default: None)
+        :param bool cache_symbol_info: when True, symbol info will be cached for
+            future reading, only relevant if plc_datatype is None (default: True)
         """
-        if self._port:
-            return adsSyncWriteByNameEx(
-                self._port, self._adr, data_name, value, plc_datatype, handle=handle
-            )
+        if not self._port:
+            return
+
+        if plc_datatype is None:
+            plc_datatype = self._query_plc_datatype_from_name(data_name, cache_symbol_info)
+
+        return adsSyncWriteByNameEx(
+            self._port, self._adr, data_name, value, plc_datatype, handle=handle
+        )
+
+
+
 
     def write_structure_by_name(
         self,
