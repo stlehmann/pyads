@@ -342,9 +342,9 @@ def dict_from_bytes(
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
-                        bytearray(byte_list[index : (index + (str_len + 1))])
-                        .partition(b"\0")[0]
-                        .decode("utf-8")
+                        bytearray(byte_list[index: (index + (str_len + 1))])
+                            .partition(b"\0")[0]
+                            .decode("utf-8")
                     )
                     index += str_len + 1
                 elif plc_datatype not in DATATYPE_MAP:
@@ -354,7 +354,7 @@ def dict_from_bytes(
                     var_array.append(
                         struct.unpack(
                             DATATYPE_MAP[plc_datatype],
-                            bytearray(byte_list[index : (index + n_bytes)]),
+                            bytearray(byte_list[index: (index + n_bytes)]),
                         )[0]
                     )
                     index += n_bytes
@@ -753,10 +753,10 @@ class Connection(object):
 
             for idx in range(sym_count):
                 read_length, index_group, index_offset = struct.unpack(
-                    "III", symbol_list_msg[ptr + 0 : ptr + 12]
+                    "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
                 name_length, type_length, comment_length = struct.unpack(
-                    "HHH", symbol_list_msg[ptr + 24 : ptr + 30]
+                    "HHH", symbol_list_msg[ptr + 24: ptr + 30]
                 )
 
                 name_start_ptr = ptr + 30
@@ -856,7 +856,6 @@ class Connection(object):
         :param data_names: list of variable names to be read
         :type data_names: list[str]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
-
         :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
         :rtype dict(str, Any)
 
