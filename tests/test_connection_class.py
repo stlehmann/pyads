@@ -568,6 +568,16 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.plc.release_handle(handle)
 
+    def test_read_by_name_without_datatype(self) -> None:
+        """Test read by name without passing the datatype."""
+        with self.plc:
+            # read twice to show cachinng
+            read_value = self.plc.read_by_name("TestVar1")
+            read_value2 = self.plc.read_by_name("TestVar1")
+
+        self.assertEqual(read_value, 1)
+        self.assertEqual(read_value2, 1)
+
     def test_read_structure_by_name(self):
         # type: () -> None
         """Test read by structure method"""
@@ -675,6 +685,16 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         with self.plc:
             self.plc.release_handle(handle)
+
+    def test_write_by_name_without_datatype(self) -> None:
+        """Test read by name without passing the datatype."""
+        with self.plc:
+            # write twice to show caching
+            self.plc.write_by_name("TestVar1", 41)
+            self.plc.write_by_name("TestVar1", 42)
+            read_value = self.plc.read_by_name("TestVar1")
+
+        self.assertEqual(read_value, 42)
 
     def test_write_structure_by_name(self):
         # type: () -> None
