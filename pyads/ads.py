@@ -81,6 +81,7 @@ from .constants import (
     DATATYPE_MAP,
     ADSIGRP_SUMUP_READ,
     ADSIGRP_SUMUP_WRITE,
+    ads_type_to_ctype,
 )
 
 from .structs import (
@@ -802,37 +803,50 @@ class Connection(object):
     def read_by_name(
         self,
         data_name: str,
-        plc_datatype: Type,
+        plc_datatype: Optional[Type] = None,
         return_ctypes: bool = False,
         handle: Optional[int] = None,
         check_length: bool = True,
+        cache_symbol_info: bool = True,
     ) -> Any:
         """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name,  can be empty string if handle is used
         :param int plc_datatype: type of the data given to the PLC, according
-            to PLCTYPE constants
-            :return: value: **value**
+            to PLCTYPE constants, if None the datatype will be read from the target
+            with adsGetSymbolInfo (default: None)
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
         :param int handle: PLC-variable handle, pass in handle if previously
             obtained to speed up reading (default: None)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)
-
+        :param bool cache_symbol_info: when True, symbol info will be cached for future reading, only relevant if plc_datatype is None (default: True)
+        :return: value: **value**
         """
-        if self._port:
-            return adsSyncReadByNameEx(
-                self._port,
-                self._adr,
-                data_name,
-                plc_datatype,
-                return_ctypes=return_ctypes,
-                handle=handle,
-                check_length=check_length,
-            )
+        if not self._port:
+            return
 
-        return None
+        if plc_datatype is None:
+            if cache_symbol_info:
+                info: SAdsSymbolEntry = self._symbol_info_cache.get(data_name)
+                if info is None:
+                    print("get symbol info")
+                    info = adsGetSymbolInfo(self._port, self._adr, data_name)
+                    self._symbol_info_cache[data_name] = info
+            else:
+                info: SAdsSymbolEntry = adsGetSymbolInfo(self._port, self._adr, data_name)
+            plc_datatype = AdsSymbol.get_type_from_str(info.symbol_type)
+
+        return adsSyncReadByNameEx(
+            self._port,
+            self._adr,
+            data_name,
+            plc_datatype,
+            return_ctypes=return_ctypes,
+            handle=handle,
+            check_length=check_length,
+        )
 
     def read_list_by_name(
         self, data_names: List[str], cache_symbol_info: bool = True
