@@ -3,6 +3,11 @@ Define the Symbol class
 
 Separate file because it depends on many other files, so we try to simplify
 the circular dependencies.
+
+:author: Roberto Roos
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+:created on: 2020-11-16
+
 """
 
 import re
