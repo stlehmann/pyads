@@ -69,7 +69,7 @@ Contributions are very much welcome. pyads is under active development. However 
 patience when creating issues or PRs. Here are some main guidelines which I ask you to follow along:
 
 * Create PRs based on the [master](https://github.com/stlehmann/pyads) branch.
-* Add an entry to the [Changelog](https://github.com/stlehmann/pyads/blob/dev/CHANGELOG.md).
+* Add an entry to the [Changelog](https://github.com/stlehmann/pyads/blob/master/CHANGELOG.md).
 * Keep PRs small (if possible), this makes reviews easier and your PR can be merged faster.
 * Address only one issue per PR. If you want to make additional fixes e.g. on import statements, style or documentation 
 which are not directly related to your issue please create an additional PR that adresses these small fixes.
