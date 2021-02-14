@@ -430,7 +430,7 @@ class BasicHandler(AbstractHandler):
             logger.info("Command received: READ_STATE")
             ads_state = struct.pack("<H", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
-            # I suspect it may be unsued..
+            # I suspect it may be unused..
             device_state = struct.pack("<H", 0)
 
             response_content = ads_state + device_state
@@ -474,7 +474,7 @@ class BasicHandler(AbstractHandler):
                         "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_STRING, 0, 0,
                         0, 0
                     )
-                # Non-existant type
+                # Non-existent type
                 elif "no_type" in write_data.decode():
                     response_value = struct.pack(
                         "<IIIIIIHHH", 30, 0, 0, 5, 1, 0, 0, 0, 0
@@ -816,11 +816,11 @@ class AdvancedHandler(AbstractHandler):
 
         def handle_read_state():
             # type: () -> bytes
-            """Handle reas-state request."""
+            """Handle read-state request."""
             logger.info("Command received: READ_STATE")
             ads_state = struct.pack("<I", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
-            # I suspect it may be unsued..
+            # I suspect it may be unused..
             device_state = struct.pack("<I", 0)
             return ads_state + device_state
 
