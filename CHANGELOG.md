@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 3.3.4 [unreleased]
 
 ### Added
-* [195](https://github.com/stlehmann/pyads/pull/195) Read/write by name without passing the datatype
+* [#195](https://github.com/stlehmann/pyads/pull/195) Read/write by name without passing the datatype
 
 ### Changed
 
