@@ -51,11 +51,6 @@ from .constants import (
 from .errorcodes import ERROR_CODES
 
 
-# Python version checking
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-
 NOTEFUNC: Optional[Callable] = None
 
 # _adslib can be WinDLL or CDLL depending on OS
