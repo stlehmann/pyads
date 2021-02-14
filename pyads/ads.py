@@ -337,8 +337,8 @@ def dict_from_bytes(
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
                         bytearray(byte_list[index: (index + (str_len + 1))])
-                            .partition(b"\0")[0]
-                            .decode("utf-8")
+                        .partition(b"\0")[0]
+                        .decode("utf-8")
                     )
                     index += str_len + 1
                 elif plc_datatype not in DATATYPE_MAP:
@@ -467,12 +467,12 @@ class Connection(object):
         return self._adr.netid
 
     @ams_netid.setter
-    def ams_netid(self, netid: str) -> None:
+    def ams_netid(self, value: str) -> None:
         if self._open:
             raise AttributeError(
                 "Setting netid is not allowed while connection is open."
             )
-        self._adr.netid = netid
+        self._adr.netid = value
 
     @property
     def ams_port(self) -> int:
@@ -858,7 +858,8 @@ class Connection(object):
         :param data_names: list of variable names to be read
         :type data_names: list[str]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
-        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
+        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC
+            for each variable
         :rtype dict(str, Any)
 
         """
@@ -885,7 +886,8 @@ class Connection(object):
         :type data_names_and_values: dict[str, Any]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
 
-        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
+        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes
+            for each write operation from the PLC
         :rtype dict(str, Any)
 
         """
@@ -1074,9 +1076,8 @@ class Connection(object):
             >>>
             >>> with plc:
             >>>     # Add notification with default settings
-            >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
-            >>>
-            >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+            >>>     atr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
+            >>>     handles = plc.add_device_notification("GVL.myvalue", atr, mycallback)
             >>>
             >>>     # Remove notification
             >>>     plc.del_device_notification(handles)
@@ -1173,10 +1174,10 @@ class Connection(object):
             func: Callable[[int, str, Union[datetime, int], Any], None]
         ) -> Callable[[Any, str], None]:
             def func_wrapper(notification: Any, data_name: str) -> None:
-                hNotification, timestamp, value = self.parse_notification(
+                h_notification, timestamp, value = self.parse_notification(
                     notification, plc_datatype, timestamp_as_filetime
                 )
-                return func(hNotification, data_name, timestamp, value)
+                return func(h_notification, data_name, timestamp, value)
 
             return func_wrapper
 
