@@ -2,10 +2,7 @@
 
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-12 14:33:11
 
 """
 
@@ -351,8 +348,8 @@ class SAdsSymbolEntry(Structure):
     def _get_string(self, offset, length):
         # type: (int, int) -> str
         """Get portion of the bigger string buffer"""
-        return bytes(self.stringBuffer[offset:(offset + length)])\
-                    .decode("utf-8")
+        return bytes(self.stringBuffer[offset:(offset + length)]) \
+            .decode("utf-8")
 
     @property
     def name(self):

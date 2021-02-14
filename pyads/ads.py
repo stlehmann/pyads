@@ -2,14 +2,11 @@
 
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
-
-from datetime import datetime
 import struct
+from collections import OrderedDict
 from ctypes import (
     memmove,
     addressof,
@@ -19,41 +16,9 @@ from ctypes import (
     sizeof,
     create_string_buffer,
 )
-from collections import OrderedDict
+from datetime import datetime
 from functools import partial
-
-from .utils import decode_ads, platform_is_linux
-from .filetimes import filetime_to_dt
-
-from .symbol import AdsSymbol
-
-from .pyads_ex import (
-    adsAddRoute,
-    adsAddRouteToPLC,
-    adsDelRoute,
-    adsPortOpenEx,
-    adsPortCloseEx,
-    adsGetLocalAddressEx,
-    adsSyncReadStateReqEx,
-    adsSyncReadDeviceInfoReqEx,
-    adsSyncWriteControlReqEx,
-    adsSyncWriteReqEx,
-    adsSyncReadWriteReqEx2,
-    adsSyncReadReqEx2,
-    adsGetHandle,
-    adsGetNetIdForPLC,
-    adsGetSymbolInfo,
-    adsSumRead,
-    adsSumWrite,
-    adsReleaseHandle,
-    adsSyncReadByNameEx,
-    adsSyncWriteByNameEx,
-    adsSyncAddDeviceNotificationReqEx,
-    adsSyncDelDeviceNotificationReqEx,
-    adsSyncSetTimeoutEx,
-    adsSetLocalAddress,
-    ADSError,
-)
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, cast
 
 # noinspection PyUnresolvedReferences
 from .constants import (
@@ -83,7 +48,34 @@ from .constants import (
     ADSIGRP_SUMUP_WRITE,
     ads_type_to_ctype,
 )
-
+from .filetimes import filetime_to_dt
+from .pyads_ex import (
+    adsAddRoute,
+    adsAddRouteToPLC,
+    adsDelRoute,
+    adsPortOpenEx,
+    adsPortCloseEx,
+    adsGetLocalAddressEx,
+    adsSyncReadStateReqEx,
+    adsSyncReadDeviceInfoReqEx,
+    adsSyncWriteControlReqEx,
+    adsSyncWriteReqEx,
+    adsSyncReadWriteReqEx2,
+    adsSyncReadReqEx2,
+    adsGetHandle,
+    adsGetNetIdForPLC,
+    adsGetSymbolInfo,
+    adsSumRead,
+    adsSumWrite,
+    adsReleaseHandle,
+    adsSyncReadByNameEx,
+    adsSyncWriteByNameEx,
+    adsSyncAddDeviceNotificationReqEx,
+    adsSyncDelDeviceNotificationReqEx,
+    adsSyncSetTimeoutEx,
+    adsSetLocalAddress,
+    ADSError,
+)
 from .structs import (
     AmsAddr,
     SAmsNetId,
@@ -91,8 +83,9 @@ from .structs import (
     NotificationAttrib,
     SAdsNotificationHeader,
     SAdsSymbolEntry,
-    SAdsSumRequest,
 )
+from .symbol import AdsSymbol
+from .utils import decode_ads, platform_is_linux
 
 # custom types
 StructureDef = Tuple[
@@ -343,8 +336,8 @@ def dict_from_bytes(
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
                         bytearray(byte_list[index: (index + (str_len + 1))])
-                            .partition(b"\0")[0]
-                            .decode("utf-8")
+                        .partition(b"\0")[0]
+                        .decode("utf-8")
                     )
                     index += str_len + 1
                 elif plc_datatype not in DATATYPE_MAP:
@@ -473,24 +466,24 @@ class Connection(object):
         return self._adr.netid
 
     @ams_netid.setter
-    def ams_netid(self, netid: str) -> None:
+    def ams_netid(self, value: str) -> None:
         if self._open:
             raise AttributeError(
                 "Setting netid is not allowed while connection is open."
             )
-        self._adr.netid = netid
+        self._adr.netid = value
 
     @property
     def ams_port(self) -> int:
         return self._adr.port
 
     @ams_port.setter
-    def ams_port(self, port: int) -> None:
+    def ams_port(self, value: int) -> None:
         if self._open:
             raise AttributeError(
                 "Setting port is not allowed while connection is open."
             )
-        self._adr.port = port
+        self._adr.port = value
 
     def __enter__(self) -> "Connection":
         """Open on entering with-block."""
@@ -728,7 +721,6 @@ class Connection(object):
         `symbol_type` should be a string representing a PLC type (e.g.
         'LREAL').
 
-        :param plc: Connection instance
         :param name:
         :param index_group:
         :param index_offset:
@@ -757,11 +749,11 @@ class Connection(object):
             sym_count = struct.unpack("I", symbol_size_msg[0:4])[0]
             sym_list_length = struct.unpack("I", symbol_size_msg[4:8])[0]
 
-            data_type_creation_fn = partial(create_string_buffer, sym_list_length)
+            data_type_creation_fn: Type = cast("Type", partial(create_string_buffer, sym_list_length))
             symbol_list_msg = self.read(
                 ADSIGRP_SYM_UPLOAD,
                 ADSIOFFS_DEVDATA_ADSSTATE,
-                data_type_creation_fn,  # type: ignore
+                data_type_creation_fn,
                 return_ctypes=True,
             )
 
@@ -865,7 +857,8 @@ class Connection(object):
         :param data_names: list of variable names to be read
         :type data_names: list[str]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
-        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
+        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC
+            for each variable
         :rtype dict(str, Any)
 
         """
@@ -885,14 +878,15 @@ class Connection(object):
 
     def write_list_by_name(
         self, data_names_and_values: Dict[str, Any], cache_symbol_info: bool = True
-    ) -> Dict[str, int]:
+    ) -> Dict[str, ADSError]:
         """Write a list of variables in a single ADS call
 
         :param data_names_and_values: dictionary of variable names and their values to be written
-        :type data_names: dict[str, Any]
+        :type data_names_and_values: dict[str, Any]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
 
-        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
+        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes
+            for each write operation from the PLC
         :rtype dict(str, Any)
 
         """
@@ -995,9 +989,6 @@ class Connection(object):
             self._port, self._adr, data_name, value, plc_datatype, handle=handle
         )
 
-
-
-
     def write_structure_by_name(
         self,
         data_name: str,
@@ -1084,9 +1075,8 @@ class Connection(object):
             >>>
             >>> with plc:
             >>>     # Add notification with default settings
-            >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
-            >>>
-            >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+            >>>     atr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
+            >>>     handles = plc.add_device_notification("GVL.myvalue", atr, mycallback)
             >>>
             >>>     # Remove notification
             >>>     plc.del_device_notification(handles)
@@ -1183,10 +1173,10 @@ class Connection(object):
             func: Callable[[int, str, Union[datetime, int], Any], None]
         ) -> Callable[[Any, str], None]:
             def func_wrapper(notification: Any, data_name: str) -> None:
-                hNotification, timestamp, value = self.parse_notification(
+                h_notification, timestamp, value = self.parse_notification(
                     notification, plc_datatype, timestamp_as_filetime
                 )
-                return func(hNotification, data_name, timestamp, value)
+                return func(h_notification, data_name, timestamp, value)
 
             return func_wrapper
 
