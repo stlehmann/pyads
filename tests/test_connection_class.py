@@ -1270,12 +1270,16 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         with self.plc:
             # create variable on testserver
             self.plc.write_by_name("test_var", 42, pyads.PLCTYPE_INT)
-            # read twice to show cachinng
+
+            # read twice to show caching
             read_value = self.plc.read_by_name("test_var")
             read_value2 = self.plc.read_by_name("test_var")
+            self.assertEqual(read_value, 42)
+            self.assertEqual(read_value2, 42)
 
-        self.assertEqual(read_value, 42)
-        self.assertEqual(read_value2, 42)
+            # read without caching
+            read_value = self.plc.read_by_name("test_var", cache_symbol_info=False)
+            self.assertEqual(read_value, 42)
 
     def test_write_by_name_without_datatype(self) -> None:
         """Test read by name without passing the datatype."""
@@ -1286,8 +1290,12 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             self.plc.write_by_name("test_var", 42)
             self.plc.write_by_name("test_var", 42)
             read_value = self.plc.read_by_name("test_var")
+            self.assertEqual(read_value, 42)
 
-        self.assertEqual(read_value, 42)
+            # write without caching
+            self.plc.write_by_name("test_var", 43, cache_symbol_info=False)
+            read_value = self.plc.read_by_name("test_var")
+            self.assertEqual(read_value, 43)
 
 if __name__ == "__main__":
     unittest.main()
