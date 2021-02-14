@@ -556,7 +556,7 @@ class PLCVariable:
         :param ads_type: constants.PLCTYPE_*
         :param symbol_type: PLC-style name of type
         """
-        self.name = name
+        self.name = name.strip('\x00')
         self.value = value  # type: bytes
         # Variable value is stored in binary!
 

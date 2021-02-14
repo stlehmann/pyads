@@ -13,7 +13,7 @@ import time
 import unittest
 import pyads
 import struct
-from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler
+from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler, PLCVariable
 from pyads.structs import NotificationAttrib
 from pyads import constants, structs
 from collections import OrderedDict
@@ -627,6 +627,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         handle_name = "TestHandle"
         value = "Test Value"
 
+        # return None if connection is closed
+        self.assertIsNone(self.plc.write_by_name("test_var", 1, pyads.PLCTYPE_INT))
+
         with self.plc:
             self.plc.write_by_name(handle_name, value, constants.PLCTYPE_STRING)
 
@@ -1197,7 +1200,8 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Start dummy ADS Endpoint
-        cls.test_server = AdsTestServer(AdvancedHandler(), logging=False)
+        cls.handler = AdvancedHandler()
+        cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
         cls.test_server.start()
 
         # wait a bit otherwise error might occur
@@ -1214,9 +1218,11 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         # Clear request history before each test
         self.test_server.request_history = []
         self.test_server.handler.reset()
+
         self.plc = pyads.Connection(
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
         )
+
 
     def test_read_check_length(self):
         # Write data shorter than what should be read
@@ -1262,6 +1268,37 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             self.assertEqual(len(symbols), 1)
             self.assertEqual(symbols[0].index_group, 123)
 
+    def test_read_by_name_without_datatype(self) -> None:
+        """Test read by name without passing the datatype."""
+        with self.plc:
+            # create variable on testserver
+            self.plc.write_by_name("test_var", 42, pyads.PLCTYPE_INT)
+
+            # read twice to show caching
+            read_value = self.plc.read_by_name("test_var")
+            read_value2 = self.plc.read_by_name("test_var")
+            self.assertEqual(read_value, 42)
+            self.assertEqual(read_value2, 42)
+
+            # read without caching
+            read_value = self.plc.read_by_name("test_var", cache_symbol_info=False)
+            self.assertEqual(read_value, 42)
+
+    def test_write_by_name_without_datatype(self) -> None:
+        """Test read by name without passing the datatype."""
+        with self.plc:
+            # create variable on testserver
+            self.plc.write_by_name("test_var", 0, pyads.PLCTYPE_INT)
+            # write twice to show caching
+            self.plc.write_by_name("test_var", 42)
+            self.plc.write_by_name("test_var", 42)
+            read_value = self.plc.read_by_name("test_var")
+            self.assertEqual(read_value, 42)
+
+            # write without caching
+            self.plc.write_by_name("test_var", 43, cache_symbol_info=False)
+            read_value = self.plc.read_by_name("test_var")
+            self.assertEqual(read_value, 43)
 
 if __name__ == "__main__":
     unittest.main()
