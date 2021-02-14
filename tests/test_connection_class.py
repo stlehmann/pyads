@@ -627,6 +627,9 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         handle_name = "TestHandle"
         value = "Test Value"
 
+        # return None if connection is closed
+        self.assertIsNone(self.plc.write_by_name("test_var", 1, pyads.PLCTYPE_INT))
+
         with self.plc:
             self.plc.write_by_name(handle_name, value, constants.PLCTYPE_STRING)
 
