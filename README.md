@@ -5,6 +5,7 @@ pyads - Python package
 [![Coverage Status](https://coveralls.io/repos/github/stlehmann/pyads/badge.svg?branch=master)](https://coveralls.io/github/stlehmann/pyads?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/pyads/badge/?version=latest)](http://pyads.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/pyads.svg)](https://badge.fury.io/py/pyads)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/opencv/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Downloads](https://pepy.tech/badge/pyads)](https://pepy.tech/project/pyads)
 [![Downloads](https://pepy.tech/badge/pyads/week)](https://pepy.tech/project/pyads/week)
@@ -50,10 +51,10 @@ plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
 plc.open()
 
 # read int value by name
-i = plc.read_by_name("GVL.int_val", pyads.PLCTYPE_INT)
+i = plc.read_by_name("GVL.int_val")
 
 # write int value by name
-plc.write_by_name("GVL.int_val", i, pyads.PLCTYPE_INT)
+plc.write_by_name("GVL.int_val", i)
 
 # close connection
 plc.close()
