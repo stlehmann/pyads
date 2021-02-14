@@ -6,10 +6,8 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
-
-from datetime import datetime
 import struct
+from collections import OrderedDict
 from ctypes import (
     memmove,
     addressof,
@@ -19,41 +17,9 @@ from ctypes import (
     sizeof,
     create_string_buffer,
 )
-from collections import OrderedDict
+from datetime import datetime
 from functools import partial
-
-from .utils import decode_ads, platform_is_linux
-from .filetimes import filetime_to_dt
-
-from .symbol import AdsSymbol
-
-from .pyads_ex import (
-    adsAddRoute,
-    adsAddRouteToPLC,
-    adsDelRoute,
-    adsPortOpenEx,
-    adsPortCloseEx,
-    adsGetLocalAddressEx,
-    adsSyncReadStateReqEx,
-    adsSyncReadDeviceInfoReqEx,
-    adsSyncWriteControlReqEx,
-    adsSyncWriteReqEx,
-    adsSyncReadWriteReqEx2,
-    adsSyncReadReqEx2,
-    adsGetHandle,
-    adsGetNetIdForPLC,
-    adsGetSymbolInfo,
-    adsSumRead,
-    adsSumWrite,
-    adsReleaseHandle,
-    adsSyncReadByNameEx,
-    adsSyncWriteByNameEx,
-    adsSyncAddDeviceNotificationReqEx,
-    adsSyncDelDeviceNotificationReqEx,
-    adsSyncSetTimeoutEx,
-    adsSetLocalAddress,
-    ADSError,
-)
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, cast
 
 # noinspection PyUnresolvedReferences
 from .constants import (
@@ -83,7 +49,34 @@ from .constants import (
     ADSIGRP_SUMUP_WRITE,
     ads_type_to_ctype,
 )
-
+from .filetimes import filetime_to_dt
+from .pyads_ex import (
+    adsAddRoute,
+    adsAddRouteToPLC,
+    adsDelRoute,
+    adsPortOpenEx,
+    adsPortCloseEx,
+    adsGetLocalAddressEx,
+    adsSyncReadStateReqEx,
+    adsSyncReadDeviceInfoReqEx,
+    adsSyncWriteControlReqEx,
+    adsSyncWriteReqEx,
+    adsSyncReadWriteReqEx2,
+    adsSyncReadReqEx2,
+    adsGetHandle,
+    adsGetNetIdForPLC,
+    adsGetSymbolInfo,
+    adsSumRead,
+    adsSumWrite,
+    adsReleaseHandle,
+    adsSyncReadByNameEx,
+    adsSyncWriteByNameEx,
+    adsSyncAddDeviceNotificationReqEx,
+    adsSyncDelDeviceNotificationReqEx,
+    adsSyncSetTimeoutEx,
+    adsSetLocalAddress,
+    ADSError,
+)
 from .structs import (
     AmsAddr,
     SAmsNetId,
@@ -91,8 +84,9 @@ from .structs import (
     NotificationAttrib,
     SAdsNotificationHeader,
     SAdsSymbolEntry,
-    SAdsSumRequest,
 )
+from .symbol import AdsSymbol
+from .utils import decode_ads, platform_is_linux
 
 # custom types
 StructureDef = Tuple[
@@ -728,7 +722,6 @@ class Connection(object):
         `symbol_type` should be a string representing a PLC type (e.g.
         'LREAL').
 
-        :param plc: Connection instance
         :param name:
         :param index_group:
         :param index_offset:
@@ -757,11 +750,11 @@ class Connection(object):
             sym_count = struct.unpack("I", symbol_size_msg[0:4])[0]
             sym_list_length = struct.unpack("I", symbol_size_msg[4:8])[0]
 
-            data_type_creation_fn = partial(create_string_buffer, sym_list_length)
+            data_type_creation_fn: Type = cast("Type", partial(create_string_buffer, sym_list_length))
             symbol_list_msg = self.read(
                 ADSIGRP_SYM_UPLOAD,
                 ADSIOFFS_DEVDATA_ADSSTATE,
-                data_type_creation_fn,  # type: ignore
+                data_type_creation_fn,
                 return_ctypes=True,
             )
 
@@ -885,11 +878,11 @@ class Connection(object):
 
     def write_list_by_name(
         self, data_names_and_values: Dict[str, Any], cache_symbol_info: bool = True
-    ) -> Dict[str, int]:
+    ) -> Dict[str, ADSError]:
         """Write a list of variables in a single ADS call
 
         :param data_names_and_values: dictionary of variable names and their values to be written
-        :type data_names: dict[str, Any]
+        :type data_names_and_values: dict[str, Any]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
 
         :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
