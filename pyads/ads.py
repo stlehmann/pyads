@@ -479,12 +479,12 @@ class Connection(object):
         return self._adr.port
 
     @ams_port.setter
-    def ams_port(self, port: int) -> None:
+    def ams_port(self, value: int) -> None:
         if self._open:
             raise AttributeError(
                 "Setting port is not allowed while connection is open."
             )
-        self._adr.port = port
+        self._adr.port = value
 
     def __enter__(self) -> "Connection":
         """Open on entering with-block."""
@@ -987,9 +987,6 @@ class Connection(object):
         return adsSyncWriteByNameEx(
             self._port, self._adr, data_name, value, plc_datatype, handle=handle
         )
-
-
-
 
     def write_structure_by_name(
         self,
