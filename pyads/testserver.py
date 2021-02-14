@@ -15,8 +15,6 @@ server level by specifying the `handler` kwarg in the server constructor.
 :author: David Browne <davidabrowne@gmail.com>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 :created on: 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-08-26 22:38:06
 
 """
 from __future__ import absolute_import
@@ -276,7 +274,8 @@ class AdsClientConnection(threading.Thread):
 
             logger.error("Request handler failed to return a valid response.")
 
-    def construct_response(self, response_data, request):
+    @staticmethod
+    def construct_response(response_data, request):
         # type: (AmsResponseData, AmsPacket) -> bytes
         """Construct binary AMS response to return to the client.
 
