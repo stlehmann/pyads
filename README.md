@@ -7,6 +7,7 @@ pyads - Python package
 [![PyPI version](https://badge.fury.io/py/pyads.svg)](https://badge.fury.io/py/pyads)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/opencv/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 [![Downloads](https://pepy.tech/badge/pyads)](https://pepy.tech/project/pyads)
 [![Downloads](https://pepy.tech/badge/pyads/week)](https://pepy.tech/project/pyads/week)
 
