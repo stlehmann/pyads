@@ -6,10 +6,11 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, Iterator
 
 from datetime import datetime
 import struct
+import itertools
 from ctypes import (
     memmove,
     addressof,
@@ -81,6 +82,7 @@ from .constants import (
     DATATYPE_MAP,
     ADSIGRP_SUMUP_READ,
     ADSIGRP_SUMUP_WRITE,
+    MAX_ADS_SUB_COMMANDS,
 )
 
 from .structs import (
@@ -721,12 +723,19 @@ class Connection(object):
             `set_auto_update(True)`)
         """
 
-        return AdsSymbol(self, name, index_group, index_offset, symbol_type,
-                         comment, auto_update=auto_update)
+        return AdsSymbol(
+            self,
+            name,
+            index_group,
+            index_offset,
+            symbol_type,
+            comment,
+            auto_update=auto_update,
+        )
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
-        
+
         :return: List of AdsSymbols
         """
         symbols = []
@@ -770,10 +779,14 @@ class Connection(object):
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
-                symbol = AdsSymbol(plc=self, name=name,
-                                   index_group=index_group,
-                                   index_offset=index_offset,
-                                   symbol_type=symbol_type, comment=comment)
+                symbol = AdsSymbol(
+                    plc=self,
+                    name=name,
+                    index_group=index_group,
+                    index_offset=index_offset,
+                    symbol_type=symbol_type,
+                    comment=comment,
+                )
                 symbols.append(symbol)
         return symbols
 
@@ -792,7 +805,7 @@ class Connection(object):
         return None
 
     def release_handle(self, handle: int) -> None:
-        """ Release handle of a PLC-variable.
+        """Release handle of a PLC-variable.
 
         :param int handle: handle of PLC-variable to be released
         """
@@ -835,13 +848,22 @@ class Connection(object):
         return None
 
     def read_list_by_name(
-        self, data_names: List[str], cache_symbol_info: bool = True
+        self,
+        data_names: List[str],
+        cache_symbol_info: bool = True,
+        ignore_max_ads_limit: bool = False,
     ) -> Dict[str, Any]:
         """Read a list of variables in a single ADS call.
+
+        Will split the read into multiple ADS calls in chuncks of MAX_ADS_SUB_COMMANDS by default.
+
+        MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
+        https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
 
         :param data_names: list of variable names to be read
         :type data_names: list[str]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
+        :param bool ignore_max_ads_limit: when True, ignores the MAX_ADS_SUB_COMMANDS limit and reads in a single ADS call
 
         :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
         :rtype dict(str, Any)
@@ -859,16 +881,33 @@ class Connection(object):
                 i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
             }
 
-        return adsSumRead(self._port, self._adr, data_names, data_symbols)
+        if ignore_max_ads_limit or (len(data_names) <= MAX_ADS_SUB_COMMANDS):
+            return adsSumRead(self._port, self._adr, data_names, data_symbols)
+
+        return_data: Dict[str, Any] = {}
+        for data_names_slice in _list_slice_generator(data_names, MAX_ADS_SUB_COMMANDS):
+            return_data.update(
+                adsSumRead(self._port, self._adr, data_names_slice, data_symbols)
+            )
+        return return_data
 
     def write_list_by_name(
-        self, data_names_and_values: Dict[str, Any], cache_symbol_info: bool = True
+        self,
+        data_names_and_values: Dict[str, Any],
+        cache_symbol_info: bool = True,
+        ignore_max_ads_limit: bool = False,
     ) -> Dict[str, int]:
-        """Write a list of variables in a single ADS call
+        """Write a list of variables in a single ADS call.
+
+        Will split the write into multiple ADS calls in chuncks of MAX_ADS_SUB_COMMANDS by default.
+
+        MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
+        https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
 
         :param data_names_and_values: dictionary of variable names and their values to be written
         :type data_names: dict[str, Any]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
+        :param bool ignore_max_ads_limit: when True, ignores the MAX_ADS_SUB_COMMANDS limit and reads in a single ADS call
 
         :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
         :rtype dict(str, Any)
@@ -893,7 +932,19 @@ class Connection(object):
                 for i in data_names_and_values.keys()
             }
 
-        return adsSumWrite(self._port, self._adr, data_names_and_values, data_symbols)
+        if ignore_max_ads_limit or (len(data_names_and_values) <= MAX_ADS_SUB_COMMANDS):
+            return adsSumWrite(
+                self._port, self._adr, data_names_and_values, data_symbols
+            )
+
+        return_data: Dict[str, int] = {}
+        for data_names_slice in _dict_slice_generator(
+            data_names_and_values, MAX_ADS_SUB_COMMANDS
+        ):
+            return_data.update(
+                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols)
+            )
+        return return_data
 
     def read_structure_by_name(
         self,
@@ -1168,45 +1219,45 @@ class Connection(object):
         # noinspection PyTypeChecker
         """Parse a notification.
 
-                        Convert the data of the NotificationHeader into the fitting Python type.
+        Convert the data of the NotificationHeader into the fitting Python type.
 
-                        :param notification: The notification we recieve from PLC datatype to be
-                        converted. This can be any basic PLC datatype or a `ctypes.Structure`.
-                        :param plc_datatype: The PLC datatype that needs to be converted. This can
-                        be any basic PLC datatype or a `ctypes.Structure`.
-                        :param timestamp_as_filetime: Whether the notification timestamp should be returned
-                        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
-                        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
-                        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
-                        task cycle times such as 62.5 µs. Default: False.
+        :param notification: The notification we recieve from PLC datatype to be
+        converted. This can be any basic PLC datatype or a `ctypes.Structure`.
+        :param plc_datatype: The PLC datatype that needs to be converted. This can
+        be any basic PLC datatype or a `ctypes.Structure`.
+        :param timestamp_as_filetime: Whether the notification timestamp should be returned
+        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+        task cycle times such as 62.5 µs. Default: False.
 
-                        :rtype: (int, int, Any)
-                        :returns: notification handle, timestamp, value
+        :rtype: (int, int, Any)
+        :returns: notification handle, timestamp, value
 
-                        **Usage**:
+        **Usage**:
 
-                        >>> import pyads
-                        >>> from ctypes import sizeof
-                        >>>
-                        >>> # Connect to the local TwinCAT PLC
-                        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
-                        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
-                        >>>
-                        >>> # Create callback function that prints the value
-                        >>> def mycallback(notification: SAdsNotificationHeader, data: str) -> None:
-                        >>>     data_type = tag[data]
-                        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
-                        >>>     print(value)
-                        >>>
-                        >>> with plc:
-                        >>>     # Add notification with default settings
-                        >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
-                        >>>
-                        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
-                        >>>
-                        >>>     # Remove notification
-                        >>>     plc.del_device_notification(handles)
-                        """
+        >>> import pyads
+        >>> from ctypes import sizeof
+        >>>
+        >>> # Connect to the local TwinCAT PLC
+        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
+        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
+        >>>
+        >>> # Create callback function that prints the value
+        >>> def mycallback(notification: SAdsNotificationHeader, data: str) -> None:
+        >>>     data_type = tag[data]
+        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
+        >>>     print(value)
+        >>>
+        >>> with plc:
+        >>>     # Add notification with default settings
+        >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
+        >>>
+        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+        >>>
+        >>>     # Remove notification
+        >>>     plc.del_device_notification(handles)
+        """
         contents = notification.contents
         data_size = contents.cbSampleSize
         # Get dynamically sized data array
@@ -1242,3 +1293,17 @@ class Connection(object):
             timestamp = filetime_to_dt(contents.nTimeStamp)
 
         return contents.hNotification, timestamp, value
+
+
+def _dict_slice_generator(dict_: Dict[Any, Any], size: int) -> Iterator[Dict[Any, Any]]:
+    """Generator for slicing a dictionary into parts of size long."""
+    it = iter(dict_)
+    for _ in range(0, len(dict_), size):
+        yield {i: dict_[i] for i in itertools.islice(it, size)}
+
+
+def _list_slice_generator(list_: List[Any], size: int) -> Iterator[List[Any]]:
+    """Generator for slicing a list into parts of size long."""
+    it = iter(list_)
+    for _ in range(0, len(list_), size):
+        yield [i for i in itertools.islice(it, size)]
