@@ -25,7 +25,13 @@ From PyPi:
 pip install pyads
 ```
 
-From Github:
+From conda-forge:
+
+```bash
+conda install pyads
+```
+
+From source:
 
 ```bash
 git clone https://github.com/MrLeeh/pyads.git --recursive

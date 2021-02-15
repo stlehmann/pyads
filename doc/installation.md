@@ -3,15 +3,21 @@
 From PyPi:
 
 ```bash
-$ pip install pyads
+pip install pyads
 ```
 
-From Github:
+From conda-forge:
 
 ```bash
-$ git clone https://github.com/MrLeeh/pyads.git --recursive
-$ cd pyads
-$ python setup.py install
+conda install pyads
+```
+
+From source:
+
+```bash
+git clone https://github.com/MrLeeh/pyads.git --recursive
+cd pyads
+python setup.py install
 ```
 
 ## Installation on Linux
@@ -33,9 +39,7 @@ importing the pyads module. If no errors occur everything is fine and you can
 carry on.
 
 ```python
-
 >>> import pyads
->>>
 ```
 
 If you get an *OSError* saying that the *adslib.so* could not be found there
@@ -43,9 +47,9 @@ probably went something wrong with the build process of the shared library. In
 this case you can create the *adslib.so* manually by doing the following:
 
 ```bash
-$ cd adslib
-$ make
-$ sudo make install
+cd adslib
+make
+sudo make install
 ```
 
 This compiles and places the *adslib.so* in your */usr/lib/* directory.
