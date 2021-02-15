@@ -15,8 +15,6 @@ server level by specifying the `handler` kwarg in the server constructor.
 :author: David Browne <davidabrowne@gmail.com>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
 :created on: 2018-06-11 18:15:53
-:last modified by:   Stefan Lehmann
-:last modified time: 2018-08-26 22:38:06
 
 """
 from __future__ import absolute_import
@@ -276,7 +274,8 @@ class AdsClientConnection(threading.Thread):
 
             logger.error("Request handler failed to return a valid response.")
 
-    def construct_response(self, response_data, request):
+    @staticmethod
+    def construct_response(response_data, request):
         # type: (AmsResponseData, AmsPacket) -> bytes
         """Construct binary AMS response to return to the client.
 
@@ -430,7 +429,7 @@ class BasicHandler(AbstractHandler):
             logger.info("Command received: READ_STATE")
             ads_state = struct.pack("<H", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
-            # I suspect it may be unsued..
+            # I suspect it may be unused..
             device_state = struct.pack("<H", 0)
 
             response_content = ads_state + device_state
@@ -474,7 +473,7 @@ class BasicHandler(AbstractHandler):
                         "<IIIIIIHHH", 30, 0, 0, 5, constants.ADST_STRING, 0, 0,
                         0, 0
                     )
-                # Non-existant type
+                # Non-existent type
                 elif "no_type" in write_data.decode():
                     response_value = struct.pack(
                         "<IIIIIIHHH", 30, 0, 0, 5, 1, 0, 0, 0, 0
@@ -556,7 +555,7 @@ class PLCVariable:
         :param ads_type: constants.PLCTYPE_*
         :param symbol_type: PLC-style name of type
         """
-        self.name = name
+        self.name = name.strip('\x00')
         self.value = value  # type: bytes
         # Variable value is stored in binary!
 
@@ -816,11 +815,11 @@ class AdvancedHandler(AbstractHandler):
 
         def handle_read_state():
             # type: () -> bytes
-            """Handle reas-state request."""
+            """Handle read-state request."""
             logger.info("Command received: READ_STATE")
             ads_state = struct.pack("<I", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
-            # I suspect it may be unsued..
+            # I suspect it may be unused..
             device_state = struct.pack("<I", 0)
             return ads_state + device_state
 

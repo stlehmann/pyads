@@ -2,15 +2,19 @@
 
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
 
 """
+<<<<<<< HEAD
 from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, Iterator
 
 from datetime import datetime
 import struct
 import itertools
+=======
+import struct
+from collections import OrderedDict
+>>>>>>> master
 from ctypes import (
     memmove,
     addressof,
@@ -20,14 +24,39 @@ from ctypes import (
     sizeof,
     create_string_buffer,
 )
-from collections import OrderedDict
+from datetime import datetime
 from functools import partial
+from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, cast
 
-from .utils import decode_ads, platform_is_linux
+# noinspection PyUnresolvedReferences
+from .constants import (
+    ADSIGRP_SYM_UPLOAD,
+    ADSIGRP_SYM_UPLOADINFO2,
+    ADSIOFFS_DEVDATA_ADSSTATE,
+    PLCTYPE_BOOL,
+    PLCTYPE_BYTE,
+    PLCTYPE_DATE,
+    PLCTYPE_DINT,
+    PLCTYPE_DT,
+    PLCTYPE_DWORD,
+    PLCTYPE_INT,
+    PLCTYPE_LREAL,
+    PLCTYPE_REAL,
+    PLCTYPE_SINT,
+    PLCTYPE_STRING,
+    PLCTYPE_TIME,
+    PLCTYPE_TOD,
+    PLCTYPE_UDINT,
+    PLCTYPE_UINT,
+    PLCTYPE_USINT,
+    PLCTYPE_WORD,
+    PLC_DEFAULT_STRING_SIZE,
+    DATATYPE_MAP,
+    ADSIGRP_SUMUP_READ,
+    ADSIGRP_SUMUP_WRITE,
+    ads_type_to_ctype,
+)
 from .filetimes import filetime_to_dt
-
-from .symbol import AdsSymbol
-
 from .pyads_ex import (
     adsAddRoute,
     adsAddRouteToPLC,
@@ -55,6 +84,7 @@ from .pyads_ex import (
     adsSetLocalAddress,
     ADSError,
 )
+<<<<<<< HEAD
 
 # noinspection PyUnresolvedReferences
 from .constants import (
@@ -85,6 +115,8 @@ from .constants import (
     MAX_ADS_SUB_COMMANDS,
 )
 
+=======
+>>>>>>> master
 from .structs import (
     AmsAddr,
     SAmsNetId,
@@ -92,8 +124,9 @@ from .structs import (
     NotificationAttrib,
     SAdsNotificationHeader,
     SAdsSymbolEntry,
-    SAdsSumRequest,
 )
+from .symbol import AdsSymbol
+from .utils import decode_ads, platform_is_linux
 
 # custom types
 StructureDef = Tuple[
@@ -343,7 +376,7 @@ def dict_from_bytes(
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
-                        bytearray(byte_list[index : (index + (str_len + 1))])
+                        bytearray(byte_list[index: (index + (str_len + 1))])
                         .partition(b"\0")[0]
                         .decode("utf-8")
                     )
@@ -355,7 +388,7 @@ def dict_from_bytes(
                     var_array.append(
                         struct.unpack(
                             DATATYPE_MAP[plc_datatype],
-                            bytearray(byte_list[index : (index + n_bytes)]),
+                            bytearray(byte_list[index: (index + n_bytes)]),
                         )[0]
                     )
                     index += n_bytes
@@ -474,24 +507,24 @@ class Connection(object):
         return self._adr.netid
 
     @ams_netid.setter
-    def ams_netid(self, netid: str) -> None:
+    def ams_netid(self, value: str) -> None:
         if self._open:
             raise AttributeError(
                 "Setting netid is not allowed while connection is open."
             )
-        self._adr.netid = netid
+        self._adr.netid = value
 
     @property
     def ams_port(self) -> int:
         return self._adr.port
 
     @ams_port.setter
-    def ams_port(self, port: int) -> None:
+    def ams_port(self, value: int) -> None:
         if self._open:
             raise AttributeError(
                 "Setting port is not allowed while connection is open."
             )
-        self._adr.port = port
+        self._adr.port = value
 
     def __enter__(self) -> "Connection":
         """Open on entering with-block."""
@@ -509,6 +542,22 @@ class Connection(object):
         """
         # If the connection is already closed, nothing new will happen
         self.close()
+
+    def _query_plc_datatype_from_name(self, data_name: str, cache_symbol_info: bool) -> Type:
+        """Return the plc_datatype by reading SymbolInfo from the target.
+
+        If cache_symbol_info is True then the SymbolInfo will be cached and adsGetSymbolInfo
+        will only used once.
+
+        """
+        if cache_symbol_info:
+            info: SAdsSymbolEntry = self._symbol_info_cache.get(data_name)
+            if info is None:
+                info = adsGetSymbolInfo(self._port, self._adr, data_name)
+                self._symbol_info_cache[data_name] = info
+        else:
+            info: SAdsSymbolEntry = adsGetSymbolInfo(self._port, self._adr, data_name)
+        return AdsSymbol.get_type_from_str(info.symbol_type)
 
     def open(self) -> None:
         """Connect to the TwinCAT message router."""
@@ -713,7 +762,6 @@ class Connection(object):
         `symbol_type` should be a string representing a PLC type (e.g.
         'LREAL').
 
-        :param plc: Connection instance
         :param name:
         :param index_group:
         :param index_offset:
@@ -749,11 +797,11 @@ class Connection(object):
             sym_count = struct.unpack("I", symbol_size_msg[0:4])[0]
             sym_list_length = struct.unpack("I", symbol_size_msg[4:8])[0]
 
-            data_type_creation_fn = partial(create_string_buffer, sym_list_length)
+            data_type_creation_fn: Type = cast("Type", partial(create_string_buffer, sym_list_length))
             symbol_list_msg = self.read(
                 ADSIGRP_SYM_UPLOAD,
                 ADSIOFFS_DEVDATA_ADSSTATE,
-                data_type_creation_fn,  # type: ignore
+                data_type_creation_fn,
                 return_ctypes=True,
             )
 
@@ -761,10 +809,10 @@ class Connection(object):
 
             for idx in range(sym_count):
                 read_length, index_group, index_offset = struct.unpack(
-                    "III", symbol_list_msg[ptr + 0 : ptr + 12]
+                    "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
                 name_length, type_length, comment_length = struct.unpack(
-                    "HHH", symbol_list_msg[ptr + 24 : ptr + 30]
+                    "HHH", symbol_list_msg[ptr + 24: ptr + 30]
                 )
 
                 name_start_ptr = ptr + 30
@@ -815,37 +863,43 @@ class Connection(object):
     def read_by_name(
         self,
         data_name: str,
-        plc_datatype: Type,
+        plc_datatype: Optional[Type] = None,
         return_ctypes: bool = False,
         handle: Optional[int] = None,
         check_length: bool = True,
+        cache_symbol_info: bool = True,
     ) -> Any:
         """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name,  can be empty string if handle is used
         :param int plc_datatype: type of the data given to the PLC, according
-            to PLCTYPE constants
-            :return: value: **value**
+            to PLCTYPE constants, if None the datatype will be read from the target
+            with adsGetSymbolInfo (default: None)
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
         :param int handle: PLC-variable handle, pass in handle if previously
             obtained to speed up reading (default: None)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)
-
+        :param bool cache_symbol_info: when True, symbol info will be cached for
+            future reading, only relevant if plc_datatype is None (default: True)
+        :return: value: **value**
         """
-        if self._port:
-            return adsSyncReadByNameEx(
-                self._port,
-                self._adr,
-                data_name,
-                plc_datatype,
-                return_ctypes=return_ctypes,
-                handle=handle,
-                check_length=check_length,
-            )
+        if not self._port:
+            return
 
-        return None
+        if plc_datatype is None:
+            plc_datatype = self._query_plc_datatype_from_name(data_name, cache_symbol_info)
+
+        return adsSyncReadByNameEx(
+            self._port,
+            self._adr,
+            data_name,
+            plc_datatype,
+            return_ctypes=return_ctypes,
+            handle=handle,
+            check_length=check_length,
+        )
 
     def read_list_by_name(
         self,
@@ -863,9 +917,14 @@ class Connection(object):
         :param data_names: list of variable names to be read
         :type data_names: list[str]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
+<<<<<<< HEAD
         :param bool ignore_max_ads_limit: when True, ignores the MAX_ADS_SUB_COMMANDS limit and reads in a single ADS call
 
         :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
+=======
+        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC
+            for each variable
+>>>>>>> master
         :rtype dict(str, Any)
 
         """
@@ -892,6 +951,7 @@ class Connection(object):
         return return_data
 
     def write_list_by_name(
+<<<<<<< HEAD
         self,
         data_names_and_values: Dict[str, Any],
         cache_symbol_info: bool = True,
@@ -903,13 +963,19 @@ class Connection(object):
 
         MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
         https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
+=======
+        self, data_names_and_values: Dict[str, Any], cache_symbol_info: bool = True
+    ) -> Dict[str, ADSError]:
+        """Write a list of variables in a single ADS call
+>>>>>>> master
 
         :param data_names_and_values: dictionary of variable names and their values to be written
-        :type data_names: dict[str, Any]
+        :type data_names_and_values: dict[str, Any]
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
         :param bool ignore_max_ads_limit: when True, ignores the MAX_ADS_SUB_COMMANDS limit and reads in a single ADS call
 
-        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
+        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes
+            for each write operation from the PLC
         :rtype dict(str, Any)
 
         """
@@ -998,22 +1064,31 @@ class Connection(object):
         self,
         data_name: str,
         value: Any,
-        plc_datatype: Type,
+        plc_datatype: Optional[Type] = None,
         handle: Optional[int] = None,
+        cache_symbol_info: bool = True,
     ) -> None:
         """Send data synchronous to an ADS-device from data name.
 
         :param string data_name: data name, can be empty string if handle is used
         :param value: value to write to the storage address of the PLC
-        :param int plc_datatype: type of the data given to the PLC,
-            according to PLCTYPE constants
+        :param int plc_datatype: type of the data given to the PLC, according
+            to PLCTYPE constants, if None the datatype will be read from the target
+            with adsGetSymbolInfo (default: None)
         :param int handle: PLC-variable handle, pass in handle if previously
             obtained to speed up writing (default: None)
+        :param bool cache_symbol_info: when True, symbol info will be cached for
+            future reading, only relevant if plc_datatype is None (default: True)
         """
-        if self._port:
-            return adsSyncWriteByNameEx(
-                self._port, self._adr, data_name, value, plc_datatype, handle=handle
-            )
+        if not self._port:
+            return
+
+        if plc_datatype is None:
+            plc_datatype = self._query_plc_datatype_from_name(data_name, cache_symbol_info)
+
+        return adsSyncWriteByNameEx(
+            self._port, self._adr, data_name, value, plc_datatype, handle=handle
+        )
 
     def write_structure_by_name(
         self,
@@ -1101,9 +1176,8 @@ class Connection(object):
             >>>
             >>> with plc:
             >>>     # Add notification with default settings
-            >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
-            >>>
-            >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+            >>>     atr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
+            >>>     handles = plc.add_device_notification("GVL.myvalue", atr, mycallback)
             >>>
             >>>     # Remove notification
             >>>     plc.del_device_notification(handles)
@@ -1200,10 +1274,10 @@ class Connection(object):
             func: Callable[[int, str, Union[datetime, int], Any], None]
         ) -> Callable[[Any, str], None]:
             def func_wrapper(notification: Any, data_name: str) -> None:
-                hNotification, timestamp, value = self.parse_notification(
+                h_notification, timestamp, value = self.parse_notification(
                     notification, plc_datatype, timestamp_as_filetime
                 )
-                return func(hNotification, data_name, timestamp, value)
+                return func(h_notification, data_name, timestamp, value)
 
             return func_wrapper
 

@@ -37,34 +37,54 @@ Read and write by name
 Values
 """"""
 
+Reading and writing values from/to variables on the target can be done with :py:meth:`.Connection.read_by_name` and
+:py:meth:`.Connection.write_by_name`. Passing the `plc_datatype` is optional for both methods. If `plc_datatype`
+is `None` the datatype will be queried from the target on the first call and cached inside the :py:class:`.Connection`
+object. You can disable symbol-caching by setting the parameter `cache_symbol_info` to `False`.
+
+.. warning::
+  Querying the datatype only works for basic datatypes.
+  For structs, lists and lists of structs you need provide proper definitions of the datatype and use
+  :py:meth:`.Connection.read_structure_by_name` or :py:meth:`.Connection.read_list_by_name`.
+
+Examples:
+
 .. code:: python
 
-   >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
-   >>> plc.open()
-   >>> plc.read_by_name('global.bool_value', pyads.PLCTYPE_BOOL)
-   True
-   >>> plc.write_by_name('global.bool_value', False, pyads.PLCTYPE_BOOL)
-   >>> plc.read_by_name('global.bool_value', pyads.PLCTYPE_BOOL)
-   False
-   >>> plc.close()
+  >>> import pyads
+  >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1):
+  >>> plc.open()
+  >>>
+  >>> plc.read_by_name('GVL.bool_value')  # datatype will be queried and cached
+  True
+  >>> plc.read_by_name('GVL.bool_value')  # cached datatype will be used
+  True
+  >>> plc.read_by_name('GVL.bool_value', cache_symbol_info=False)  # datatype will not be cached and queried on each call
+  True
+  >>> plc.read_by_name('GVL.int_value', pyads.PLCTYPE_INT)  # datatype is provided and will not be queried
+  0
+  >>> plc.write_by_name('GVL.int_value', 10)  # write to target
+  >>> plc.read_by_name('GVL.int_value')
+  10
+
+ >>> plc.close()
 
 If the name could not be found an Exception containing the error message
 and ADS Error number is raised.
 
 .. code:: python
 
-   >>> plc.read_by_name('global.wrong_name', pyads.PLCTYPE_BOOL)
+   >>> plc.read_by_name('GVL.wrong_name', pyads.PLCTYPE_BOOL)
    ADSError: ADSError: symbol not found (1808)
 
 For reading strings the maximum buffer length is 1024.
 
 .. code:: python
 
-   >>> plc.read_by_name('global.sample_string', pyads.PLCTYPE_STRING)
+   >>> plc.read_by_name('GVL.sample_string', pyads.PLCTYPE_STRING)
    'Hello World'
-   >>> plc.write_by_name('global.sample_string', 'abc', pyads.PLCTYPE_STRING)
-   >>> plc.read_by_name(adr, 'global.sample_string', pyads.PLCTYPE_STRING)
+   >>> plc.write_by_name('GVL.sample_string', 'abc', pyads.PLCTYPE_STRING)
+   >>> plc.read_by_name(adr, 'GVL.sample_string', pyads.PLCTYPE_STRING)
    'abc'
 
 Arrays

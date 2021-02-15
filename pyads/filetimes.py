@@ -2,10 +2,7 @@
 
 :author: David Buxton <david@gasmark6.com>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 07:42:05
 
 """
 # Copyright (c) 2009, David Buxton <david@gasmark6.com>

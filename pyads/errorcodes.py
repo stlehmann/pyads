@@ -2,10 +2,7 @@
 
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2018-07-13 10:30:15
 
 """
 ERROR_CODES = {
@@ -89,7 +86,7 @@ ERROR_CODES = {
     1826: "symbol not active. Onlinechange. Release handle and get a new one",
     1827: "access denied",
     1828: "missing license. Activate license for TwinCAT 3 function",
-    1836: "exception occurred during system start. Check each device transistions",
+    1836: "exception occurred during system start. Check each device transitions",
     1856: "Error class <client error>",
     1857: "invalid parameter at service",
     1858: "polling list is empty",

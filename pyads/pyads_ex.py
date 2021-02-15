@@ -2,10 +2,7 @@
 
 :author: David Browne <davidabrowne@gmail.com>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-
 :created on: 2018-06-11 18:15:53
-:last modified by: Stefan Lehmann
-:last modified time: 2019-07-30 16:57:32
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional, List, Dict
@@ -49,11 +46,6 @@ from .constants import (
     ads_type_to_ctype,
 )
 from .errorcodes import ERROR_CODES
-
-
-# Python version checking
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
 
 
 NOTEFUNC: Optional[Callable] = None
@@ -141,14 +133,14 @@ def router_function(fn: Callable) -> Callable:
 
     Unlike the Windows implementation which uses a separate router daemon,
     the Linux library manages AMS routing in-process. As such, routing must be
-    configured programatically via. the provided API. These endpoints are
+    configured programmatically via. the provided API. These endpoints are
     invalid on Win32 systems, so an exception will be raised.
 
     """
 
     @wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> Callable:
-        if platform_is_windows():  # pragma: no cover, skipt Windows test
+        if platform_is_windows():  # pragma: no cover, skip Windows test
             raise RuntimeError(
                 "Router interface is not available on Win32 systems.\n"
                 "Configure AMS routes using the TwinCAT router service."
@@ -282,7 +274,6 @@ def adsAddRouteToPLC(
     if struct.unpack(">B", rcvd_packet_header[-1:])[0] == 0x80:
         rcvd_PLC_AMS_ID = struct.unpack(">6B", data[12:18])[0]  # AMS ID of PLC
         # Convert to a String AMS ID
-        # rcvd_PLC_AMS_ID = '.'.join([str(int.from_bytes(rcvd_PLC_AMS_ID[i:i+1], 'big')) for i in range(0, len(rcvd_PLC_AMS_ID), 1)])
         rcvd_AMS_port = struct.unpack(
             "<H", data[18:20]
         )  # Some sort of AMS port? Little endian
@@ -1143,11 +1134,13 @@ def adsSyncAddDeviceNotificationReqEx(
     ]
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
-    def wrapper(addr, notification, user):
-        # type: (AmsAddr, SAdsNotificationHeader, int) -> Callable[[SAdsNotificationHeader, str], None]
+    # noinspection PyUnusedLocal
+    def wrapper(addr: AmsAddr, notification: SAdsNotificationHeader, user: int) -> Callable[
+            [SAdsNotificationHeader, str], None]:
         return callback(notification, data)
 
-    c_callback = NOTEFUNC(wrapper)
+    # noinspection PyTypeChecker
+    c_callback = NOTEFUNC(wrapper)  # type: ignore
     err_code = adsSyncAddDeviceNotificationReqFct(
         port,
         pAmsAddr,
@@ -1191,15 +1184,15 @@ def adsSyncDelDeviceNotificationReqEx(
         )
 
 
-def adsSyncSetTimeoutEx(port: int, nMs: int) -> None:
+def adsSyncSetTimeoutEx(port: int, n_ms: int) -> None:
     """Set Timeout.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
-    :param int nMs: timeout in ms
+    :param int n_ms: timeout in ms
 
     """
     adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeoutEx
-    cms = ctypes.c_long(nMs)
+    cms = ctypes.c_long(n_ms)
     err_code = adsSyncSetTimeoutFct(port, cms)
     if err_code:
         raise ADSError(err_code)
