@@ -492,6 +492,12 @@ class BasicHandler(AbstractHandler):
                     )
 
             elif index_group == constants.ADSIGRP_SUMUP_READ:
+                n_reads = len(write_data) / 12
+                for i in range(n_reads):
+                    index_group = write_data[i:i+4]
+                    index_offset = write_data[i+4:i+8]
+                    data_type = write_data[i+8:i+12]
+
                 # Could be improved to handle variable length requests
                 response_value = struct.pack(
                     "<IIIIBB4sB", 0, 0, 0, 1, 1, 2,
