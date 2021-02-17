@@ -492,14 +492,27 @@ class BasicHandler(AbstractHandler):
                     )
 
             elif index_group == constants.ADSIGRP_SUMUP_READ:
-                # Could be improved to handle variable length requests
-                response_value = struct.pack(
-                    "<IIIIBB4sB", 0, 0, 0, 1, 1, 2,
-                    ("test" + "\x00").encode("utf-8"), 0
-                )
+                n_reads = len(write_data) // 12
+                fmt = "<" + n_reads * "I"
+                vals = [0 for i in range(n_reads)]
+
+                for i in range(n_reads):
+                    buf = write_data[i * 12 + 8:i * 12 + 12]
+                    is_str = struct.unpack("<I", buf)[0] == 5
+
+                    if is_str:
+                        fmt += "5s"
+                        vals.append(b"test\x00")
+                    else:
+                        fmt += "B"
+                        vals.append(i + 1)
+                response_value = struct.pack(fmt, *vals)
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
-                response_value = struct.pack("<IIII", 0, 0, 0, 1)
+                n_writes = len(write_data) // 12
+                fmt = "<" + n_writes * "I"
+                vals = n_writes * [0]
+                response_value = struct.pack(fmt, *vals)
 
             elif response_length > 0:
                 # Create response of repeated 0x0F with a null terminator for strings
@@ -817,10 +830,10 @@ class AdvancedHandler(AbstractHandler):
             # type: () -> bytes
             """Handle read-state request."""
             logger.info("Command received: READ_STATE")
-            ads_state = struct.pack("<I", constants.ADSSTATE_RUN)
+            ads_state = struct.pack("<H", constants.ADSSTATE_RUN)
             # I don't know what an appropriate value for device state is.
             # I suspect it may be unused..
-            device_state = struct.pack("<I", 0)
+            device_state = struct.pack("<H", 0)
             return ads_state + device_state
 
         def handle_writectrl():

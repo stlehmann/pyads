@@ -561,6 +561,61 @@ class AdsTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             pyads.bytes_from_dict(OrderedDict(), structure_def)
 
+    def test_dict_slice_generator(self):
+        """test _dict_slice_generator function."""
+        test_dict = {
+            "hi": 11,
+            "how": 12,
+            "are": 13,
+            "you": 14,
+            "doing": 15,
+            "today": 16,
+        }
+        # split in three
+        split_list = []
+        for i in pyads.ads._dict_slice_generator(test_dict, 3):
+            split_list.append(i)
+        expected = [
+            {"hi": 11, "how": 12, "are": 13},
+            {"you": 14, "doing": 15, "today": 16},
+        ]
+        self.assertEqual(split_list, expected)
+        split_list.clear()
+
+        for i in pyads.ads._dict_slice_generator(test_dict, 2):
+            split_list.append(i)
+        expected = [
+            {"hi": 11, "how": 12},
+            {"are": 13, "you": 14,},
+            {"doing": 15, "today": 16},
+        ]
+        self.assertEqual(split_list, expected)
+        split_list.clear()
+
+    def test_list_slice_generator(self):
+        """test _list_slice_generator function."""
+        test_list = ["hi", "how", "are", "you", "doing", "today"]
+        # split in three
+        split_list = []
+        for i in pyads.ads._list_slice_generator(test_list, 3):
+            split_list.append(i)
+        expected = [
+            ["hi", "how", "are"],
+            ["you", "doing", "today"],
+        ]
+        self.assertEqual(split_list, expected)
+        split_list.clear()
+
+        for i in pyads.ads._list_slice_generator(test_list, 2):
+            split_list.append(i)
+        expected = [
+            ["hi", "how"],
+            ["are", "you"],
+            ["doing", "today"],
+        ]
+        self.assertEqual(split_list, expected)
+        split_list.clear()
+
 
 if __name__ == "__main__":
     unittest.main()

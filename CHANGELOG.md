@@ -7,9 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#195](https://github.com/stlehmann/pyads/pull/195) Read/write by name without passing the datatype
+* [#200](https://github.com/stlehmann/pyads/pull/200) Split read write by list into max-ads-sub-comands chunks
 * [#206](https://github.com/stlehmann/pyads/pull/206) AdsSymbol now supports DT, DATE_TIME and TIME datatypes 
 
 ### Changed
+* [#202](https://github.com/stlehmann/pyads/pull/202) Testserver now support variable sumread and sumwrite with 
+  variable length for uint8 and string datatypes
 
 ### Removed
 
