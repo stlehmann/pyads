@@ -493,15 +493,21 @@ class BasicHandler(AbstractHandler):
 
             elif index_group == constants.ADSIGRP_SUMUP_READ:
                 n_reads = len(write_data) // 12
-
-                # Could be improved to handle variable length requests
                 fmt = "<" + n_reads * "I"
-                vals = n_reads * [0]
-                for i in range(n_reads):
-                    fmt += "B"
-                    vals.append(i + 1)
-                response_value = struct.pack(fmt, *vals)
+                vals = [0 for i in range(n_reads)]
 
+                for i in range(n_reads):
+                    buf = write_data[i * 12 + 8:i * 12 + 12]
+                    is_str = struct.unpack("<I", buf)[0] == 5
+
+                    if is_str:
+                        fmt += "4s"
+                        vals.append(b"test\x00")
+                    else:
+                        fmt += "B"
+                        vals.append(i + 1)
+                response_value = struct.pack(fmt, *vals)
+                print(response_value)
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
                 n_writes = len(write_data) // 12

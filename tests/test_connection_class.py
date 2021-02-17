@@ -1036,7 +1036,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
 
     def test_read_list(self):
-        variables = ["i1", "i2", "i3", "i4"]
+        variables = ["i1", "i2", "i3", "str_test"]
 
         # Read twice to show caching
         with self.plc:
@@ -1062,7 +1062,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "i1": 1,
             "i2": 2,
             "i3": 3,
-            "i4": 4,
+            "str_test": "test",
         }
         self.assertEqual(read_values, expected_result)
         self.assertEqual(read_values2, expected_result)
@@ -1070,7 +1070,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
     def test_read_list_without_cache(self):
 
         # Repeat the test without cache
-        variables = ["i1", "i2", "i3", "i4"]
+        variables = ["i1", "i2", "i3", "str_test"]
 
         with self.plc:
             read_values = self.plc.read_list_by_name(variables, cache_symbol_info=False)
@@ -1093,7 +1093,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "i1": 1,
             "i2": 2,
             "i3": 3,
-            "i4": 4,
+            "str_test": "test",
         }
         self.assertEqual(read_values, expected_result)
 
