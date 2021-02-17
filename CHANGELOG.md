@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#195](https://github.com/stlehmann/pyads/pull/195) Read/write by name without passing the datatype
+* [#206](https://github.com/stlehmann/pyads/pull/206) AdsSymbol now supports DT, DATE_TIME and TIME datatypes 
 
 ### Changed
 
