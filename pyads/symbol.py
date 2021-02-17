@@ -45,8 +45,12 @@ class AdsSymbol:
         value for this symbol
     """
 
+    # Regex for array - e.g. "ARRAY [1..10] OF DINT"
     _regex_array = re.compile(r"ARRAY \[(\d+)..(\d+)\] OF (.*)")
+    # Regex for matrix - e.g. "matrix_10_int32"
     _regex_matrix = re.compile(r"matrix_(\d+)_(.*)_T")
+    # Regex for list - e.g. "DINT(10)"
+    _regex_list = re.compile(r"(.*)\((\d+)\)")
 
     def __init__(
         self,
@@ -271,6 +275,19 @@ class AdsSymbol:
 
             if scalar_type_str in constants.PLC_ARRAY_MAP:
                 return constants.PLC_ARRAY_MAP[scalar_type_str](size)
+
+        # If list
+        reg_match = AdsSymbol._regex_list.match(type_str)
+        if reg_match is not None:
+
+            groups = reg_match.groups()
+            scalar_type_str = groups[0]
+            size = int(groups[1])
+
+            scalar_type = AdsSymbol.get_type_from_str(scalar_type_str)
+
+            if scalar_type:
+                return scalar_type * size
 
         # We allow unmapped types at this point - Instead we will throw  an
         # error when they are being addressed
