@@ -1102,7 +1102,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "i1": 1,
             "i2": 2,
             "i3": 3,
-            "i4": 4,
+            "str_test": "test",
         }
 
         with self.plc:
@@ -1126,7 +1126,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "i1": "no error",
             "i2": "no error",
             "i3": "no error",
-            "i4": "no error",
+            "str_test": "no error",
         }
         self.assertEqual(errors, expected_result)
 
@@ -1134,8 +1134,8 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         variables = {
             "i1": 1,
             "i2": 2,
-            "i3": 4,
-            "i4": 3,
+            "i3": 3,
+            "str_test": "test",
         }
 
         with self.plc:
@@ -1159,7 +1159,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "i1": "no error",
             "i2": "no error",
             "i3": "no error",
-            "i4": "no error",
+            "str_test": "no error",
         }
         self.assertEqual(errors, expected_result)
 
