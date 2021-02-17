@@ -501,13 +501,12 @@ class BasicHandler(AbstractHandler):
                     is_str = struct.unpack("<I", buf)[0] == 5
 
                     if is_str:
-                        fmt += "4s"
+                        fmt += "5s"
                         vals.append(b"test\x00")
                     else:
                         fmt += "B"
                         vals.append(i + 1)
                 response_value = struct.pack(fmt, *vals)
-                print(response_value)
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
                 n_writes = len(write_data) // 12

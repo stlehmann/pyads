@@ -27,6 +27,8 @@ from ctypes import (
 STRING_BUFFER: int = 1024
 PLC_DEFAULT_STRING_SIZE: int = 80
 
+MAX_ADS_SUB_COMMANDS: int = 500
+
 # plc data types:
 PLCTYPE_BOOL = c_bool
 PLCTYPE_BYTE = c_ubyte

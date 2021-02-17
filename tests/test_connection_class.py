@@ -1097,6 +1097,64 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         }
         self.assertEqual(read_values, expected_result)
 
+    def test_read_list_ads_sub_commands(self):
+        variables = ["TestVar1", "TestVar2", "str_TestVar3", "TestVar4"]
+
+        with self.plc:
+            read_values = self.plc.read_list_by_name(variables, ads_sub_commands=2)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received - 4x symbol info, 2x sum read (as sub commands split request into two reads)
+        self.assertEqual(len(requests), 6)
+
+        # Assert that all commands are read write - 4x symbol info, 2x sum read
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[5], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": 2,
+        }
+        self.assertEqual(read_values, expected_result)
+
+    def test_read_list_ads_sub_commands(self):
+        variables = ["TestVar1", "TestVar2", "str_TestVar3", "TestVar4"]
+
+        with self.plc:
+            read_values = self.plc.read_list_by_name(variables, ads_sub_commands=2)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received - 4x symbol info, 2x sum read (as sub commands split request into two reads)
+        self.assertEqual(len(requests), 6)
+
+        # Assert that all commands are read write - 4x symbol info, 2x sum read
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[5], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": 2,
+        }
+        self.assertEqual(read_values, expected_result)
+
     def test_write_list(self):
         variables = {
             "i1": 1,
@@ -1160,6 +1218,74 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "i2": "no error",
             "i3": "no error",
             "str_test": "no error",
+        }
+        self.assertEqual(errors, expected_result)
+
+    def test_write_list_ads_sub_commands(self):
+        variables = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": 3,
+        }
+
+        with self.plc:
+            errors = self.plc.write_list_by_name(variables, ads_sub_commands=2)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 6 requests - 4x symbol info, 2x write as split by subcommands
+        self.assertEqual(len(requests), 6)
+
+        # Assert that all commands are read write - 4x symbol info, 2x sum write
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[5], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {
+            "TestVar1": "no error",
+            "TestVar2": "no error",
+            "str_TestVar3": "no error",
+            "TestVar4": "no error",
+        }
+        self.assertEqual(errors, expected_result)
+
+    def test_write_list_ads_sub_commands(self):
+        variables = {
+            "TestVar1": 1,
+            "TestVar2": 2,
+            "str_TestVar3": "test",
+            "TestVar4": 3,
+        }
+
+        with self.plc:
+            errors = self.plc.write_list_by_name(variables, ads_sub_commands=2)
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received 6 requests - 4x symbol info, 2x write as split by subcommands
+        self.assertEqual(len(requests), 6)
+
+        # Assert that all commands are read write - 4x symbol info, 2x sum write
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[3], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[4], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[5], constants.ADSCOMMAND_READWRITE)
+
+        # Expected result
+        expected_result = {
+            "TestVar1": "no error",
+            "TestVar2": "no error",
+            "str_TestVar3": "no error",
+            "TestVar4": "no error",
         }
         self.assertEqual(errors, expected_result)
 
