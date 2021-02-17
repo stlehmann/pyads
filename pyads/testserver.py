@@ -504,7 +504,10 @@ class BasicHandler(AbstractHandler):
 
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
-                response_value = struct.pack("<IIII", 0, 0, 0, 1)
+                n_writes = len(write_data) // 12
+                fmt = "<" + n_writes * "I"
+                vals = n_writes * [0]
+                response_value = struct.pack(fmt, *vals)
 
             elif response_length > 0:
                 # Create response of repeated 0x0F with a null terminator for strings
