@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#195](https://github.com/stlehmann/pyads/pull/195) Read/write by name without passing the datatype
 
 ### Changed
+* [#202](https://github.com/stlehmann/pyads/pull/202) Testserver now support variable sumread and sumwrite with 
+  variable length for uint8 and string datatypes
 
 ### Removed
 

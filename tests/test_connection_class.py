@@ -1036,7 +1036,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.assert_command_id(requests[1], constants.ADSCOMMAND_WRITE)
 
     def test_read_list(self):
-        variables = ["TestVar1", "TestVar2", "str_TestVar3", "TestVar4"]
+        variables = ["i1", "i2", "i3", "str_test"]
 
         # Read twice to show caching
         with self.plc:
@@ -1059,10 +1059,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Expected result
         expected_result = {
-            "TestVar1": 1,
-            "TestVar2": 2,
-            "str_TestVar3": "test",
-            "TestVar4": "Internal error",
+            "i1": 1,
+            "i2": 2,
+            "i3": 3,
+            "str_test": "test",
         }
         self.assertEqual(read_values, expected_result)
         self.assertEqual(read_values2, expected_result)
@@ -1070,7 +1070,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
     def test_read_list_without_cache(self):
 
         # Repeat the test without cache
-        variables = ["TestVar1", "TestVar2", "str_TestVar3", "TestVar4"]
+        variables = ["i1", "i2", "i3", "str_test"]
 
         with self.plc:
             read_values = self.plc.read_list_by_name(variables, cache_symbol_info=False)
@@ -1090,19 +1090,19 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Expected result
         expected_result = {
-            "TestVar1": 1,
-            "TestVar2": 2,
-            "str_TestVar3": "test",
-            "TestVar4": "Internal error",
+            "i1": 1,
+            "i2": 2,
+            "i3": 3,
+            "str_test": "test",
         }
         self.assertEqual(read_values, expected_result)
 
     def test_write_list(self):
         variables = {
-            "TestVar1": 1,
-            "TestVar2": 2,
-            "str_TestVar3": "test",
-            "TestVar4": 3,
+            "i1": 1,
+            "i2": 2,
+            "i3": 3,
+            "str_test": "test",
         }
 
         with self.plc:
@@ -1123,19 +1123,19 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Expected result
         expected_result = {
-            "TestVar1": "no error",
-            "TestVar2": "no error",
-            "str_TestVar3": "no error",
-            "TestVar4": "Internal error",
+            "i1": "no error",
+            "i2": "no error",
+            "i3": "no error",
+            "str_test": "no error",
         }
         self.assertEqual(errors, expected_result)
 
     def test_write_list_without_cache(self):
         variables = {
-            "TestVar1": 1,
-            "TestVar2": 2,
-            "str_TestVar3": "test",
-            "TestVar4": 3,
+            "i1": 1,
+            "i2": 2,
+            "i3": 3,
+            "str_test": "test",
         }
 
         with self.plc:
@@ -1156,10 +1156,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Expected result
         expected_result = {
-            "TestVar1": "no error",
-            "TestVar2": "no error",
-            "str_TestVar3": "no error",
-            "TestVar4": "Internal error",
+            "i1": "no error",
+            "i2": "no error",
+            "i3": "no error",
+            "str_test": "no error",
         }
         self.assertEqual(errors, expected_result)
 
