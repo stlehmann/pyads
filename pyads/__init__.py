@@ -20,6 +20,7 @@ from .ads import (
     size_of_structure,
     dict_from_bytes,
     bytes_from_dict,
+    StructureDef,
 )
 
 from .pyads_ex import ADSError

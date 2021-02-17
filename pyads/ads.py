@@ -959,7 +959,7 @@ class Connection(object):
         array_size: int = 1,
         structure_size: Optional[int] = None,
         handle: Optional[int] = None,
-    ) -> Any:
+    ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """Read a structure of multiple types.
 
         :param string data_name: data name
