@@ -447,7 +447,6 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertEqual(r_value, 123.456)
 
 
-
 class TypesTestCase(unittest.TestCase):
     """Basic test to cover the PLCTYPE_ARR_* functions"""
 
@@ -471,6 +470,11 @@ class TypesTestCase(unittest.TestCase):
         self.assertSizeOf(constants.PLCTYPE_ARR_DINT(n), 4 * n)
         self.assertSizeOf(constants.PLCTYPE_ARR_UDINT(n), 4 * n)
         self.assertSizeOf(constants.PLCTYPE_ARR_USINT(n), 1 * n)
+
+    def test_string(self):
+        type_str = 'STRING(80)'  # This is how a string might appear
+        plc_type = AdsSymbol.get_type_from_str(type_str)
+        self.assertSizeOf(plc_type, 1 * 80)
 
 
 if __name__ == "__main__":
