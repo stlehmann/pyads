@@ -1122,7 +1122,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "TestVar1": 1,
             "TestVar2": 2,
             "str_TestVar3": "test",
-            "TestVar4": "Internal error",
+            "TestVar4": 2,
         }
         self.assertEqual(read_values, expected_result)
 
@@ -1222,7 +1222,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
             "TestVar1": "no error",
             "TestVar2": "no error",
             "str_TestVar3": "no error",
-            "TestVar4": "Internal error",
+            "TestVar4": "no error",
         }
         self.assertEqual(errors, expected_result)
 
