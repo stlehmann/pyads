@@ -856,7 +856,7 @@ class Connection(object):
         data_names: List[str],
         cache_symbol_info: bool = True,
         ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
-        structure_defs: Optional[Dict[str, StructureDef]] = None
+        structure_defs: Optional[Dict[str, StructureDef]] = None,
     ) -> Dict[str, Any]:
         """Read a list of variables.
 
