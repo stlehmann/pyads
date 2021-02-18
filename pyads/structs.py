@@ -6,7 +6,9 @@
 
 """
 
-from ctypes import Structure, Union, c_ubyte, c_uint16, c_uint32, c_uint64
+import ctypes
+from ctypes import Structure, c_ubyte, c_uint16, c_uint32, c_uint64
+from typing import Union
 
 from .constants import ADSTRANS_SERVERONCHA
 
@@ -223,7 +225,7 @@ class NotificationAttrib(object):
         )
 
 
-class _AttribUnion(Union):
+class _AttribUnion(ctypes.Union):
     _fields_ = [("nCycleTime", c_uint32), ("dwChangeFilter", c_uint32)]
 
 
