@@ -84,7 +84,7 @@ For reading strings the maximum buffer length is 1024.
    >>> plc.read_by_name('GVL.sample_string', pyads.PLCTYPE_STRING)
    'Hello World'
    >>> plc.write_by_name('GVL.sample_string', 'abc', pyads.PLCTYPE_STRING)
-   >>> plc.read_by_name(adr, 'GVL.sample_string', pyads.PLCTYPE_STRING)
+   >>> plc.read_by_name('GVL.sample_string', pyads.PLCTYPE_STRING)
    'abc'
 
 Arrays
@@ -96,14 +96,14 @@ read/write.
 
 .. code:: python
 
-   >>> plc.write_by_name('global.sample_array', [1, 2, 3], pyads.PLCTYPE_INT * 3)
-   >>> plc.read_by_name('global.sample_array', pyads.PLCTYPE_INT * 3)
+   >>> plc.write_by_name('GVL.sample_array', [1, 2, 3], pyads.PLCTYPE_INT * 3)
+   >>> plc.read_by_name('GVL.sample_array', pyads.PLCTYPE_INT * 3)
    [1, 2, 3]
 
 .. code:: python
 
-   >>> plc.write_by_name('global.sample_array[0]', 5, pyads.PLCTYPE_INT)
-   >>> plc.read_by_name('global.sample_array[0]', pyads.PLCTYPE_INT)
+   >>> plc.write_by_name('GVL.sample_array[0]', 5, pyads.PLCTYPE_INT)
+   >>> plc.read_by_name('GVL.sample_array[0]', pyads.PLCTYPE_INT)
    5
 
 
@@ -127,16 +127,16 @@ Python code:
 
 .. code:: python
 
-   >>> plc.write_by_name('global.sample_structure',
+   >>> plc.write_by_name('GVL.sample_structure',
                          [11.1, 22.2, 33.3, 44.4, 55.5, 66.6],
                          pyads.PLCTYPE_LREAL * 6)
-   >>> plc.read_by_name('global.sample_structure', pyads.PLCTYPE_LREAL * 6)
+   >>> plc.read_by_name('GVL.sample_structure', pyads.PLCTYPE_LREAL * 6)
    [11.1, 22.2, 33.3, 44.4, 55.5, 66.6]
 
 .. code:: python
 
-   >>> plc.write_by_name('global.sample_structure.rVar2', 1234.5, pyads.PLCTYPE_LREAL)
-   >>> plc.read_by_name('global.sample_structure.rVar2', pyads.PLCTYPE_LREAL)
+   >>> plc.write_by_name('GVL.sample_structure.rVar2', 1234.5, pyads.PLCTYPE_LREAL)
+   >>> plc.read_by_name('GVL.sample_structure.rVar2', pyads.PLCTYPE_LREAL)
    1234.5
 
 Structures with multiple datatypes
