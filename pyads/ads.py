@@ -613,7 +613,7 @@ class Connection(object):
         return None
 
     def write(
-        self, index_group: int, index_offset: int, value: Any, plc_datatype: Type[PLCDataType]
+        self, index_group: int, index_offset: int, value: Any, plc_datatype: Type["PLCDataType"]
     ) -> None:
         """Send data synchronous to an ADS-device.
 
@@ -621,7 +621,7 @@ class Connection(object):
             constants
         :param int index_offset: PLC storage address
         :param Any value: value to write to the storage address of the PLC
-        :param Type[PLCDataType] plc_datatype: type of the data given to the PLC,
+        :param Type["PLCDataType"] plc_datatype: type of the data given to the PLC,
             according to PLCTYPE constants
 
         """
@@ -634,9 +634,9 @@ class Connection(object):
         self,
         index_group: int,
         index_offset: int,
-        plc_read_datatype: Optional[Type[PLCDataType]],
+        plc_read_datatype: Optional[Type["PLCDataType"]],
         value: Any,
-        plc_write_datatype: Optional[Type[PLCDataType]],
+        plc_write_datatype: Optional[Type["PLCDataType"]],
         return_ctypes: bool = False,
         check_length: bool = True,
     ) -> Any:
@@ -645,10 +645,10 @@ class Connection(object):
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
-        :param Type[PLCDataType] plc_read_datatype: type of the data given to the PLC to respond to,
+        :param Type["PLCDataType"] plc_read_datatype: type of the data given to the PLC to respond to,
             according to PLCTYPE constants, or None to not read anything
         :param value: value to write to the storage address of the PLC
-        :param Type[PLCDataType] plc_write_datatype: type of the data given to the PLC, according to
+        :param Type["PLCDataType"] plc_write_datatype: type of the data given to the PLC, according to
             PLCTYPE constants, or None to not write anything
         :param bool return_ctypes: return ctypes instead of python types if True
         (default: False)
@@ -676,7 +676,7 @@ class Connection(object):
         self,
         index_group: int,
         index_offset: int,
-        plc_datatype: Type[PLCDataType],
+        plc_datatype: Type["PLCDataType"],
         return_ctypes: bool = False,
         check_length: bool = True,
     ) -> Any:
@@ -685,7 +685,7 @@ class Connection(object):
         :param int index_group: PLC storage area, according to the INDEXGROUP
             constants
         :param int index_offset: PLC storage address
-        :param Type[PLCDataType] plc_datatype: type of the data given to the PLC, according
+        :param Type["PLCDataType"] plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
@@ -712,7 +712,7 @@ class Connection(object):
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
-        plc_datatype: Optional[Union[Type[PLCDataType], str]] = None,
+        plc_datatype: Optional[Union[Type["PLCDataType"], str]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
     ) -> AdsSymbol:
@@ -728,7 +728,7 @@ class Connection(object):
         :param str name:
         :param Optional[int] index_group:
         :param Optional[int] index_offset:
-        :param Optional[Union[Type[PLCDataType], str]]: type of the  PLC variable, according
+        :param Optional[Union[Type["PLCDataType"], str]]: type of the  PLC variable, according
             to PLCTYPE constants
         :param str comment: comment
         :param bool auto_update: Create notification to update buffer (same as
@@ -816,7 +816,7 @@ class Connection(object):
     def read_by_name(
         self,
         data_name: str,
-        plc_datatype: Optional[Type[PLCDataType]] = None,
+        plc_datatype: Optional[Type["PLCDataType"]] = None,
         return_ctypes: bool = False,
         handle: Optional[int] = None,
         check_length: bool = True,
@@ -825,7 +825,7 @@ class Connection(object):
         """Read data synchronous from an ADS-device from data name.
 
         :param string data_name: data name,  can be empty string if handle is used
-        :param Optional[Type[PLCDataType]] plc_datatype: type of the data given to the PLC, according
+        :param Optional[Type["PLCDataType"]] plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants, if None the datatype will be read from the target
             with adsGetSymbolInfo (default: None)
         :param bool return_ctypes: return ctypes instead of python types if True
@@ -1021,7 +1021,7 @@ class Connection(object):
         self,
         data_name: str,
         value: Any,
-        plc_datatype: Optional[Type[PLCDataType]] = None,
+        plc_datatype: Optional[Type["PLCDataType"]] = None,
         handle: Optional[int] = None,
         cache_symbol_info: bool = True,
     ) -> None:
