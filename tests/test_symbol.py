@@ -58,6 +58,7 @@ class AdsSymbolTestCase(unittest.TestCase):
             "TestDouble", ads_type=constants.ADST_REAL64, symbol_type="LREAL"
         )
         self.test_var.comment = "Some variable of type double"
+        self.test_var_type = pyads.constants.PLCTYPE_LREAL  # Corresponds with "LREAL"
         self.handler.add_variable(self.test_var)
 
         self.plc = pyads.Connection(
@@ -153,7 +154,7 @@ class AdsSymbolTestCase(unittest.TestCase):
             name=var.name,
             index_group=var.index_group,
             index_offset=var.index_offset,
-            symbol_type=var.symbol_type,
+            symbol_type=var.symbol_type,  # String initialization
         )  # No lookup
 
         # Verify looked up info
@@ -205,6 +206,12 @@ class AdsSymbolTestCase(unittest.TestCase):
         """Test if PLCTYPE is resolved correctly"""
         with self.plc:
 
+            symbol_const = AdsSymbol(self.plc, "NonExistentVar", 123, 0,
+                                     pyads.PLCTYPE_UDINT)
+            self.assertEqual(constants.PLCTYPE_UDINT, symbol_const.plc_type)
+            self.assertNotIsInstance(symbol_const.symbol_type, str)  # symbol_type
+            # can't a neat human-readable string now
+
             symbol_str = AdsSymbol(self.plc, "NonExistentVar", 123, 0, "UDINT")
             self.assertEqual(constants.PLCTYPE_UDINT, symbol_str.plc_type)
             self.assertEqual("UDINT", symbol_str.symbol_type)
@@ -226,7 +233,7 @@ class AdsSymbolTestCase(unittest.TestCase):
                 name=self.test_var.name,
                 index_group=self.test_var.index_group,
                 index_offset=self.test_var.index_offset,
-                symbol_type=self.test_var.symbol_type,
+                symbol_type=self.test_var_type,
             )
 
             self.assertAdsRequestsCount(0)  # No requests yet

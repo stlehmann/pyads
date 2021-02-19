@@ -6,7 +6,9 @@
 
 """
 
-from ctypes import Structure, Union, c_ubyte, c_uint16, c_uint32, c_uint64
+import ctypes
+from ctypes import Structure, c_ubyte, c_uint16, c_uint32, c_uint64
+from typing import Union
 
 from .constants import ADSTRANS_SERVERONCHA
 
@@ -26,8 +28,7 @@ class AdsVersion:
 
     """
 
-    def __init__(self, stAdsVersion):
-        # type: (SAdsVersion) -> None
+    def __init__(self, stAdsVersion: SAdsVersion) -> None:
         """Create new AdsVersion object.
 
         :param pyads.constants.SAdsVersion stAdsVersion: ctypes structure
@@ -61,8 +62,7 @@ class AmsAddr(object):
 
     """
 
-    def __init__(self, netid=None, port=None):
-        # type: (str, int) -> None
+    def __init__(self, netid: str = None, port: int = None) -> None:
         """Create a new AmsAddr object by a given netid and port.
 
         :param netid: NetId of an ADS device
@@ -76,8 +76,7 @@ class AmsAddr(object):
         if port is not None:
             self.port = port
 
-    def toString(self):
-        # type: () -> str
+    def toString(self) -> str:
         """Textual representation of the AMS address.
 
         :rtype: string
@@ -87,8 +86,7 @@ class AmsAddr(object):
 
     # property netid
     @property
-    def netid(self):
-        # type: () -> str
+    def netid(self) -> str:
         """Netid of the AmsAddress.
 
         The Netid is always returned as a String. If the NetId is set
@@ -98,8 +96,7 @@ class AmsAddr(object):
         return ".".join(map(str, self._ams_addr.netId.b))
 
     @netid.setter
-    def netid(self, value):
-        # type: (Union[str, SAmsNetId]) -> None
+    def netid(self, value: Union[str, SAmsNetId]) -> None:
         # Check if the value is already an instance of the SAmsNetId struct
         if isinstance(value, SAmsNetId):
             self._ams_addr.netId = value
@@ -116,28 +113,23 @@ class AmsAddr(object):
 
     # property port
     @property
-    def port(self):
-        # type: () -> int
+    def port(self) -> int:
         """Port of the AmsAddress object."""
         return self._ams_addr.port
 
     @port.setter
-    def port(self, value):
-        # type: (int) -> None
+    def port(self, value: int) -> None:
         self._ams_addr.port = c_uint16(value)
 
-    def amsAddrStruct(self):
-        # type: () -> SAmsAddr
+    def amsAddrStruct(self) -> SAmsAddr:
         """Return the c-types structure SAmsAddr."""
         return self._ams_addr
 
-    def netIdStruct(self):
-        # type: () -> SAmsNetId
+    def netIdStruct(self) -> SAmsNetId:
         """Return the c-types structure SAmsNetId."""
         return self._ams_addr.netId
 
-    def setAdr(self, adrString):
-        # type: (str) -> None
+    def setAdr(self, adrString: str) -> None:
         """Set the AMS-address according to the given IP-address.
 
         :type adrString: string
@@ -146,8 +138,7 @@ class AmsAddr(object):
         """
         self.netid = adrString
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
         """Return object name."""
         return "<AmsAddress {}:{}>".format(self.netid, self.port)
 
@@ -156,9 +147,8 @@ class NotificationAttrib(object):
     """Notification Attribute."""
 
     def __init__(
-        self, length, trans_mode=ADSTRANS_SERVERONCHA, max_delay=1e-4, cycle_time=1e-4
-    ):
-        # type: (int, int, float, float) -> None
+        self, length: int, trans_mode: int = ADSTRANS_SERVERONCHA, max_delay: float = 1e-4, cycle_time: float = 1e-4
+    ) -> None:
         """Create a new NotificationAttrib object.
 
         :param int length: length of the data
@@ -177,25 +167,21 @@ class NotificationAttrib(object):
         if cycle_time:
             self._attrib.nCycleTime = int(cycle_time * 1e4)
 
-    def notificationAttribStruct(self):
-        # type: () -> SAdsNotificationAttrib
+    def notificationAttribStruct(self) -> "SAdsNotificationAttrib":
         """Return the raw struct."""
         return self._attrib
 
     @property
-    def length(self):
-        # type: () -> int
+    def length(self) -> int:
         """Notification data length."""
         return self._attrib.cbLength
 
     @length.setter
-    def length(self, val):
-        # type: (int) -> None
+    def length(self, val: int) -> None:
         self._attrib.cbLength = val
 
     @property
-    def trans_mode(self):
-        # type: () -> int
+    def trans_mode(self) -> int:
         """Mode of transmission.
 
         This can be one of the following:
@@ -210,42 +196,36 @@ class NotificationAttrib(object):
         return self._attrib.nTransMode
 
     @trans_mode.setter
-    def trans_mode(self, val):
-        # type: (int) -> None
+    def trans_mode(self, val: int) -> None:
         self._attrib.nTransMode = val
 
     @property
-    def max_delay(self):
-        # type: () -> int
+    def max_delay(self) -> None:
         """Maximum allowed delay between notifications in ms."""
         return self._attrib.nMaxDelay
 
     @max_delay.setter
-    def max_delay(self, val):
-        # type: (int) -> None
+    def max_delay(self, val: int) -> None:
         self._attrib.nMaxDelay = val
 
     @property
-    def cycle_time(self):
-        # type: () -> int
+    def cycle_time(self) -> int:
         """Notification cycle time in ms for cycle transmission mode."""
         return self._attrib.nCycleTime
 
     @cycle_time.setter
-    def cycle_time(self, val):
-        # type: (int) -> None
+    def cycle_time(self, val: int) -> None:
         self._attrib.nCycleTime = val
         self._attrib.dwChangeFilter = val
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
         """Return object name."""
         return "<NotificationAttrib {} {} {} {}>".format(
             self.length, self.trans_mode, self.max_delay, self.cycle_time
         )
 
 
-class _AttribUnion(Union):
+class _AttribUnion(ctypes.Union):
     _fields_ = [("nCycleTime", c_uint32), ("dwChangeFilter", c_uint32)]
 
 
@@ -345,27 +325,23 @@ class SAdsSymbolEntry(Structure):
         # 3 strings contained, with max length 256 each
     ]
 
-    def _get_string(self, offset, length):
-        # type: (int, int) -> str
+    def _get_string(self, offset: int, length: int) -> str:
         """Get portion of the bigger string buffer"""
         return bytes(self.stringBuffer[offset:(offset + length)]) \
             .decode("utf-8")
 
     @property
-    def name(self):
-        # type: () -> str
+    def name(self) -> str:
         """The symbol name."""
         return self._get_string(0, self.nameLength)
 
     @property
-    def symbol_type(self):
-        # type: () -> str
+    def symbol_type(self) -> str:
         """The qualified type name, including the namespace."""
         return self._get_string(self.nameLength + 1, self.typeLength)
 
     @property
-    def comment(self):
-        # type: () -> str
+    def comment(self) -> str:
         """User-defined comment."""
         return self._get_string(
             self.nameLength + self.typeLength + 2, self.commentLength

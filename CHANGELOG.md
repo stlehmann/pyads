@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#202](https://github.com/stlehmann/pyads/pull/202) Testserver now support variable sumread and sumwrite with 
   variable length for uint8 and string datatypes
 * [#209](https://github.com/stlehmann/pyads/pull/209) Removed duplicate tests and added addtional asserts to existing tests
+* [#212](https://github.com/stlehmann/pyads/pull/212) Add type annotations to structs.py
 
 ### Removed
 
