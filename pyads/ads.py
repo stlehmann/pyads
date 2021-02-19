@@ -49,6 +49,8 @@ from .constants import (
     ADSIGRP_SUMUP_WRITE,
     MAX_ADS_SUB_COMMANDS,
     ads_type_to_ctype,
+    PLCSimpleDataType,
+    PLCDataType,
 )
 from .filetimes import filetime_to_dt
 from .pyads_ex import (

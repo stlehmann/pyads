@@ -6,7 +6,7 @@
 :created on 2018-06-11 18:15:53
 
 """
-from typing import Type, Dict, Callable
+from typing import Type, Dict, Callable, Union
 from ctypes import (
     Array,
     c_bool,
@@ -52,6 +52,32 @@ PLCTYPE_DATE = PLCTYPE_DWORD
 PLCTYPE_DATE_AND_TIME = PLCTYPE_DWORD
 PLCTYPE_DT = PLCTYPE_DWORD
 PLCTYPE_TIME = PLCTYPE_DWORD
+
+# Typing
+PLCSimpleDataType = Union[
+    PLCTYPE_BOOL,
+    PLCTYPE_BYTE,
+    PLCTYPE_DWORD,
+    PLCTYPE_DINT,
+    PLCTYPE_INT,
+    PLCTYPE_LREAL,
+    PLCTYPE_REAL,
+    PLCTYPE_SINT,
+    PLCTYPE_STRING,
+    PLCTYPE_TOD,
+    PLCTYPE_UBYTE,
+    PLCTYPE_UDINT,
+    PLCTYPE_UINT,
+    PLCTYPE_USINT,
+    PLCTYPE_WORD,
+    PLCTYPE_LINT,
+    PLCTYPE_ULINT,
+    PLCTYPE_DATE,
+    PLCTYPE_DATE_AND_TIME,
+    PLCTYPE_DT,
+    PLCTYPE_TIME,
+]
+PLCDataType = Union[Array, PLCSimpleDataType]
 
 # Datatype unpacking values
 DATATYPE_MAP: Dict[Type, str] = {
