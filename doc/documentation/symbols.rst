@@ -28,10 +28,11 @@ provided:
    >>> symbol = plc.get_symbol('global.bool_value')
    # Alternatively, specify all information and no lookup will be done:
    >>> symbol = plc.get_symbol('global.bool_value', index_group=123,
-                               index_offset=12345, symbol_type='BOOL')
+                               index_offset=12345, symbol_type=pyads.PLCTYPE_BOOL)
 
 Here the indices are same as used in :py:meth:`.Connection.read` and :py:meth:`.Connection.write`.
-The symbol type is a string of the variable type in PLC-style, e.g. ‘LREAL’, ‘INT’, ‘UDINT’, etc.
+The symbol type can also be the same as with the read and write method, e.g. ``pyads.PLCTYPE_INT`` or ``pyads.PLCTYPE_BOOL``.
+Alternatively, the class will also accept a string of the variable type in PLC-style, e.g. ‘LREAL’, ‘INT’, ‘UDINT’, etc.
 
 .. warning::
 
