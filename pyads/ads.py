@@ -712,7 +712,7 @@ class Connection(object):
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
-        data_type: Optional[Union[Type[PLCDataType], str]] = None,
+        plc_datatype: Optional[Union[Type[PLCDataType], str]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
     ) -> AdsSymbol:
@@ -735,7 +735,7 @@ class Connection(object):
             `set_auto_update(True)`)
         """
 
-        return AdsSymbol(self, name, index_group, index_offset, data_type,
+        return AdsSymbol(self, name, index_group, index_offset, plc_datatype,
                          comment, auto_update=auto_update)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
