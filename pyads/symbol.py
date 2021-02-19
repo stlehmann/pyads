@@ -12,7 +12,7 @@ the circular dependencies.
 
 import re
 from ctypes import sizeof
-from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable
+from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type
 
 from . import constants  # To access all constants, use package notation
 from .pyads_ex import adsGetSymbolInfo
@@ -58,24 +58,26 @@ class AdsSymbol:
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
-        symbol_type: Optional[str] = None,
+        symbol_type: Optional[Union[str, Type]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
     ) -> None:
-        """Create AdsSymbol instance
+        """Create AdsSymbol instance.
 
         Specify either the variable name or the index_group **and**
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `symbol_type` should be a string representing a PLC type (e.g.
+
+        `symbol_type` should be a type constant like `pyads.PLCTYPE_*`.
+        Alternatively, it can be a string representation a PLC type (e.g.
         'LREAL').
 
         :param plc: Connection instance
         :param name:
         :param index_group:
         :param index_offset:
-        :param symbol_type: PLC variable type (e.g. 'LREAL')
+        :param symbol_type: PLC variable type (e.g. `pyads.PLCTYPE_DINT`)
         :param comment:
         :param auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
@@ -112,7 +114,10 @@ class AdsSymbol:
 
         self.plc_type: Optional[Any] = None
         if self.symbol_type is not None:
-            self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
+            if isinstance(self.symbol_type, str):  # Perform lookup if string
+                self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
+            else:  # Otherwise `symbol_type` is probably a pyads.PLCTYPE_* constant
+                self.plc_type = self.symbol_type
 
         self.auto_update = auto_update
 

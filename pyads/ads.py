@@ -710,7 +710,7 @@ class Connection(object):
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
-        symbol_type: Optional[str] = None,
+        symbol_type: Optional[Union[str, Type]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
     ) -> AdsSymbol:
@@ -720,13 +720,15 @@ class Connection(object):
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `symbol_type` should be a string representing a PLC type (e.g.
+
+        `symbol_type` should be a type constant like `pyads.PLCTYPE_*`.
+        Alternatively, it can be a string representation a PLC type (e.g.
         'LREAL').
 
         :param name:
         :param index_group:
         :param index_offset:
-        :param symbol_type: PLC variable type (e.g. 'LREAL')
+        :param symbol_type: PLC variable type (e.g. `pyads.PLCTYPE_DINT`)
         :param comment:
         :param auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
