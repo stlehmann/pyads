@@ -722,7 +722,7 @@ class Connection(object):
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `data_type` should can be a PLCTYPE constant or  a string representing
+        `data_type` can be a PLCTYPE constant or  a string representing
         a PLC type (e.g. 'LREAL').
 
         :param str name:
