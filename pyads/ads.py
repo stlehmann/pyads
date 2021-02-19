@@ -728,7 +728,7 @@ class Connection(object):
         :param str name:
         :param Optional[int] index_group:
         :param Optional[int] index_offset:
-        :param Optional[Union[Type["PLCDataType"], str]]: type of the  PLC variable, according
+        :param plc_datatype: type of the  PLC variable, according
             to PLCTYPE constants
         :param str comment: comment
         :param bool auto_update: Create notification to update buffer (same as
