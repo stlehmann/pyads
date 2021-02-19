@@ -687,11 +687,11 @@ class Connection(object):
         :param int index_offset: PLC storage address
         :param Type[PLCDataType] plc_datatype: type of the data given to the PLC, according
             to PLCTYPE constants
-            :return: value: **value**
         :param bool return_ctypes: return ctypes instead of python types if True
             (default: False)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)
+        :return: value
 
         """
         if self._port is not None:
@@ -712,7 +712,7 @@ class Connection(object):
         name: Optional[str] = None,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
-        symbol_type: Optional[str] = None,
+        data_type: Optional[Union[Type[PLCDataType], str]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
     ) -> AdsSymbol:
@@ -722,19 +722,20 @@ class Connection(object):
         index_offset so the symbol can be located.
         If the name was specified but not all other attributes were,
         the other attributes will be looked up from the connection.
-        `symbol_type` should be a string representing a PLC type (e.g.
-        'LREAL').
+        `data_type` should can be a PLCTYPE constant or  a string representing
+        a PLC type (e.g. 'LREAL').
 
-        :param name:
-        :param index_group:
-        :param index_offset:
-        :param symbol_type: PLC variable type (e.g. 'LREAL')
-        :param comment:
-        :param auto_update: Create notification to update buffer (same as
+        :param str name:
+        :param Optional[int] index_group:
+        :param Optional[int] index_offset:
+        :param Optional[Union[Type[PLCDataType], str]]: type of the  PLC variable, according
+            to PLCTYPE constants
+        :param str comment: comment
+        :param bool auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
         """
 
-        return AdsSymbol(self, name, index_group, index_offset, symbol_type,
+        return AdsSymbol(self, name, index_group, index_offset, data_type,
                          comment, auto_update=auto_update)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
