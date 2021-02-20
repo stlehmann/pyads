@@ -18,7 +18,7 @@ server level by specifying the `handler` kwarg in the server constructor.
 
 """
 from __future__ import absolute_import
-from typing import Any, List, Type, Optional, Dict, Tuple
+from typing import Any, List, Type, Optional, Dict, Tuple, Union
 from types import TracebackType
 import atexit
 import logging
@@ -84,10 +84,14 @@ class AdsTestServer(threading.Thread):
     """
 
     def __init__(
-            self, handler=None, ip_address="", port=ADS_PORT,
-            logging=True, *args, **kwargs
-    ):
-        # type: (AbstractHandler, str, int, bool, Any, Any) -> None
+            self,
+            handler: "AbstractHandler" = None,
+            ip_address: str = "",
+            port: int = ADS_PORT,
+            logging: bool = True,
+            *args: Any,
+            **kwargs: Any,
+    ) -> None:
         self.handler = handler or BasicHandler()
         self.ip_address = ip_address
         self.port = port
@@ -97,7 +101,7 @@ class AdsTestServer(threading.Thread):
         logger = logger if logging else null_logger
 
         # Keep track of all received AMS packets
-        self.request_history = []  # type: List[AmsPacket]
+        self.request_history: List[AmsPacket] = []
 
         # Initialize TCP/IP socket server
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -113,24 +117,22 @@ class AdsTestServer(threading.Thread):
         # Daemonize the server thread
 
         # Container for client connection threads
-        self.clients = []  # type: List[AdsClientConnection]
+        self.clients: List[AdsClientConnection] = []
 
         super(AdsTestServer, self).__init__(*args, **kwargs)
         self.daemon = True
 
-    def __enter__(self):
-        # type: () -> AdsTestServer
+    def __enter__(self) -> "AdsTestServer":
         """Enter context."""
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        # type: (Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]) -> None  # noqa: E501
+    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         """Exit context."""
         self.close()
 
-    def stop(self):
-        # type: () -> None
+    def stop(self) -> None:
         """Close client connections and stop main server loop."""
         # Close all client connections
         for client in self.clients:
@@ -145,13 +147,11 @@ class AdsTestServer(threading.Thread):
 
         self.server.close()
 
-    def close(self):
-        # type: () -> None
+    def close(self) -> None:
         """Close the server thread."""
         self.stop()
 
-    def run(self):
-        # type: () -> None
+    def run(self) -> None:
         """Listen for incoming connections from clients."""
         self._run = True
 
@@ -192,8 +192,9 @@ class AdsTestServer(threading.Thread):
 class AdsClientConnection(threading.Thread):
     """Connection thread to an ADS client."""
 
-    def __init__(self, handler, client, address, server, *args, **kwargs):
-        # type: (AbstractHandler, socket.socket, str, AdsTestServer, Any, Any) -> None
+    def __init__(self, handler: "AbstractHandler", client: socket.socket, address: str, server: AdsTestServer,
+                 *args: Any,
+                 **kwargs: Any) -> None:
         self.handler = handler
         self.server = server
         self.client = client
@@ -207,8 +208,7 @@ class AdsClientConnection(threading.Thread):
 
         super(AdsClientConnection, self).__init__(*args, **kwargs)
 
-    def stop(self):
-        # type: () -> None
+    def stop(self) -> None:
         """Stop the client thread."""
         if self._run:
             logger.info(
@@ -219,15 +219,13 @@ class AdsClientConnection(threading.Thread):
 
         self.join()
 
-    def close(self):
-        # type: () -> None
+    def close(self) -> None:
         """Close the client connection."""
         if self.is_alive():
             self.stop()
         self.client.close()
 
-    def run(self):
-        # type: () -> None
+    def run(self) -> None:
         """Listen for data on client connection and delegate requests."""
         self._run = True
 
@@ -275,8 +273,7 @@ class AdsClientConnection(threading.Thread):
             logger.error("Request handler failed to return a valid response.")
 
     @staticmethod
-    def construct_response(response_data, request):
-        # type: (AmsResponseData, AmsPacket) -> bytes
+    def construct_response(response_data: AmsResponseData, request: AmsPacket) -> bytes:
         """Construct binary AMS response to return to the client.
 
         :param AmsResponseData response_data: Data to include in the response
@@ -328,8 +325,8 @@ class AdsClientConnection(threading.Thread):
 
         return ams_tcp_header + ams_header
 
-    def construct_request(self, request_bytes):
-        # type: (bytes) -> AmsPacket
+    @staticmethod
+    def construct_request(request_bytes: bytes) -> AmsPacket:
         """Unpack an AMS packet from binary data.
 
         :param bytes request_bytes: The raw request data
@@ -363,8 +360,7 @@ class AdsClientConnection(threading.Thread):
 class AbstractHandler:
     """Abstract Handler class to provide a base class for handling requests."""
 
-    def handle_request(self, request):
-        # type: (AmsPacket) -> AmsResponseData
+    def handle_request(self, request: AmsPacket) -> AmsResponseData:
         """Handle incoming requests.
 
         :param AmsPacket request: The request data received from the client
@@ -382,8 +378,7 @@ class BasicHandler(AbstractHandler):
 
     """
 
-    def handle_request(self, request):
-        # type: (AmsPacket) -> AmsResponseData
+    def handle_request(self, request: AmsPacket) -> AmsResponseData:
         """Handle incoming requests and send a response."""
         # Extract command id from the request
         command_id_bytes = request.ams_header.command_id
@@ -494,7 +489,7 @@ class BasicHandler(AbstractHandler):
             elif index_group == constants.ADSIGRP_SUMUP_READ:
                 n_reads = len(write_data) // 12
                 fmt = "<" + n_reads * "I"
-                vals = [0 for i in range(n_reads)]
+                vals: List[Union[int, bytes]] = [0 for _ in range(n_reads)]
 
                 for i in range(n_reads):
                     buf = write_data[i * 12 + 8:i * 12 + 12]
@@ -554,67 +549,64 @@ class PLCVariable:
     INDEX_OFFSET_BASE = 10000
 
     def __init__(self,
-                 name="unnamed",
-                 value=bytes(16),
-                 ads_type=constants.ADST_UINT8,
-                 symbol_type='UINT'):
-        # type: (str, bytes, int, str) -> None
+                 name: str,
+                 value: Union[int, float, bytes],
+                 ads_type: int,
+                 symbol_type: str,
+                 index_group: Optional[int] = None,
+                 index_offset: Optional[int] = None,
+                ) -> None:
         """
-
         Handle and indices are set by default (to random but safe values)
 
-        :param name:
-        :param value:
-        :param ads_type: constants.PLCTYPE_*
-        :param symbol_type: PLC-style name of type
+        :param str name: variable name
+        :param bytes value: variable value as bytes
+        :param int ads_type: constants.ADST_*
+        :param str symbol_type: PLC-style name of type
+        :param Optional[int] index_group: set index_group manually
+        :param Optional[int] index_offset: set index_offset manually
         """
         self.name = name.strip('\x00')
-        self.value = value  # type: bytes
-        # Variable value is stored in binary!
 
-        self.ads_type = None  # type: Optional[int]
-        self.symbol_type = None  # type: Optional[str]
-        self.plc_type = None  # type: Any
+        # value is stored in binary!
+        if isinstance(value, bytes):
+            self.value = value
+        else:
+            # try to pack value according to ads_type
+            fmt = constants.DATATYPE_MAP[constants.ads_type_to_ctype[ads_type]]
+            self.value = struct.pack(fmt, value)
 
-        self.set_type(ads_type, symbol_type)
-
-        self.handle = self.handle_count
-        self.index_group = self.INDEX_GROUP  # Default value - shouldn't
-        # matter much
-        self.index_offset = self.INDEX_OFFSET_BASE + self.handle  # We will
-        # cheat by using the handle (since we know it will be unique)
-
-        self.comment = ''  # type: str
-
-        self.size = 2  # Value size in bytes
-
-        self.handle_count += 1  # Increment class property
-
-    def set_type(self, ads_type, symbol_type):
-        # type: (int, str) -> None
-        """Set a new ADST_ variable type (also update PLCTYPE_
-
-        However, the symbol_type string cannot be updated automatically!
-        """
         self.ads_type = ads_type
-        if ads_type in constants.ads_type_to_ctype:
-            self.plc_type = constants.ads_type_to_ctype[ads_type]
         self.symbol_type = symbol_type
 
-    def get_packed_info(self):
-        # type: () -> bytes
+        self.handle = PLCVariable.handle_count
+        PLCVariable.handle_count += 1
+
+        if index_group is None:
+            self.index_group = PLCVariable.INDEX_GROUP  # default value - shouldn't matter much
+        else:
+            self.index_group = index_group
+
+        if index_offset is None:
+            # cheat by using the handle as offset (since we know it will be unique)
+            self.index_offset = PLCVariable.INDEX_OFFSET_BASE + self.handle
+        else:
+            self.index_offset = index_offset
+
+        self.comment: str = ''
+        self.size = 2  # value size in bytes
+
+    def get_packed_info(self) -> bytes:
         """Get bytes array of symbol info"""
-        # str_buffer = var.name.encode('utf-8') + \
-        #              var.symbol_type.encode('utf-8')
         if self.comment is None:
             self.comment = ""
         name_bytes = self.name.encode('utf-8')
         symbol_type_bytes = self.symbol_type.encode('utf-8')
         comment_bytes = self.comment.encode('utf-8')
 
-        entry_length = 6 * 4 + 3 * 2 + len(name_bytes) \
-                             + 1 + len(symbol_type_bytes) + 1 \
-                             + len(comment_bytes)
+        entry_length = (6 * 4 + 3 * 2 + len(name_bytes)
+                        + 1 + len(symbol_type_bytes) + 1
+                        + len(comment_bytes))
 
         read_data = struct.pack(
             "<IIIIIIHHH",
@@ -627,8 +619,7 @@ class PLCVariable:
             len(name_bytes),
             len(symbol_type_bytes),
             len(comment_bytes)
-        ) + name_bytes + b'\x20' + symbol_type_bytes + b'\x20' \
-          + comment_bytes
+        ) + name_bytes + b'\x20' + symbol_type_bytes + b'\x20' + comment_bytes
 
         return read_data
 
@@ -651,10 +642,8 @@ class AdvancedHandler(AbstractHandler):
     non-default type is important.
     """
 
-    def __init__(self):
-        # type: () -> None
-
-        self._data = {}  # type: Dict[Tuple[int, int], PLCVariable]
+    def __init__(self) -> None:
+        self._data: Dict[Tuple[int, int], PLCVariable] = {}
         # This will be our variables database
         # We won't both with indexing it by handle or name, speed is not
         # important. We store by group + offset index and will have to
@@ -662,13 +651,11 @@ class AdvancedHandler(AbstractHandler):
 
         self.reset()
 
-    def reset(self):
-        # type: () -> None
+    def reset(self) -> None:
         """Clear saved variables in handler"""
         self._data = {}
 
-    def handle_request(self, request):
-        # type: (AmsPacket) -> AmsResponseData
+    def handle_request(self, request: AmsPacket) -> AmsResponseData:
         """Handle incoming requests and create a response."""
         # Extract command id from the request
         command_id_bytes = request.ams_header.command_id
@@ -679,10 +666,8 @@ class AdvancedHandler(AbstractHandler):
         state = state | 0x0001  # Set response flag
         state = struct.pack("<H", state)
 
-        def handle_read_device_info():
-            # type: () -> bytes
-            """Create dummy response: version 1.2.3, device name 'TestServer'
-            """
+        def handle_read_device_info() -> bytes:
+            """Create dummy response: version 1.2.3, device name 'TestServer'."""
             logger.info("Command received: READ_DEVICE_INFO")
 
             major_version = "\x01".encode("utf-8")
@@ -696,8 +681,7 @@ class AdvancedHandler(AbstractHandler):
 
             return response_content
 
-        def handle_read():
-            # type: () -> bytes
+        def handle_read() -> bytes:
             """Handle read request."""
             data = request.ams_header.data
 
@@ -714,8 +698,6 @@ class AdvancedHandler(AbstractHandler):
 
             # value by handle is demanded return from named data store
             if index_group == constants.ADSIGRP_SYM_VALBYHND:
-
-                # response_value = self._named_data[index_offset].value
                 response_value = self.get_variable_by_handle(
                     index_offset).value
 
@@ -739,8 +721,7 @@ class AdvancedHandler(AbstractHandler):
 
             return struct.pack("<I", len(response_value)) + response_value
 
-        def handle_write():
-            # type: () -> bytes
+        def handle_write() -> bytes:
             """Handle write request."""
             data = request.ams_header.data
 
@@ -765,15 +746,14 @@ class AdvancedHandler(AbstractHandler):
                 var.value = value
                 return b""
 
-            var = self.get_or_create_variable_by_indices(
+            var = self.get_variable_by_indices(
                 index_group, index_offset)
             var.value = value
 
             # no return value needed
             return b""
 
-        def handle_read_write():
-            # type: () -> bytes
+        def handle_read_write() -> bytes:
             """Handle read-write request."""
             data = request.ams_header.data
 
@@ -802,7 +782,7 @@ class AdvancedHandler(AbstractHandler):
 
                 # This could be part of a write-by-name, so create the
                 # variable if it does not yet exist
-                var = self.get_or_create_variable_by_name(var_name)
+                var = self.get_variable_by_name(var_name)
 
                 read_data = struct.pack("<I", var.handle)
 
@@ -826,8 +806,7 @@ class AdvancedHandler(AbstractHandler):
 
             return struct.pack("<I", len(read_data)) + read_data
 
-        def handle_read_state():
-            # type: () -> bytes
+        def handle_read_state() -> bytes:
             """Handle read-state request."""
             logger.info("Command received: READ_STATE")
             ads_state = struct.pack("<H", constants.ADSSTATE_RUN)
@@ -836,29 +815,25 @@ class AdvancedHandler(AbstractHandler):
             device_state = struct.pack("<H", 0)
             return ads_state + device_state
 
-        def handle_writectrl():
-            # type: () -> bytes
+        def handle_writectrl() -> bytes:
             """Handle writectrl request."""
             logger.info("Command received: WRITE_CONTROL")
             # No response data required
             return b""
 
-        def handle_add_devicenote():
-            # type: () -> bytes
+        def handle_add_devicenote() -> bytes:
             """Handle add_devicenode request."""
             logger.info("Command received: ADD_DEVICE_NOTIFICATION")
             handle = ("\x0F" * 4).encode("utf-8")
             return handle
 
-        def handle_delete_devicenote():
-            # type: () -> bytes
+        def handle_delete_devicenote() -> bytes:
             """Handle delete_devicenode request."""
             logger.info("Command received: DELETE_DEVICE_NOTIFICATION")
             # No response data required
             return b""
 
-        def handle_devicenote():
-            # type: () -> bytes
+        def handle_devicenote() -> bytes:
             """Handle a device notification."""
             logger.info("Command received: DEVICE_NOTIFICATION")
             # No response data required
@@ -894,10 +869,8 @@ class AdvancedHandler(AbstractHandler):
         return AmsResponseData(state, request.ams_header.error_code,
                                response_data)
 
-    def get_variable_by_handle(self, handle):
-        # type: (int) -> PLCVariable
+    def get_variable_by_handle(self, handle: int) -> PLCVariable:
         """Get PLC variable by handle, throw error when not found"""
-
         for idx, var in self._data.items():
             if var.handle == handle:
                 return var
@@ -905,56 +878,25 @@ class AdvancedHandler(AbstractHandler):
         raise KeyError('Variable with handle `{}` not found - Create it first '
                        'explicitly or write to it'.format(handle))
 
-    def get_variable_by_indices(self, index_group, index_offset):
-        # type: (int, int) -> PLCVariable
+    def get_variable_by_indices(self, index_group: int, index_offset: int) -> PLCVariable:
         """Get PLC variable by handle, throw error when not found"""
-
         tup = (index_group, index_offset)
-
         if tup in self._data:
             return self._data[tup]
-
         raise KeyError('Variable with indices ({}, {}) not found - Create '
                        'it first explicitly or write to it'
                        .format(index_group, index_offset))
 
-    def get_or_create_variable_by_indices(self, index_group, index_offset):
-        # type: (int, int) -> PLCVariable
-        """Try to retrieve a variable by indices, create it if non-existent"""
-        try:
-            return self.get_variable_by_indices(index_group, index_offset)
-        except KeyError:
-            var = PLCVariable()
-            var.index_group = index_group
-            var.index_offset = index_offset
-            self.add_variable(var)
-            return var
-
-    def get_variable_by_name(self, name):
-        # type: (str) -> PLCVariable
+    def get_variable_by_name(self, name: str) -> PLCVariable:
         """Get variable by name, throw error if not found"""
-
         name = name.strip('\x00')
-
         for key, var in self._data.items():
             if var.name == name:
                 return var
-
         raise KeyError('Variable with name `{}` not found - Create it first '
                        'explicitly or write to it'.format(name))
 
-    def get_or_create_variable_by_name(self, name):
-        # type: (str) -> PLCVariable
-        """Try to retrieve a variable by indices, create it if non-existent"""
-        try:
-            return self.get_variable_by_name(name)
-        except KeyError:
-            var = PLCVariable(name=name)
-            self.add_variable(var)
-            return var
-
-    def add_variable(self, var):
-        # type: (PLCVariable) -> None
+    def add_variable(self, var: PLCVariable) -> None:
         tup = (var.index_group, var.index_offset)
         self._data[tup] = var
 
@@ -962,6 +904,7 @@ class AdvancedHandler(AbstractHandler):
 def main():
     """Main function (keep variable out of global scope)"""
     server = AdsTestServer(handler=AdvancedHandler())
+    # noinspection PyBroadException
     try:
         server.start()
         server.join()
