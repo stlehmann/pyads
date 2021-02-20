@@ -738,7 +738,7 @@ class AdvancedHandler(AbstractHandler):
                 var.value = value
                 return b""
 
-            var = self.get_or_create_variable_by_indices(
+            var = self.get_variable_by_indices(
                 index_group, index_offset)
             var.value = value
 
@@ -774,7 +774,7 @@ class AdvancedHandler(AbstractHandler):
 
                 # This could be part of a write-by-name, so create the
                 # variable if it does not yet exist
-                var = self.get_or_create_variable_by_name(var_name)
+                var = self.get_variable_by_name(var_name)
 
                 read_data = struct.pack("<I", var.handle)
 
@@ -879,17 +879,6 @@ class AdvancedHandler(AbstractHandler):
                        'it first explicitly or write to it'
                        .format(index_group, index_offset))
 
-    def get_or_create_variable_by_indices(self, index_group: int, index_offset: int) -> PLCVariable:
-        """Try to retrieve a variable by indices, create it if non-existent"""
-        try:
-            return self.get_variable_by_indices(index_group, index_offset)
-        except KeyError:
-            var = PLCVariable()
-            var.index_group = index_group
-            var.index_offset = index_offset
-            self.add_variable(var)
-            return var
-
     def get_variable_by_name(self, name: str) -> PLCVariable:
         """Get variable by name, throw error if not found"""
         name = name.strip('\x00')
@@ -898,15 +887,6 @@ class AdvancedHandler(AbstractHandler):
                 return var
         raise KeyError('Variable with name `{}` not found - Create it first '
                        'explicitly or write to it'.format(name))
-
-    def get_or_create_variable_by_name(self, name: str) -> PLCVariable:
-        """Try to retrieve a variable by indices, create it if non-existent"""
-        try:
-            return self.get_variable_by_name(name)
-        except KeyError:
-            var = PLCVariable(name=name)
-            self.add_variable(var)
-            return var
 
     def add_variable(self, var: PLCVariable) -> None:
         tup = (var.index_group, var.index_offset)
