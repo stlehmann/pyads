@@ -1323,7 +1323,9 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_read_check_length(self):
         # Write data shorter than what should be read
         self.handler.add_variable(
-            PLCVariable("i", 1, constants.PLCTYPE_USINT, index_group=constants.INDEXGROUP_DATA, index_offset=1))
+            PLCVariable("i", 1, constants.ADST_UINT8, symbol_type="USINT",
+                        index_group=constants.INDEXGROUP_DATA,
+                        index_offset=1))
         with self.plc:
             with self.assertRaises(RuntimeError):
                 # Since the length is checked, this must give an error
@@ -1348,7 +1350,8 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             self.assertEqual(len(self.plc.get_all_symbols()), 0)
 
     def test_get_all_symbols_single(self):
-        self.handler.add_variable(PLCVariable("i", 1, constants.PLCTYPE_INT, index_group=123, index_offset=0))
+        self.handler.add_variable(
+            PLCVariable("i", 1, constants.ADST_INT16, symbol_type="INT", index_group=123, index_offset=0))
         with self.plc:
             symbols = self.plc.get_all_symbols()
             self.assertEqual(len(symbols), 1)
@@ -1356,8 +1359,8 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
     def test_read_by_name_without_datatype(self) -> None:
         """Test read by name without passing the datatype."""
-        # creat variable on testserver
-        self.handler.add_variable(PLCVariable("test_var", 42, pyads.PLCTYPE_INT))
+        # create variable on testserver
+        self.handler.add_variable(PLCVariable("test_var", 42, constants.ADST_INT16, "INT"))
         with self.plc:
             # read twice to show caching
             read_value = self.plc.read_by_name("test_var")
@@ -1372,7 +1375,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_write_by_name_without_datatype(self) -> None:
         """Test read by name without passing the datatype."""
         # create variable on testserver
-        self.handler.add_variable(PLCVariable("test_var", 0, pyads.PLCTYPE_INT))
+        self.handler.add_variable(PLCVariable("test_var", 0, constants.ADST_INT16, "INT"))
         with self.plc:
             # write twice to show caching
             self.plc.write_by_name("test_var", 42)
