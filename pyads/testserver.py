@@ -549,48 +549,44 @@ class PLCVariable:
     INDEX_OFFSET_BASE = 10000
 
     def __init__(self,
-                 name: str = "unnamed",
-                 value: bytes = bytes(16),
-                 ads_type: int = constants.ADST_UINT8,
-                 symbol_type: str = 'UINT') -> None:
+                 name: str,
+                 value: bytes,
+                 ads_type: int,
+                 symbol_type: str,
+                 index_group: Optional[int] = None,
+                 index_offset: Optional[int] = None,
+                ) -> None:
         """
         Handle and indices are set by default (to random but safe values)
 
-        :param str name:
-        :param bytes value:
+        :param str name: variable name
+        :param bytes value: variable value as bytes
         :param int ads_type: constants.ADST_*
         :param str symbol_type: PLC-style name of type
+        :param Optional[int] index_group: set index_group manually
+        :param Optional[int] index_offset: set index_offset manually
         """
         self.name = name.strip('\x00')
-        self.value = value
-        # Variable value is stored in binary!
-
-        self.ads_type: Optional[int] = None
-        self.symbol_type: Optional[str] = None
-        self.plc_type: Any = None
-
-        self.set_type(ads_type, symbol_type)
+        self.value = value  # value is stored in binary!
+        self.ads_type = ads_type
+        self.symbol_type = symbol_type
 
         self.handle = PLCVariable.handle_count
-        self.index_group = PLCVariable.INDEX_GROUP  # default value - shouldn't matter much
-        self.index_offset = PLCVariable.INDEX_OFFSET_BASE + self.handle  # We will
-        # cheat by using the handle (since we know it will be unique)
+        PLCVariable.handle_count += 1
+
+        if index_group is None:
+            self.index_group = PLCVariable.INDEX_GROUP  # default value - shouldn't matter much
+        else:
+            self.index_group = index_group
+
+        if index_offset is None:
+            # cheat by using the handle as offset (since we know it will be unique)
+            self.index_offset = PLCVariable.INDEX_OFFSET_BASE + self.handle
+        else:
+            self.index_offset = index_offset
 
         self.comment: str = ''
-
-        self.size = 2  # Value size in bytes
-
-        PLCVariable.handle_count += 1  # Increment class property
-
-    def set_type(self, ads_type: int, symbol_type: str) -> None:
-        """Set a new ADST_ variable type (also update PLCTYPE_
-
-        However, the symbol_type string cannot be updated automatically!
-        """
-        self.ads_type = ads_type
-        if ads_type in constants.ads_type_to_ctype:
-            self.plc_type = constants.ads_type_to_ctype[ads_type]
-        self.symbol_type = symbol_type
+        self.size = 2  # value size in bytes
 
     def get_packed_info(self) -> bytes:
         """Get bytes array of symbol info"""
