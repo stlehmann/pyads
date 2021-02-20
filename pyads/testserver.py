@@ -571,17 +571,16 @@ class PLCVariable:
 
         self.set_type(ads_type, symbol_type)
 
-        self.handle = self.handle_count
-        self.index_group = self.INDEX_GROUP  # Default value - shouldn't
-        # matter much
-        self.index_offset = self.INDEX_OFFSET_BASE + self.handle  # We will
+        self.handle = PLCVariable.handle_count
+        self.index_group = PLCVariable.INDEX_GROUP  # default value - shouldn't matter much
+        self.index_offset = PLCVariable.INDEX_OFFSET_BASE + self.handle  # We will
         # cheat by using the handle (since we know it will be unique)
 
         self.comment: str = ''
 
         self.size = 2  # Value size in bytes
 
-        self.handle_count += 1  # Increment class property
+        PLCVariable.handle_count += 1  # Increment class property
 
     def set_type(self, ads_type: int, symbol_type: str) -> None:
         """Set a new ADST_ variable type (also update PLCTYPE_
