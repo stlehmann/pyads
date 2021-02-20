@@ -550,7 +550,7 @@ class PLCVariable:
 
     def __init__(self,
                  name: str,
-                 value: bytes,
+                 value: Union[int, float, bytes],
                  ads_type: int,
                  symbol_type: str,
                  index_group: Optional[int] = None,
@@ -567,7 +567,15 @@ class PLCVariable:
         :param Optional[int] index_offset: set index_offset manually
         """
         self.name = name.strip('\x00')
-        self.value = value  # value is stored in binary!
+
+        # value is stored in binary!
+        if isinstance(value, bytes):
+            self.value = value
+        else:
+            # try to pack value according to ads_type
+            fmt = constants.DATATYPE_MAP[constants.ads_type_to_ctype[ads_type]]
+            self.value = struct.pack(fmt, value)
+
         self.ads_type = ads_type
         self.symbol_type = symbol_type
 
