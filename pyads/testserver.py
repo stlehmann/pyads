@@ -794,6 +794,10 @@ class AdvancedHandler(AbstractHandler):
 
                 read_data = var.get_packed_info()
 
+            elif index_group == constants.ADSIGRP_SUMUP_WRITE:
+                # need to do some work here
+                pass
+
             # Else just return the value stored
             else:
 
