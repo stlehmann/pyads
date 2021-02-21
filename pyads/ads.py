@@ -956,11 +956,14 @@ class Connection(object):
                 for i in data_names_and_values.keys()
             }
 
+        if structure_defs is None:
+            structure_defs = {}
+
         for name, structure_def in structure_defs.items():
             data_names_and_values[name] = bytes_from_dict(
                 data_names_and_values[name], structure_def)
-
         structured_data_names = list(structure_defs.keys())
+
         if len(data_names_and_values) <= ads_sub_commands:
             return adsSumWrite(
                 self._port, self._adr, data_names_and_values, data_symbols,
