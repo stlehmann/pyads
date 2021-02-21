@@ -925,7 +925,6 @@ def adsSumWrite(
     address: AmsAddr,
     data_names_and_values: Dict[str, Any],
     data_symbols: Dict[str, SAdsSymbolEntry],
-    structured_data_names: List[str],
 ) -> Dict[str, ADSError]:
     """Perform a sum write to write the value of multiple ADS variables
 
@@ -935,7 +934,6 @@ def adsSumWrite(
     :type data_names_and_values: dict[str, Any]
     :param data_symbols: list of dictionaries of ADS Symbol Info
     :type data_symbols: dict[str, ADSSymbolInfo]
-    :param structured_data_names: list of structured variable names
     :return: result: dict of variable names and error codes
     :rtype: dict[str, ADSError]
     """
@@ -955,9 +953,7 @@ def adsSumWrite(
         offset += 12
 
     for data_name, value in data_names_and_values.items():
-        if data_name in structured_data_names:
-            buf[offset : offset + data_symbols[data_name].size] = value
-        elif (
+        if (
             data_symbols[data_name].dataType != ADST_STRING
             and data_symbols[data_name].dataType != ADST_WSTRING
         ):
