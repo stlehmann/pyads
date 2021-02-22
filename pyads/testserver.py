@@ -798,6 +798,7 @@ class AdvancedHandler(AbstractHandler):
 
                 read_data = var.get_packed_info()
 
+            # Write to a list of variables
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
                 num_requests = index_offset  # number of requests is coded in the offset for sumup_write
                 rq_list = [(
@@ -816,6 +817,19 @@ class AdvancedHandler(AbstractHandler):
 
                 read_data = struct.pack("<" + num_requests * "I", *(num_requests * [0]))
 
+            # Read a list of variables
+            elif index_group == constants.ADSIGRP_SUMUP_READ:
+                num_requests = index_offset
+                rq_list = [(
+                    struct.unpack("<I", write_data[i:i + 4])[0],  # index_group
+                    struct.unpack("<I", write_data[i + 4:i + 8])[0],  # index_offset
+                    struct.unpack("<I", write_data[i + 8:i + 12])[0],  # size
+                ) for i in range(0, num_requests * 12, 12)]
+
+                read_data = struct.pack("<" + num_requests * "I", *(num_requests * [0]))
+                for index_group, index_offset, size in rq_list:
+                    var = self.get_variable_by_indices(index_group, index_offset)
+                    read_data += var.value
 
             # Else just return the value stored
             else:
