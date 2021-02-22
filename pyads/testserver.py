@@ -594,7 +594,11 @@ class PLCVariable:
             self.index_offset = index_offset
 
         self.comment: str = ''
-        self.size = 2  # value size in bytes
+
+    @property
+    def size(self) -> int:
+        """Return size of value."""
+        return len(self.value)
 
     def get_packed_info(self) -> bytes:
         """Get bytes array of symbol info"""
@@ -795,8 +799,23 @@ class AdvancedHandler(AbstractHandler):
                 read_data = var.get_packed_info()
 
             elif index_group == constants.ADSIGRP_SUMUP_WRITE:
-                # need to do some work here
-                pass
+                num_requests = index_offset  # number of requests is coded in the offset for sumup_write
+                rq_list = [(
+                    struct.unpack("<I", write_data[i:i + 4])[0],  # index_group
+                    struct.unpack("<I", write_data[i + 4:i + 8])[0],  # index_offset
+                    struct.unpack("<I", write_data[i + 8:i + 12])[0],  # size
+                ) for i in range(0, num_requests * 12, 12)]
+
+                data = write_data[num_requests*12:]
+                offset = 0
+
+                for index_group, index_offset, size in rq_list:
+                    var = self.get_variable_by_indices(index_group, index_offset)
+                    var.value = data[offset : offset + size]
+                    offset += size
+
+                read_data = struct.pack("<" + num_requests * "I", *(num_requests * [0]))
+
 
             # Else just return the value stored
             else:
