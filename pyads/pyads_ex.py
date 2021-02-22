@@ -847,7 +847,7 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
 
 def adsSumRead(
     port: int, address: AmsAddr, data_names: List[str], data_symbols,
-    structured_data_names: List[str]
+    structured_data_names: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """Perform a sum read to get the value of multiple variables
 
@@ -861,6 +861,9 @@ def adsSumRead(
     :rtype: dict[str, Any]
     """
     result = {i: None for i in data_names}
+
+    if structured_data_names is None:
+        structured_data_names = []
 
     num_requests = len(data_names)
     sum_req_array_type = SAdsSumRequest * num_requests
