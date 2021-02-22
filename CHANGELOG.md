@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#187](https://github.com/stlehmann/pyads/pull/187) Support structured data types in `read_list_by_name`
+* [#220](https://github.com/stlehmann/pyads/pull/220) Support structured data types in `write_list_by_name`. Also the
+  AdvancedHandler of the testserver now support sumup_read and sumup_write commands.
 * [#195](https://github.com/stlehmann/pyads/pull/195) Read/write by name without passing the datatype
 * [#200](https://github.com/stlehmann/pyads/pull/200) Split read write by list into max-ads-sub-comands chunks
 * [#206](https://github.com/stlehmann/pyads/pull/206) AdsSymbol now supports DT, DATE_TIME and TIME datatypes 
