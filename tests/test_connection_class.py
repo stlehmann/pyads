@@ -1320,6 +1320,13 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
         )
 
+    def assert_command_id(self, request: AmsPacket, target_id: int) -> None:
+        """Assert command_id and target_id."""
+        # Check the request code received by the server
+        command_id = request.ams_header.command_id
+        command_id = struct.unpack("<H", command_id)[0]
+        self.assertEqual(command_id, target_id)
+
     def test_read_check_length(self):
         # Write data shorter than what should be read
         self.handler.add_variable(
@@ -1394,7 +1401,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             PLCVariable("TestStructure", b"\x01\x00", constants.ADST_INT16, symbol_type="TestStructure"))
         self.handler.add_variable(PLCVariable("TestVar", 0, constants.ADST_UINT8, "USINT"))
         variables = ["TestStructure", "TestVar"]
-        structure_defs = {"TestStructure": (("xVar", pyads.PLCTYPE_BYTE, 1),)}
+        structure_defs = {"TestStructure": (("xVar", pyads.PLCTYPE_INT, 1),)}
         data = {
             "TestStructure": {"xVar": 11},
             "TestVar": 22,
@@ -1420,5 +1427,3 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-    if __name__ == "__main__":
-        unittest.main()
