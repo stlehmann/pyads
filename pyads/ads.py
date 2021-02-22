@@ -961,6 +961,8 @@ class Connection(object):
 
         if structure_defs is None:
             structure_defs = {}
+        else:
+            data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
 
         for name, structure_def in structure_defs.items():
             data_names_and_values[name] = bytes_from_dict(
