@@ -918,6 +918,7 @@ class Connection(object):
         data_names_and_values: Dict[str, Any],
         cache_symbol_info: bool = True,
         ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+        structure_defs: Optional[Dict[str, StructureDef]] = None,
     ) -> Dict[str, ADSError]:
         """Write a list of variables.
 
@@ -931,6 +932,9 @@ class Connection(object):
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
         :param int ads_sub_commands: Max number of ADS-Sub commands used to write the variables in a single ADS call.
             A larger number can be used but may jitter the PLC execution!
+        :param dict structure_defs: for structured variables, optional mapping of
+            data name to special tuple defining the structure and
+            types contained within it according to PLCTYPE constants
 
         :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
         :rtype dict(str, ADSError)
@@ -955,9 +959,20 @@ class Connection(object):
                 for i in data_names_and_values.keys()
             }
 
+        if structure_defs is None:
+            structure_defs = {}
+        else:
+            data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
+
+        for name, structure_def in structure_defs.items():
+            data_names_and_values[name] = bytes_from_dict(
+                data_names_and_values[name], structure_def)
+        structured_data_names = list(structure_defs.keys())
+
         if len(data_names_and_values) <= ads_sub_commands:
             return adsSumWrite(
-                self._port, self._adr, data_names_and_values, data_symbols
+                self._port, self._adr, data_names_and_values, data_symbols,
+                structured_data_names
             )
 
         return_data: Dict[str, ADSError] = {}
@@ -965,7 +980,8 @@ class Connection(object):
             data_names_and_values, ads_sub_commands
         ):
             return_data.update(
-                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols)
+                adsSumWrite(self._port, self._adr, data_names_slice,
+                            data_symbols, structured_data_names)
             )
         return return_data
 
