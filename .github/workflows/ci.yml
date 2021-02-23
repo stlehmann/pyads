@@ -32,6 +32,7 @@ jobs:
         python -m pip install flake8 pytest coverage coveralls pytest-cov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         python setup.py develop
+        cd adslib && make
         
     - name: Test with pytest
       run: |
