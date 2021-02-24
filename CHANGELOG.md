@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+* [#221](https://github.com/stlehmann/pyads/pull/221) CI now uses Github Actions instead of TravisCI. Also Upload to PyPi is now on automatic.
+
 ### Removed
 
 ## 3.3.4

@@ -5,7 +5,7 @@ pyads - Python package
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyads/badges/version.svg)](https://anaconda.org/conda-forge/pyads)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyads/badges/platforms.svg)](https://anaconda.org/conda-forge/pyads)
 
-[![Build Status](https://travis-ci.org/stlehmann/pyads.svg?branch=master)](https://travis-ci.org/stlehmann/pyads)
+[![CI](https://github.com/stlehmann/pyads/actions/workflows/ci.yml/badge.svg)](https://github.com/stlehmann/pyads/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/stlehmann/pyads/badge.svg?branch=master)](https://coveralls.io/github/stlehmann/pyads?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/pyads/badge/?version=latest)](http://pyads.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://pepy.tech/badge/pyads)](https://pepy.tech/project/pyads)
