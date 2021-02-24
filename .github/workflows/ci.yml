@@ -21,7 +21,10 @@ jobs:
         python-version: [3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -31,9 +34,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest coverage coveralls pytest-cov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        python setup.py develop
-        cd adslib && make
-        
+        pip install -e .        
     - name: Test with pytest
       run: |
         pytest
