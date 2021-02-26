@@ -70,6 +70,11 @@ TwinCAT or you can make use of the convenience function
 Here is an example of adding a route to a target (e.g. remote plc) to
 allow connections to a PC with the Hostname “MyPC”
 
+.. warning::
+
+  You need to open a port and set a local netid with :py:func:`.set_local_address` before you
+  can use :py:func:`.add_route_to_plc`.
+
 .. code:: python
 
    >>> import pyads
@@ -79,5 +84,8 @@ allow connections to a PC with the Hostname “MyPC”
    >>> PLC_PASSWORD = 'plc_password'
    >>> ROUTE_NAME = 'RouteToMyPC'
    >>> HOSTNAME = 'MyPC'  # or IP
-   >>> PLC_AMS_ID = '11.22.33.44.1.1'
+   >>>
+   >>> pyads.open_port()
+   >>> pyads.set_local_address(SENDER_AMS)
    >>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, PLC_USERNAME, PLC_PASSWORD, route_name=ROUTE_NAME)
+   >>> pyads.close_port()
