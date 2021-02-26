@@ -61,6 +61,7 @@ class AdsSymbol:
         symbol_type: Optional[Union[str, Type]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
+        structure_def: Optional[StructureDef] = None,
     ) -> None:
         """Create AdsSymbol instance.
 
@@ -81,6 +82,9 @@ class AdsSymbol:
         :param comment:
         :param auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
+        :param Optional[StructureDef] structure_def: tuple defining the structure and types contained within at
+            according to PLCTYPE constants, must match the structure defined in the PLC, PLC structure must be defined
+            with {attribute 'pack_mode' := '1'}
         """
         self._plc = plc
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
