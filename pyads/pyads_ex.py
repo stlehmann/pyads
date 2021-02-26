@@ -600,6 +600,7 @@ def adsSyncReadWriteReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
     read_data: Optional[Any]
+    read_data_pointer: Optional[ctypes.pointer]
     response_size: int = 0
 
     if index_group == ADSIGRP_SUMUP_READ:
@@ -623,7 +624,7 @@ def adsSyncReadWriteReqEx2(
     elif read_data_type is None:
         read_data = None
         read_data_pointer = None
-        read_length = ctypes.c_ulong(0)
+        read_length = 0
     else:
         if read_data_type == PLCTYPE_STRING:
             read_data = (STRING_BUFFER * PLCTYPE_STRING)()
@@ -631,7 +632,7 @@ def adsSyncReadWriteReqEx2(
             read_data = read_data_type()
 
         read_data_pointer = ctypes.pointer(read_data)
-        read_length = ctypes.c_ulong(ctypes.sizeof(read_data))
+        read_length = ctypes.sizeof(read_data)
 
     bytes_read = ctypes.c_ulong()
     bytes_read_pointer = ctypes.pointer(bytes_read)
@@ -646,12 +647,12 @@ def adsSyncReadWriteReqEx2(
         write_length = ctypes.sizeof(write_data)
     elif write_data_type is None:
         write_data_pointer = None
-        write_length = ctypes.c_ulong(0)
+        write_length = 0
     elif write_data_type == PLCTYPE_STRING:
         # Get pointer to string
         write_data_pointer = ctypes.c_char_p(value.encode("utf-8"))
         # Add an extra byte to the data length for the null terminator
-        write_length = ctypes.c_ulong(len(value) + 1)
+        write_length = len(value) + 1
     else:
         if type(write_data_type).__name__ == "PyCArrayType":
             write_data = write_data_type(*value)
@@ -660,16 +661,16 @@ def adsSyncReadWriteReqEx2(
         else:
             write_data = write_data_type(value)
         write_data_pointer = ctypes.pointer(write_data)
-        write_length = ctypes.c_ulong(ctypes.sizeof(write_data))
+        write_length = ctypes.sizeof(write_data)
 
     err_code = sync_read_write_request(
         port,
         ams_address_pointer,
         index_group_c,
         index_offset_c,
-        read_length,
+        ctypes.c_ulong(read_length),
         read_data_pointer,
-        write_length,
+        ctypes.c_ulong(write_length),
         write_data_pointer,
         bytes_read_pointer,
     )
@@ -683,7 +684,7 @@ def adsSyncReadWriteReqEx2(
         expected_length = (
             read_data.entryLength
             if isinstance(read_data, SAdsSymbolEntry)
-            else read_length.value
+            else read_length
         )
 
     # If we're reading a value of predetermined size (anything but a string),
@@ -843,7 +844,7 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
 
 
 def adsSumRead(
-    port: int, address: AmsAddr, data_names: List[str], data_symbols,
+    port: int, address: AmsAddr, data_names: List[str], data_symbols: Dict[str, SAdsSymbolEntry],
     structured_data_names: List[str],
 ) -> Dict[str, Any]:
     """Perform a sum read to get the value of multiple variables
@@ -851,13 +852,13 @@ def adsSumRead(
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param data_names: list of variables names to read
-    :param data_symbols: list of dictionaries of ADS Symbol Info
-    :type data_symbols: dict[str, ADSSymbolInfo]
+    :param Dict[str, SAdsSymbolEntry] data_symbols: dictionary of ADS Symbol Info
     :param structured_data_names: list of structured variable names
     :return: result: dict of variable names and values
     :rtype: dict[str, Any]
+
     """
-    result = {i: None for i in data_names}
+    result: Dict[str, Optional[Any]] = {i: None for i in data_names}
 
     num_requests = len(data_names)
     sum_req_array_type = SAdsSumRequest * num_requests
@@ -923,7 +924,7 @@ def adsSumWrite(
     data_names_and_values: Dict[str, Any],
     data_symbols: Dict[str, SAdsSymbolEntry],
     structured_data_names: List[str],
-) -> Dict[str, ADSError]:
+) -> Dict[str, str]:
     """Perform a sum write to write the value of multiple ADS variables
 
     :param int port: local AMS port as returned by adsPortOpenEx()
