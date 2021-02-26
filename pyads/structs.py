@@ -285,6 +285,8 @@ class SAdsSymbolEntry(Structure):
 
     A complete example could be:
 
+    .. code:: python
+
         value: 57172            # Current value
         info.entryLength: 88    # Total storage space for this symbol
         info.iGroup: 16448      # Group index
