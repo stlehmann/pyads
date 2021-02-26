@@ -254,25 +254,27 @@ def size_of_structure(structure_def: StructureDef) -> int:
     """Calculate the size of a structure in number of BYTEs.
 
     :param tuple structure_def: special tuple defining the structure and
-            types contained within it according o PLCTYPE constants
-
-            Expected input example:
-
-            structure_def = (
-                ('rVar', pyads.PLCTYPE_LREAL, 1),
-                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-                ('sVar1', pyads.PLCTYPE_STRING, 1),
-                ('rVar1', pyads.PLCTYPE_REAL, 1),
-                ('iVar', pyads.PLCTYPE_DINT, 1),
-                ('iVar1', pyads.PLCTYPE_INT, 3),
-            )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
-
-            If array of structure multiply structure_def input by array size
-
+        types contained within it according o PLCTYPE constants
     :return: data size required to read/write a structure of multiple types
     :rtype: int
+
+    Expected input example for structure_def:
+
+    .. code:: python
+
+        structure_def = (
+            ('rVar', pyads.PLCTYPE_LREAL, 1),
+            ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+            ('sVar1', pyads.PLCTYPE_STRING, 1),
+            ('rVar1', pyads.PLCTYPE_REAL, 1),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ('iVar1', pyads.PLCTYPE_INT, 3),
+        )
+        # i.e ('Variable Name', variable type, arr size (1 if not array),
+        # length of string (if defined in PLC))
+
+    If array of structure multiply structure_def input by array size.
+
     """
     num_of_bytes = 0
     for item in structure_def:
@@ -300,27 +302,27 @@ def dict_from_bytes(
 ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
     """Return an ordered dict of PLC values from a list of BYTE values read from PLC.
 
-    :param byte_list: list of byte values for an entire structure
+    :param bytearray byte_list: list of byte values for an entire structure
     :param tuple structure_def: special tuple defining the structure and
-            types contained within it according o PLCTYPE constants
-
-            Expected input example:
-
-            structure_def = (
-                ('rVar', pyads.PLCTYPE_LREAL, 1),
-                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-                ('sVar1', pyads.PLCTYPE_STRING, 1),
-                ('rVar1', pyads.PLCTYPE_REAL, 1),
-                ('iVar', pyads.PLCTYPE_DINT, 1),
-                ('iVar1', pyads.PLCTYPE_INT, 3),
-            )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
-
-    :param array_size: size of array if reading array of structure, defaults to 1
-    :type array_size: int, optional
-
+        types contained within it according o PLCTYPE constants
+    :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
     :return: ordered dictionary of values for each variable type in order of structure
+
+    Expected input example for structure_def:
+
+    .. code:: python
+
+        structure_def = (
+            ('rVar', pyads.PLCTYPE_LREAL, 1),
+            ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+            ('sVar1', pyads.PLCTYPE_STRING, 1),
+            ('rVar1', pyads.PLCTYPE_REAL, 1),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ('iVar1', pyads.PLCTYPE_INT, 3),
+        )
+        # i.e ('Variable Name', variable type, arr size (1 if not array),
+        # length of string (if defined in PLC))
+
     """
     values_list: List[Dict[str, Any]] = []
     index = 0
@@ -370,32 +372,34 @@ def dict_from_bytes(
 def bytes_from_dict(
     values: Union[Dict[str, Any], List[Dict[str, Any]]],
     structure_def: StructureDef,
-    array_size: int = 1,
+    array_size: Optional[int] = 1,
 ) -> List[int]:
     """Returns a byte array of values which can be written to the PLC from an ordered dict.
 
-    :param Union[Dict[str, Any], List[Dict[str, Any]]] values: ordered dictionary of values
-            for each variable type in order of structure_def
+    :param values: ordered dictionary of values
+        for each variable type in order of structure_def
     :param tuple structure_def: special tuple defining the structure and
-            types contained within it according o PLCTYPE constants
+        types contained within it according o PLCTYPE constants
+    :param Optional[int] array_size: size of array if writing array of structure, defaults to 1
+    :return: list of byte values for an entire structure
+    :rtype: List[int]
 
-            Expected input example:
+    Expected input example for structure_def:
 
-            structure_def = (
-                ('rVar', pyads.PLCTYPE_LREAL, 1),
-                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
-                ('sVar2', pyads.PLCTYPE_STRING, 1),
-                ('rVar1', pyads.PLCTYPE_REAL, 1),
-                ('iVar', pyads.PLCTYPE_DINT, 1),
-                ('iVar1', pyads.PLCTYPE_INT, 3)
-            )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
+    .. code:: python
 
-    :param array_size: size of array if writing array of structure, defaults to 1
-    :type array_size: int, optional
+        structure_def = (
+            ('rVar', pyads.PLCTYPE_LREAL, 1),
+            ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+            ('sVar2', pyads.PLCTYPE_STRING, 1),
+            ('rVar1', pyads.PLCTYPE_REAL, 1),
+            ('iVar', pyads.PLCTYPE_DINT, 1),
+            ('iVar1', pyads.PLCTYPE_INT, 3)
+        )
 
-    :return: byte_list: list of byte values for an entire structure
+        # i.e ('Variable Name', variable type, arr size (1 if not array),
+        # length of string (if defined in PLC))
+
     """
     byte_list = []
     for structure in range(0, array_size):
@@ -650,8 +654,7 @@ class Connection(object):
         :param value: value to write to the storage address of the PLC
         :param Type["PLCDataType"] plc_write_datatype: type of the data given to the PLC, according to
             PLCTYPE constants, or None to not write anything
-        :param bool return_ctypes: return ctypes instead of python types if True
-        (default: False)
+        :param bool return_ctypes: return ctypes instead of python types if True (default: False)
         :param bool check_length: check whether the amount of bytes read matches the size
             of the read data type (default: True)
         :return: value: **value**
@@ -868,17 +871,14 @@ class Connection(object):
         MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
         https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
 
-        :param data_names: list of variable names to be read
-        :type data_names: list[str]
+        :param List[str] data_names: list of variable names to be read
         :param bool cache_symbol_info: when True, symbol info will be cached for future reading
         :param int ads_sub_commands: Max number of ADS-Sub commands used to read the variables in a single ADS call.
             A larger number can be used but may jitter the PLC execution!
-        :param dict structure_defs: for structured variables, optional mapping of
-            data name to special tuple defining the structure and
-            types contained within it according to PLCTYPE constants
-
+        :param Optional[Dict[str, StructureDef]] structure_defs: for structured variables, optional mapping of
+            data name to special tuple defining the structure and types contained within it according to PLCTYPE constants
         :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
-        :rtype dict(str, Any)
+        :rtype: Dict[str, Any]
 
         """
         if cache_symbol_info:
@@ -937,7 +937,7 @@ class Connection(object):
             types contained within it according to PLCTYPE constants
 
         :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
-        :rtype dict(str, ADSError)
+        :rtype: dict(str, ADSError)
 
         """
         if cache_symbol_info:
@@ -989,7 +989,7 @@ class Connection(object):
         self,
         data_name: str,
         structure_def: StructureDef,
-        array_size: int = 1,
+        array_size: Optional[int] = 1,
         structure_size: Optional[int] = None,
         handle: Optional[int] = None,
     ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
@@ -1000,8 +1000,18 @@ class Connection(object):
             types contained within it according to PLCTYPE constants, must match
             the structure defined in the PLC, PLC structure must be defined with
             {attribute 'pack_mode' :=  '1'}
+        :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
+        :param Optional[int] structure_size: size of structure if known by previous use of
+            size_of_structure, defaults to None
+        :param Optional[int] handle: PLC-variable handle, pass in handle if previously
+            obtained to speed up reading, defaults to None
+        :return: values_dict: ordered dictionary of all values corresponding to the structure
+            definition
 
-            Expected input example:
+        Expected input example for structure_def:
+
+        .. code:: python
+
             structure_def = (
                 ('rVar', pyads.PLCTYPE_LREAL, 1),
                 ('sVar', pyads.PLCTYPE_STRING, 2, 35),
@@ -1010,20 +1020,10 @@ class Connection(object):
                 ('iVar', pyads.PLCTYPE_DINT, 1),
                 ('iVar1', pyads.PLCTYPE_INT, 3),
             )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
 
-        :param array_size: size of array if reading array of structure, defaults to 1
-        :type array_size: int, optional
-        :param structure_size: size of structure if known by previous use of
-            size_of_structure, defaults to None
-        :type structure_size: int, optional
-        :param handle: PLC-variable handle, pass in handle if previously
-            obtained to speed up reading, defaults to None
-        :type handle: int, optional
+            # i.e ('Variable Name', variable type, arr size (1 if not array),
+            # length of string (if defined in PLC))
 
-        :return: values_dict: ordered dictionary of all values corresponding to the structure
-            definition
         """
         if structure_size is None:
             structure_size = size_of_structure(structure_def * array_size)
@@ -1068,20 +1068,28 @@ class Connection(object):
         data_name: str,
         value: Union[Dict[str, Any], List[Dict[str, Any]]],
         structure_def: StructureDef,
-        array_size: int = 1,
+        array_size: Optional[int] = 1,
         structure_size: Optional[int] = None,
         handle: Optional[int] = None,
     ) -> None:
         """Write a structure of multiple types.
 
-        :param string data_name: data name
+        :param str data_name: data name
         :param Union[Dict[str, Any], List[Dict[str, Any]]] value: value to write to the storage address of the PLC
-        :param tuple structure_def: special tuple defining the structure and
+        :param StructureDef structure_def: special tuple defining the structure and
             types contained within it according to PLCTYPE constants, must match
             the structure defined in the PLC, PLC structure must be defined with
             {attribute 'pack_mode' :=  '1'}
+        :param Optional[int] array_size: size of array if writing array of structure, defaults to 1
+        :param Optional[int] structure_size: size of structure if known by previous use of
+            size_of_structure, defaults to None
+        :param Optional[int] handle: PLC-variable handle, pass in handle if previously
+            obtained to speed up reading, defaults to None
 
-            Expected input example:
+        Expected input example for structure_def:
+
+        .. code:: python
+
             structure_def = (
                 ('rVar', pyads.PLCTYPE_LREAL, 1),
                 ('sVar', pyads.PLCTYPE_STRING, 2, 35),
@@ -1089,17 +1097,10 @@ class Connection(object):
                 ('rVar1', pyads.PLCTYPE_REAL, 1),
                 ('iVar', pyads.PLCTYPE_DINT, 1),
             )
-            i.e ('Variable Name', variable type, arr size (1 if not array),
-                 length of string (if defined in PLC))
 
-        :param array_size: size of array if writing array of structure, defaults to 1
-        :type array_size: int, optional
-        :param structure_size: size of structure if known by previous use of
-            size_of_structure, defaults to None
-        :type structure_size: int, optional
-        :param handle: PLC-variable handle, pass in handle if previously
-            obtained to speed up reading, defaults to None
-        :type handle: int, optional
+            # i.e ('Variable Name', variable type, arr size (1 if not array),
+            # length of string (if defined in PLC))
+
         """
         byte_values = bytes_from_dict(value, structure_def, array_size=array_size)
         if structure_size is None:
@@ -1205,12 +1206,12 @@ class Connection(object):
         Python type.
 
         :param plc_datatype: The PLC datatype that needs to be converted. This can
-        be any basic PLC datatype or a `ctypes.Structure`.
+            be any basic PLC datatype or a `ctypes.Structure`.
         :param timestamp_as_filetime: Whether the notification timestamp should be returned
-        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
-        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
-        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
-        task cycle times such as 62.5 µs. Default: False.
+            as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+            via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+            microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+            task cycle times such as 62.5 µs. Default: False.
 
         The callback functions need to be of the following type:
 
@@ -1269,14 +1270,14 @@ class Connection(object):
                         Convert the data of the NotificationHeader into the fitting Python type.
 
                         :param notification: The notification we recieve from PLC datatype to be
-                        converted. This can be any basic PLC datatype or a `ctypes.Structure`.
+                            converted. This can be any basic PLC datatype or a `ctypes.Structure`.
                         :param plc_datatype: The PLC datatype that needs to be converted. This can
-                        be any basic PLC datatype or a `ctypes.Structure`.
+                            be any basic PLC datatype or a `ctypes.Structure`.
                         :param timestamp_as_filetime: Whether the notification timestamp should be returned
-                        as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
-                        via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
-                        microseconds, while FILETIME allows for 100 ns. This may be relevant when using
-                        task cycle times such as 62.5 µs. Default: False.
+                            as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+                            via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+                            microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+                            task cycle times such as 62.5 µs. Default: False.
 
                         :rtype: (int, int, Any)
                         :returns: notification handle, timestamp, value

@@ -3,7 +3,7 @@
 
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-:created on 2018-06-11 18:15:53
+:created on: 2018-06-11 18:15:53
 
 """
 from typing import Type, Dict, Callable, Union

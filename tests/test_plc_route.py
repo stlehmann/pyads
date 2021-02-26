@@ -1,3 +1,4 @@
+import time
 import unittest
 import threading
 import socket
@@ -156,6 +157,8 @@ class PLCRouteTestCase(unittest.TestCase):
             route_thread = threading.Thread(target=self.plc_route_receiver)
             route_thread.setDaemon(True)
             route_thread.start()
+
+            time.sleep(1)
 
             # Try to set up a route with ourselves using all the optionals
             try:
