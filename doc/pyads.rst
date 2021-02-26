@@ -45,7 +45,7 @@ pyads\.structs module
     :show-inheritance:
 
 pyads\.symbol module
--------------------
+--------------------
 
 .. automodule:: pyads.symbol
     :members:
