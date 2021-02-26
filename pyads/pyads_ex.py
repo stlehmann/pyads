@@ -192,12 +192,9 @@ def send_raw_udp_message(
         # Response should come in in less than .5 seconds, but wait longer to account for slow
         # communications
         sock.settimeout(5)
-        # Allow TimeoutError to be raised so user can handle it how they please
 
-        # Keep looping until we get a response from our PLC
-        addr = [0]
-        while addr[0] != ip_address:
-            return sock.recvfrom(expected_return_length)
+        # Allow TimeoutError to be raised so user can handle it how they please
+        return sock.recvfrom(expected_return_length)
 
 
 @router_function
