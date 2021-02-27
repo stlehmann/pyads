@@ -372,7 +372,6 @@ def dict_from_bytes(
 def bytes_from_dict(
     values: Union[Dict[str, Any], List[Dict[str, Any]]],
     structure_def: StructureDef,
-    array_size: Optional[int] = 1,
 ) -> List[int]:
     """Returns a byte array of values which can be written to the PLC from an ordered dict.
 
@@ -402,12 +401,10 @@ def bytes_from_dict(
 
     """
     byte_list = []
-    for structure in range(0, array_size):
-        if array_size == 1:
-            cur_dict = values
-        else:
-            cur_dict = values[structure]
+    if not isinstance(values, list):
+        values = [values]
 
+    for cur_dict in values:
         for item in structure_def:
             try:
                 var, plc_datatype, size = item  # type: ignore
@@ -1102,7 +1099,7 @@ class Connection(object):
             # length of string (if defined in PLC))
 
         """
-        byte_values = bytes_from_dict(value, structure_def, array_size=array_size)
+        byte_values = bytes_from_dict(value, structure_def)
         if structure_size is None:
             structure_size = size_of_structure(structure_def * array_size)
         return self.write_by_name(

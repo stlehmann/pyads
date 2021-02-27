@@ -358,8 +358,7 @@ class AdsTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             pyads.dict_from_bytes([], structure_def)
 
-    def test_bytes_from_dict(self):
-        # type: () -> None
+    def test_bytes_from_dict(self) -> None:
         """Test bytes_from_dict function"""
         # tests for known values
         structure_def = (
@@ -513,7 +512,7 @@ class AdsTest(unittest.TestCase):
                       0, 0, 210, 2, 150, 73]
         # fmt: on
         self.assertEqual(
-            bytes_list, pyads.bytes_from_dict(values_list, structure_def, array_size=3)
+            bytes_list, pyads.bytes_from_dict(values_list, structure_def)
         )
 
         # test for not default string and array of LREALs
