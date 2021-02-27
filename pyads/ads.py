@@ -515,12 +515,12 @@ class Connection(object):
 
         """
         if cache_symbol_info:
-            info: SAdsSymbolEntry = self._symbol_info_cache.get(data_name)
+            info = self._symbol_info_cache.get(data_name)
             if info is None:
                 info = adsGetSymbolInfo(self._port, self._adr, data_name)
                 self._symbol_info_cache[data_name] = info
         else:
-            info: SAdsSymbolEntry = adsGetSymbolInfo(self._port, self._adr, data_name)
+            info = adsGetSymbolInfo(self._port, self._adr, data_name)
         return AdsSymbol.get_type_from_str(info.symbol_type)
 
     def open(self) -> None:
@@ -878,6 +878,9 @@ class Connection(object):
         :rtype: Dict[str, Any]
 
         """
+        if structure_defs is None:
+            structure_defs = {}
+
         if cache_symbol_info:
             new_items = [i for i in data_names if i not in self._symbol_info_cache]
             new_cache = {
@@ -890,13 +893,11 @@ class Connection(object):
                 i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
             }
 
-        structure_defs = structure_defs or {}
-        def sum_read(port, adr, data_names, data_symbols):
-            result = adsSumRead(port, adr, data_names, data_symbols,
-                                list(structure_defs.keys()))
+        def sum_read(port: int, adr: AmsAddr, data_names: List[str], data_symbols: Dict) -> Dict[str, str]:
+            result = adsSumRead(port, adr, data_names, data_symbols, list(structure_defs.keys()))  # type: ignore
 
-            for data_name, structure_def in structure_defs.items():
-                result[data_name] = dict_from_bytes(result[data_name], structure_def)
+            for data_name, structure_def in structure_defs.items():  # type: ignore
+                result[data_name] = dict_from_bytes(result[data_name], structure_def)  # type: ignore
 
             return result
 
@@ -916,7 +917,7 @@ class Connection(object):
         cache_symbol_info: bool = True,
         ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
         structure_defs: Optional[Dict[str, StructureDef]] = None,
-    ) -> Dict[str, ADSError]:
+    ) -> Dict[str, str]:
         """Write a list of variables.
 
         Will split the write into multiple ADS calls in chunks of ads_sub_commands by default.
@@ -932,9 +933,9 @@ class Connection(object):
         :param dict structure_defs: for structured variables, optional mapping of
             data name to special tuple defining the structure and
             types contained within it according to PLCTYPE constants
-
-        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for each write operation from the PLC
-        :rtype: dict(str, ADSError)
+        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for
+            each write operation from the PLC
+        :rtype: dict(str, str)
 
         """
         if cache_symbol_info:
@@ -972,7 +973,7 @@ class Connection(object):
                 structured_data_names
             )
 
-        return_data: Dict[str, ADSError] = {}
+        return_data: Dict[str, str] = {}
         for data_names_slice in _dict_slice_generator(
             data_names_and_values, ads_sub_commands
         ):
