@@ -146,7 +146,7 @@ class AdsSymbol:
 
         This checks only if the Connection is open.
         """
-        if not self._plc or not self._plc.is_open:
+        if not self._plc.is_open:
             raise ValueError(
                 "Cannot read or write data with missing or closed Connection"
             )
