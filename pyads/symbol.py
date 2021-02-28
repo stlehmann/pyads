@@ -175,14 +175,14 @@ class AdsSymbol:
             self._value = new_value  # Update buffer with new value
         self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Debug string"""
         t = type(self)
         return "<{}.{} object at {}, name: {}, type: {}>".format(
             t.__module__, t.__qualname__, hex(id(self)), self.name, self.symbol_type
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor"""
         self.clear_device_notifications()
 
