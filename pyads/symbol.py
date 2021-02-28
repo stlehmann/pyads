@@ -141,7 +141,7 @@ class AdsSymbol:
         # type
         self.symbol_type = info.symbol_type  # Save the type as string
 
-    def _read_write_check(self) -> None:
+    def _check_for_open_connection(self) -> None:
         """Assert the current object is ready to read from/write to.
 
         This checks only if the Connection is open.
@@ -156,7 +156,7 @@ class AdsSymbol:
 
         The new read value is also saved in the buffer.
         """
-        self._read_write_check()
+        self._check_for_open_connection()
         self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
         return self._value
 
@@ -168,7 +168,7 @@ class AdsSymbol:
         :param new_value    Value to be written to symbol (if None,
                             the buffered value is send instead)
         """
-        self._read_write_check()
+        self._check_for_open_connection()
         if new_value is None:
             new_value = self._value  # Send buffered value instead
         else:
