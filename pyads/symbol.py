@@ -15,13 +15,14 @@ from ctypes import sizeof
 from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type
 
 from . import constants  # To access all constants, use package notation
+from .constants import PLCDataType
 from .pyads_ex import adsGetSymbolInfo
 from .structs import NotificationAttrib
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
 if TYPE_CHECKING:
-    from .ads import Connection  # pragma: no cover
+    from .ads import Connection, StructureDef  # pragma: no cover
 
 
 class AdsSymbol:
@@ -58,7 +59,7 @@ class AdsSymbol:
             name: Optional[str] = None,
             index_group: Optional[int] = None,
             index_offset: Optional[int] = None,
-            symbol_type: Optional[Union[str, Type]] = None,
+            symbol_type: Optional[Union[str, Type[PLCDataType]]] = None,
             comment: Optional[str] = None,
             auto_update: bool = False,
             structure_def: Optional["StructureDef"] = None,
@@ -121,7 +122,7 @@ class AdsSymbol:
         # from it.
         # This is relevant for both lookup and full user definition.
 
-        self.plc_type: Optional[Any] = None
+        self.plc_type: Optional[Type[PLCDataType]] = None
         if self.symbol_type is not None:
             if isinstance(self.symbol_type, str):  # Perform lookup if string
                 self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
@@ -191,7 +192,8 @@ class AdsSymbol:
             self._value = new_value  # Update buffer with new value
 
         if self.is_structure:
-            self._plc.write_structure_by_name(self.name, new_value, self.structure_def, structure_size=self._structure_size)
+            self._plc.write_structure_by_name(self.name, new_value, self.structure_def,
+                                              structure_size=self._structure_size)
         else:
             self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
@@ -259,7 +261,7 @@ class AdsSymbol:
         self._value = value
 
     @staticmethod
-    def get_type_from_str(type_str: str) -> Any:
+    def get_type_from_str(type_str: str) -> Optional[Type[PLCDataType]]:
         """Get PLCTYPE_* from PLC name string
 
         If PLC name could not be mapped, return None. This is done on
