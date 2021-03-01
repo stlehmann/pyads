@@ -53,15 +53,15 @@ class AdsSymbol:
     _regex_list = re.compile(r"(.*)\((\d+)\)")
 
     def __init__(
-        self,
-        plc: "Connection",
-        name: Optional[str] = None,
-        index_group: Optional[int] = None,
-        index_offset: Optional[int] = None,
-        symbol_type: Optional[Union[str, Type]] = None,
-        comment: Optional[str] = None,
-        auto_update: bool = False,
-        structure_def: Optional[StructureDef] = None,
+            self,
+            plc: "Connection",
+            name: Optional[str] = None,
+            index_group: Optional[int] = None,
+            index_offset: Optional[int] = None,
+            symbol_type: Optional[Union[str, Type]] = None,
+            comment: Optional[str] = None,
+            auto_update: bool = False,
+            structure_def: Optional["StructureDef"] = None,
     ) -> None:
         """Create AdsSymbol instance.
 
@@ -91,9 +91,7 @@ class AdsSymbol:
         self._auto_update_handle: Optional[Tuple[int, int]] = None
 
         # Check if the required info is present:
-        missing_info = (
-            index_group is None or index_offset is None or symbol_type is None
-        )
+        missing_info = index_group is None or index_offset is None or symbol_type is None
 
         if missing_info:
             if name is None:
@@ -108,6 +106,13 @@ class AdsSymbol:
         self.symbol_type = symbol_type
         self.comment = comment
         self._value: Any = None
+
+        # structure information
+        self.structure_def = structure_def
+        self._structure_size = 0
+        if self.structure_def is not None:
+            from .ads import size_of_structure
+            self._structure_size = size_of_structure(self.structure_def)
 
         if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
@@ -161,7 +166,13 @@ class AdsSymbol:
         The new read value is also saved in the buffer.
         """
         self._check_for_open_connection()
-        self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
+
+        if self.is_structure:
+            self._value = self._plc.read_structure_by_name(self.name, self.structure_def,
+                                                           structure_size=self._structure_size)
+        else:
+            self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
+
         return self._value
 
     def write(self, new_value: Optional[Any] = None) -> None:
@@ -173,11 +184,16 @@ class AdsSymbol:
                             the buffered value is send instead)
         """
         self._check_for_open_connection()
+
         if new_value is None:
             new_value = self._value  # Send buffered value instead
         else:
             self._value = new_value  # Update buffer with new value
-        self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
+
+        if self.is_structure:
+            self._plc.write_structure_by_name(self.name, new_value, self.structure_def, structure_size=self._structure_size)
+        else:
+            self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
     def __repr__(self) -> str:
         """Debug string"""
@@ -191,10 +207,10 @@ class AdsSymbol:
         self.clear_device_notifications()
 
     def add_device_notification(
-        self,
-        callback: Callable[[Any, Any], None],
-        attr: Optional[NotificationAttrib] = None,
-        user_handle: Optional[int] = None,
+            self,
+            callback: Callable[[Any, Any], None],
+            attr: Optional[NotificationAttrib] = None,
+            user_handle: Optional[int] = None,
     ) -> Optional[Tuple[int, int]]:
         """Add on-change callback to symbol.
 
@@ -344,3 +360,11 @@ class AdsSymbol:
         # write value to plc if auto_update is enabled
         if self.auto_update:
             self.write(val)
+
+    @property
+    def is_structure(self) -> bool:
+        """Return True if the symbol object represents a structure.
+
+        This is the case if a structure_def has been passed during initialization.
+        """
+        return self.structure_def is not None
