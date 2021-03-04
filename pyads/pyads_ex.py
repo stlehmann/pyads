@@ -788,9 +788,15 @@ def adsSyncReadReqEx2(
         return data
 
     if data_type == PLCTYPE_STRING:
+        # Note: this does not catch a string with a specified size
         return data.value.decode("utf-8")
 
     if type(data_type).__name__ == "PyCArrayType":
+
+        if data_type._type_ == PLCTYPE_STRING:
+            # If the type is a char-array
+            return data.value.decode("utf-8")
+
         return [i for i in data]
 
     if hasattr(data, "value"):
