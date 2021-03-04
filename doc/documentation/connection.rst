@@ -276,22 +276,26 @@ for an integer variable can be seen here:
    >>> import pyads
    >>> from ctypes import sizeof
    >>>
-   >>> # define the callback which extracts the value of the variable
-   >>> def callback(notification, data):
-   >>>     contents = notification.contents
-   >>>     var = next(map(int, bytearray(contents.data)[0:contents.cbSampleSize]))
    >>>
    >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
    >>> plc.open()
+   >>> tags = {"GVL.integer_value": pyads.PLCTYPE_INT}
+   >>>
+   >>> # define the callback which extracts the value of the variable
+   >>> def mycallback(notification, data):
+   >>>     data_type = tags[data]
+   >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
+   >>>     print(value)
+   >>>
    >>> attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
    >>>
    >>> # add_device_notification returns a tuple of notification_handle and
    >>> # user_handle which we just store in handles
-   >>> handles = plc.add_device_notification('GVL.integer_value', attr, callback)
+   >>> handles = plc.add_device_notification('GVL.integer_value', attr, mycallback)
    >>>
-   >>> # To remove the device notification just use the del_device_notication
-       # function.
-   >>> plc.del_device_notification(*handles)
+   >>> # To remove the device notification use the del_device_notification function.
+   >>> plc.del_device_notification(handles)
+   >>> plc.close()
 
 This examples uses the default values for :py:class:`.NotificationAttrib`. The
 default behaviour is that you get notified when the value of the
@@ -309,24 +313,6 @@ following values:
 For more information about the NotificationAttrib settings have a look
 at `Beckhoffs specification of the AdsNotificationAttrib
 struct <https://infosys.beckhoff.de/content/1033/tcadsdll2/html/tcadsdll_strucadsnotificationattrib.htm>`__.
-
-**Here are some examples of callbacks for other datatypes:**
-
-.. code:: python
-
-   def callbackBool(notification, data):
-           contents = notification.contents
-           var = map(bool, bytearray(contents.data)[0:contents.cbSampleSize])[0]
-
-   def callbackInt(notification, data):
-           contents = notification.contents
-           var = map(int, bytearray(contents.data)[0:contents.cbSampleSize])[0]
-
-   def callbackString(notification, data):
-           dest = (c_ubyte * contents.cbSampleSize)()
-           memmove(addressof(dest), addressof(contents.data), contents.cbSampleSize)
-           # Remove nullbytes
-           var = str(bytearray(dest)).split('\x00')[0]
 
 Device Notification callback decorator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
