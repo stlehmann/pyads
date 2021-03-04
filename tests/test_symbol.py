@@ -365,6 +365,17 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
         # been made
 
+    def test_string(self):
+        """Test symbol with a string value"""
+        variable = PLCVariable("my_text", bytes(50), ads_type=constants.ADST_STRING,
+                               symbol_type="STRING(50)")
+
+        with self.plc:
+            symbol = self.plc.get_symbol("my_text")
+            symbol.write("I am a string!")
+            value = symbol.read()
+            self.assertEqual(value, "I am a string")
+
     def test_add_notification(self):
         """Test notification registering"""
 

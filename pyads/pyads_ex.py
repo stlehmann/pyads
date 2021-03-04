@@ -534,7 +534,9 @@ def adsSyncWriteReqEx(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if plc_data_type == PLCTYPE_STRING:
+    if plc_data_type == PLCTYPE_STRING or type(plc_data_type).__name__ == \
+            "PyCArrayType" and plc_data_type._type_ == PLCTYPE_STRING:
+
         data = ctypes.c_char_p(value.encode("utf-8"))
         data_pointer = data  # type: Union[ctypes.c_char_p, ctypes.pointer]
         data_length = len(data_pointer.value) + 1  # type: ignore
