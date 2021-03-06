@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 3.3.5 [unreleased]
 
 ### Added
+* [#223](https://github.com/stlehmann/pyads/pull/223) Add structure support for symbols
 
 ### Changed
 
