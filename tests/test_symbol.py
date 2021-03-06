@@ -334,8 +334,9 @@ class AdsSymbolTestCase(unittest.TestCase):
         structure_def = (
             ("a", pyads.PLCTYPE_INT, 1),
             ("b", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1)
         )
-        values = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+        values = [{"a": 1, "b": 2, "s": "foo"}, {"a": 3, "b": 4, "s": "bar"}]
         data = bytes(bytes_from_dict(values, structure_def))
 
         self.handler.add_variable(
@@ -390,14 +391,15 @@ class AdsSymbolTestCase(unittest.TestCase):
         structure_def = (
             ("a", pyads.PLCTYPE_INT, 1),
             ("b", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1)
         )
-        values = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+        values = [{"a": 1, "b": 2, "s": "foo"}, {"a": 3, "b": 4, "s": "bar"}]
         data = bytes(bytes_from_dict(values, structure_def))
 
         self.handler.add_variable(
             PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
 
-        write_values = [{"a": 42, "b": 43}, {"a": 44, "b": 45}]
+        write_values = [{"a": 42, "b": 43, "s": "hello"}, {"a": 44, "b": 45, "s": "world"}]
         with self.plc:
             symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def, array_size=2)
             symbol.write(write_values)
