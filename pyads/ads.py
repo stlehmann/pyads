@@ -963,23 +963,19 @@ class Connection(object):
             data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
 
         for name, structure_def in structure_defs.items():
-            data_names_and_values[name] = bytes_from_dict(
-                data_names_and_values[name], structure_def)
+            data_names_and_values[name] = bytes_from_dict(data_names_and_values[name], structure_def)
+
         structured_data_names = list(structure_defs.keys())
 
         if len(data_names_and_values) <= ads_sub_commands:
             return adsSumWrite(
-                self._port, self._adr, data_names_and_values, data_symbols,
-                structured_data_names
+                self._port, self._adr, data_names_and_values, data_symbols, structured_data_names
             )
 
         return_data: Dict[str, str] = {}
-        for data_names_slice in _dict_slice_generator(
-            data_names_and_values, ads_sub_commands
-        ):
+        for data_names_slice in _dict_slice_generator(data_names_and_values, ads_sub_commands):
             return_data.update(
-                adsSumWrite(self._port, self._adr, data_names_slice,
-                            data_symbols, structured_data_names)
+                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols, structured_data_names)
             )
         return return_data
 
