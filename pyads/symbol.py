@@ -9,6 +9,7 @@ the circular dependencies.
 :created on: 2020-11-16
 
 """
+from __future__ import annotations
 
 import re
 from ctypes import sizeof
@@ -59,7 +60,7 @@ class AdsSymbol:
             name: Optional[str] = None,
             index_group: Optional[int] = None,
             index_offset: Optional[int] = None,
-            symbol_type: Optional[Union[str, Type[PLCDataType]]] = None,
+            symbol_type: Optional[Union[str, Type["PLCDataType"]]] = None,
             comment: Optional[str] = None,
             auto_update: bool = False,
             structure_def: Optional["StructureDef"] = None,
