@@ -325,9 +325,27 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         with self.plc:
             symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def)
-            read_data = symbol.read()
+            read_values = symbol.read()
 
-        self.assertEqual(values, read_data)
+        self.assertEqual(values, read_values)
+
+    def test_read_structure_array(self):
+        """Test symbol value reading with structures."""
+        structure_def = (
+            ("a", pyads.PLCTYPE_INT, 1),
+            ("b", pyads.PLCTYPE_INT, 1),
+        )
+        values = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(
+            PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+
+        with self.plc:
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def, array_size=2)
+            read_values = symbol.read()
+
+        self.assertEqual(values, read_values)
 
     def test_write(self):
         """Test symbol value writing"""
@@ -362,6 +380,26 @@ class AdsSymbolTestCase(unittest.TestCase):
         write_values = {"i": 42, "s": "bar"}
         with self.plc:
             symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def)
+            symbol.write(write_values)
+            read_values = symbol.read()
+
+        self.assertEqual(write_values, read_values)
+
+    def test_write_structure_array(self):
+        """Test symbol value reading with structures."""
+        structure_def = (
+            ("a", pyads.PLCTYPE_INT, 1),
+            ("b", pyads.PLCTYPE_INT, 1),
+        )
+        values = [{"a": 1, "b": 2}, {"a": 3, "b": 4}]
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(
+            PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+
+        write_values = [{"a": 42, "b": 43}, {"a": 44, "b": 45}]
+        with self.plc:
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def, array_size=2)
             symbol.write(write_values)
             read_values = symbol.read()
 
