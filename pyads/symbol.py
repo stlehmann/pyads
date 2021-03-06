@@ -64,6 +64,7 @@ class AdsSymbol:
             comment: Optional[str] = None,
             auto_update: bool = False,
             structure_def: Optional["StructureDef"] = None,
+            array_size: Optional[int] = 1,
     ) -> None:
         """Create AdsSymbol instance.
 
@@ -88,6 +89,7 @@ class AdsSymbol:
             types contained within it according to PLCTYPE constants, must match
             the structure defined in the PLC, PLC structure must be defined with
             {attribute 'pack_mode' :=  '1'}
+        :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
 
         Expected input example for structure_def:
 
@@ -129,6 +131,7 @@ class AdsSymbol:
 
         # structure information
         self.structure_def = structure_def
+        self.array_size = array_size
         self._structure_size = 0
         if self.structure_def is not None:
             from .ads import size_of_structure
@@ -189,7 +192,8 @@ class AdsSymbol:
 
         if self.is_structure:
             self._value = self._plc.read_structure_by_name(self.name, self.structure_def,
-                                                           structure_size=self._structure_size)
+                                                           structure_size=self._structure_size,
+                                                           array_size=self.array_size)
         else:
             self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
 
@@ -212,7 +216,7 @@ class AdsSymbol:
 
         if self.is_structure:
             self._plc.write_structure_by_name(self.name, new_value, self.structure_def,
-                                              structure_size=self._structure_size)
+                                              structure_size=self._structure_size, array_size=self.array_size)
         else:
             self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 

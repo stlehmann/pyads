@@ -717,6 +717,7 @@ class Connection(object):
         comment: Optional[str] = None,
         auto_update: bool = False,
         structure_def: Optional["StructureDef"] = None,
+        array_size: Optional[int] = 1,
     ) -> AdsSymbol:
         """Create a symbol instance
 
@@ -739,6 +740,7 @@ class Connection(object):
             types contained within it according to PLCTYPE constants, must match
             the structure defined in the PLC, PLC structure must be defined with
             {attribute 'pack_mode' :=  '1'}
+        :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
 
         Expected input example for structure_def:
 
@@ -759,7 +761,7 @@ class Connection(object):
         """
 
         return AdsSymbol(self, name, index_group, index_offset, plc_datatype,
-                         comment, auto_update=auto_update, structure_def=structure_def)
+                         comment, auto_update=auto_update, structure_def=structure_def, array_size=array_size)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
