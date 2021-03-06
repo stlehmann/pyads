@@ -735,6 +735,27 @@ class Connection(object):
         :param str comment: comment
         :param bool auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
+        :param Optional["StructureDef"] structure_def: special tuple defining the structure and
+            types contained within it according to PLCTYPE constants, must match
+            the structure defined in the PLC, PLC structure must be defined with
+            {attribute 'pack_mode' :=  '1'}
+
+        Expected input example for structure_def:
+
+        .. code:: python
+
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('SVar1', pyads.PLCTYPE_STRING, 1),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3),
+            )
+
+            # i.e ('Variable Name', variable type, arr size (1 if not array),
+            # length of string (if defined in PLC))
+
         """
 
         return AdsSymbol(self, name, index_group, index_offset, plc_datatype,
