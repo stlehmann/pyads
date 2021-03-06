@@ -34,10 +34,19 @@ Here the indices are same as used in :py:meth:`.Connection.read` and :py:meth:`.
 The symbol type can also be the same as with the read and write method, e.g. ``pyads.PLCTYPE_INT`` or ``pyads.PLCTYPE_BOOL``.
 Alternatively, the class will also accept a string of the variable type in PLC-style, e.g. ‘LREAL’, ‘INT’, ‘UDINT’, etc.
 
-.. warning::
+Symbols also work with structures and arrays of structures. Use the parameter `structure_def` to define the structure
+and `array_size` to define the size of the array.
 
-  Symbols don't work with structs or lists of structs. But you can use them to address specific
-  members of a struct, e.g. `plc.get_symbol("GVL.mydata.ival")`.
+.. code:: python
+
+    >>> structure_def = (
+            ("i", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1)
+        )
+    >>> symbol = plc.get_symbol("MyStructure", structure_def=structure_def, array_size=2)
+    >>> symbol.write([{"i": 1, " "s": "foo"}, {"i": 2, "s": "bar"}])
+    >>> symbol.read()
+   [{"i": 1, " "s": "foo"}, {"i": 2, "s": "bar"}]
 
 Read and write operations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
