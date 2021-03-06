@@ -135,7 +135,7 @@ class AdsSymbol:
         self._structure_size = 0
         if self.structure_def is not None:
             from .ads import size_of_structure
-            self._structure_size = size_of_structure(self.structure_def)
+            self._structure_size = size_of_structure(self.structure_def * self.array_size)
 
         if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
