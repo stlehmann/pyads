@@ -715,6 +715,7 @@ class Connection(object):
         plc_datatype: Optional[Union[Type["PLCDataType"], str]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
+        structure_def: Optional["StructureDef"] = None,
     ) -> AdsSymbol:
         """Create a symbol instance
 
@@ -736,7 +737,7 @@ class Connection(object):
         """
 
         return AdsSymbol(self, name, index_group, index_offset, plc_datatype,
-                         comment, auto_update=auto_update)
+                         comment, auto_update=auto_update, structure_def=structure_def)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
