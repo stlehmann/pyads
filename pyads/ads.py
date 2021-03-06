@@ -5,6 +5,7 @@
 :created on: 2018-06-11 18:15:53
 
 """
+from __future__ import annotations
 import struct
 import itertools
 from collections import OrderedDict
