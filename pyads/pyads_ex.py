@@ -197,6 +197,21 @@ def send_raw_udp_message(
         return sock.recvfrom(expected_return_length)
 
 
+def type_is_string(plc_type: Type) -> bool:
+    """Return true if the given class is a string type."""
+
+    # If single char
+    if plc_type == PLCTYPE_STRING:
+        return True
+
+    # If char array
+    if type(plc_type).__name__ == "PyCArrayType":
+        if plc_type._type_ == PLCTYPE_STRING:
+            return True
+
+    return False
+
+
 @router_function
 def adsAddRouteToPLC(
     sending_net_id: str,
@@ -486,7 +501,7 @@ def adsSyncWriteControlReqEx(
     ads_state_c = ctypes.c_ulong(ads_state)
     device_state_c = ctypes.c_ulong(device_state)
 
-    if plc_data_type == PLCTYPE_STRING:
+    if type_is_string(plc_data_type):
         data = ctypes.c_char_p(data.encode("utf-8"))
         data_pointer = data
         data_length = len(data_pointer.value) + 1
@@ -534,7 +549,7 @@ def adsSyncWriteReqEx(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if plc_data_type == PLCTYPE_STRING:
+    if type_is_string(plc_data_type):
         data = ctypes.c_char_p(value.encode("utf-8"))
         data_pointer = data  # type: Union[ctypes.c_char_p, ctypes.pointer]
         data_length = len(data_pointer.value) + 1  # type: ignore
@@ -626,7 +641,7 @@ def adsSyncReadWriteReqEx2(
         read_data_pointer = None
         read_length = 0
     else:
-        if read_data_type == PLCTYPE_STRING:
+        if type_is_string(read_data_type):
             read_data = (STRING_BUFFER * PLCTYPE_STRING)()
         else:
             read_data = read_data_type()
@@ -648,7 +663,7 @@ def adsSyncReadWriteReqEx2(
     elif write_data_type is None:
         write_data_pointer = None
         write_length = 0
-    elif write_data_type == PLCTYPE_STRING:
+    elif type_is_string(write_data_type):
         # Get pointer to string
         write_data_pointer = ctypes.c_char_p(value.encode("utf-8"))
         # Add an extra byte to the data length for the null terminator
@@ -691,7 +706,7 @@ def adsSyncReadWriteReqEx2(
     # validate that the correct number of bytes were read
     if (
         check_length
-        and read_data_type != PLCTYPE_STRING
+        and not type_is_string(read_data_type)
         and bytes_read.value != expected_length
     ):
         raise RuntimeError(
@@ -703,7 +718,7 @@ def adsSyncReadWriteReqEx2(
     if return_ctypes:
         return read_data
 
-    if read_data is not None and read_data_type == PLCTYPE_STRING:
+    if read_data is not None and type_is_string(read_data_type):
         return read_data.value.decode("utf-8")
 
     if read_data is not None and type(read_data_type).__name__ == "PyCArrayType":
@@ -747,7 +762,7 @@ def adsSyncReadReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if data_type == PLCTYPE_STRING:
+    if type_is_string(data_type):
         data = (STRING_BUFFER * PLCTYPE_STRING)()
     else:
         data = data_type()
@@ -775,7 +790,7 @@ def adsSyncReadReqEx2(
     # validate that the correct number of bytes were read
     if (
         check_length
-        and data_type != PLCTYPE_STRING
+        and not type_is_string(data_type)
         and bytes_read.value != data_length.value
     ):
         raise RuntimeError(
@@ -787,10 +802,16 @@ def adsSyncReadReqEx2(
     if return_ctypes:
         return data
 
-    if data_type == PLCTYPE_STRING:
+    if type_is_string(data_type):
+        # Note: this does not catch a string with a specified size
         return data.value.decode("utf-8")
 
     if type(data_type).__name__ == "PyCArrayType":
+
+        if type_is_string(data_type._type_):
+            # If the type is a char-array
+            return data.value.decode("utf-8")
+
         return [i for i in data]
 
     if hasattr(data, "value"):
