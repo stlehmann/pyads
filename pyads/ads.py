@@ -5,6 +5,7 @@
 :created on: 2018-06-11 18:15:53
 
 """
+from __future__ import annotations
 import struct
 import itertools
 from collections import OrderedDict
@@ -715,6 +716,8 @@ class Connection(object):
         plc_datatype: Optional[Union[Type["PLCDataType"], str]] = None,
         comment: Optional[str] = None,
         auto_update: bool = False,
+        structure_def: Optional["StructureDef"] = None,
+        array_size: Optional[int] = 1,
     ) -> AdsSymbol:
         """Create a symbol instance
 
@@ -733,10 +736,32 @@ class Connection(object):
         :param str comment: comment
         :param bool auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
+        :param Optional["StructureDef"] structure_def: special tuple defining the structure and
+            types contained within it according to PLCTYPE constants, must match
+            the structure defined in the PLC, PLC structure must be defined with
+            {attribute 'pack_mode' :=  '1'}
+        :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
+
+        Expected input example for structure_def:
+
+        .. code:: python
+
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('SVar1', pyads.PLCTYPE_STRING, 1),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3),
+            )
+
+            # i.e ('Variable Name', variable type, arr size (1 if not array),
+            # length of string (if defined in PLC))
+
         """
 
         return AdsSymbol(self, name, index_group, index_offset, plc_datatype,
-                         comment, auto_update=auto_update)
+                         comment, auto_update=auto_update, structure_def=structure_def, array_size=array_size)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.

@@ -9,19 +9,21 @@ the circular dependencies.
 :created on: 2020-11-16
 
 """
+from __future__ import annotations
 
 import re
 from ctypes import sizeof
 from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type
 
 from . import constants  # To access all constants, use package notation
+from .constants import PLCDataType
 from .pyads_ex import adsGetSymbolInfo
 from .structs import NotificationAttrib
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
 if TYPE_CHECKING:
-    from .ads import Connection  # pragma: no cover
+    from .ads import Connection, StructureDef  # pragma: no cover
 
 
 class AdsSymbol:
@@ -53,14 +55,16 @@ class AdsSymbol:
     _regex_list = re.compile(r"(.*)\((\d+)\)")
 
     def __init__(
-        self,
-        plc: "Connection",
-        name: Optional[str] = None,
-        index_group: Optional[int] = None,
-        index_offset: Optional[int] = None,
-        symbol_type: Optional[Union[str, Type]] = None,
-        comment: Optional[str] = None,
-        auto_update: bool = False,
+            self,
+            plc: "Connection",
+            name: Optional[str] = None,
+            index_group: Optional[int] = None,
+            index_offset: Optional[int] = None,
+            symbol_type: Optional[Union[str, Type["PLCDataType"]]] = None,
+            comment: Optional[str] = None,
+            auto_update: bool = False,
+            structure_def: Optional["StructureDef"] = None,
+            array_size: Optional[int] = 1,
     ) -> None:
         """Create AdsSymbol instance.
 
@@ -81,15 +85,35 @@ class AdsSymbol:
         :param comment:
         :param auto_update: Create notification to update buffer (same as
             `set_auto_update(True)`)
+        :param Optional["StructureDef"] structure_def: special tuple defining the structure and
+            types contained within it according to PLCTYPE constants, must match
+            the structure defined in the PLC, PLC structure must be defined with
+            {attribute 'pack_mode' :=  '1'}
+        :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
+
+        Expected input example for structure_def:
+
+        .. code:: python
+
+            structure_def = (
+                ('rVar', pyads.PLCTYPE_LREAL, 1),
+                ('sVar', pyads.PLCTYPE_STRING, 2, 35),
+                ('SVar1', pyads.PLCTYPE_STRING, 1),
+                ('rVar1', pyads.PLCTYPE_REAL, 1),
+                ('iVar', pyads.PLCTYPE_DINT, 1),
+                ('iVar1', pyads.PLCTYPE_INT, 3),
+            )
+
+            # i.e ('Variable Name', variable type, arr size (1 if not array),
+            # length of string (if defined in PLC))
+
         """
         self._plc = plc
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
         self._auto_update_handle: Optional[Tuple[int, int]] = None
 
         # Check if the required info is present:
-        missing_info = (
-            index_group is None or index_offset is None or symbol_type is None
-        )
+        missing_info = index_group is None or index_offset is None or symbol_type is None
 
         if missing_info:
             if name is None:
@@ -105,6 +129,14 @@ class AdsSymbol:
         self.comment = comment
         self._value: Any = None
 
+        # structure information
+        self.structure_def = structure_def
+        self.array_size = array_size
+        self._structure_size = 0
+        if self.structure_def is not None:
+            from .ads import size_of_structure
+            self._structure_size = size_of_structure(self.structure_def * self.array_size)
+
         if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
 
@@ -112,7 +144,7 @@ class AdsSymbol:
         # from it.
         # This is relevant for both lookup and full user definition.
 
-        self.plc_type: Optional[Any] = None
+        self.plc_type: Optional[Type[PLCDataType]] = None
         if self.symbol_type is not None:
             if isinstance(self.symbol_type, str):  # Perform lookup if string
                 self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
@@ -157,7 +189,14 @@ class AdsSymbol:
         The new read value is also saved in the buffer.
         """
         self._check_for_open_connection()
-        self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
+
+        if self.is_structure:
+            self._value = self._plc.read_structure_by_name(self.name, self.structure_def,
+                                                           structure_size=self._structure_size,
+                                                           array_size=self.array_size)
+        else:
+            self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
+
         return self._value
 
     def write(self, new_value: Optional[Any] = None) -> None:
@@ -169,11 +208,17 @@ class AdsSymbol:
                             the buffered value is send instead)
         """
         self._check_for_open_connection()
+
         if new_value is None:
             new_value = self._value  # Send buffered value instead
         else:
             self._value = new_value  # Update buffer with new value
-        self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
+
+        if self.is_structure:
+            self._plc.write_structure_by_name(self.name, new_value, self.structure_def,
+                                              structure_size=self._structure_size, array_size=self.array_size)
+        else:
+            self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
     def __repr__(self) -> str:
         """Debug string"""
@@ -187,10 +232,10 @@ class AdsSymbol:
         self.clear_device_notifications()
 
     def add_device_notification(
-        self,
-        callback: Callable[[Any, Any], None],
-        attr: Optional[NotificationAttrib] = None,
-        user_handle: Optional[int] = None,
+            self,
+            callback: Callable[[Any, Any], None],
+            attr: Optional[NotificationAttrib] = None,
+            user_handle: Optional[int] = None,
     ) -> Optional[Tuple[int, int]]:
         """Add on-change callback to symbol.
 
@@ -239,7 +284,7 @@ class AdsSymbol:
         self._value = value
 
     @staticmethod
-    def get_type_from_str(type_str: str) -> Any:
+    def get_type_from_str(type_str: str) -> Optional[Type[PLCDataType]]:
         """Get PLCTYPE_* from PLC name string
 
         If PLC name could not be mapped, return None. This is done on
@@ -340,3 +385,11 @@ class AdsSymbol:
         # write value to plc if auto_update is enabled
         if self.auto_update:
             self.write(val)
+
+    @property
+    def is_structure(self) -> bool:
+        """Return True if the symbol object represents a structure.
+
+        This is the case if a structure_def has been passed during initialization.
+        """
+        return self.structure_def is not None

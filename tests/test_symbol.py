@@ -12,7 +12,7 @@ from ctypes import sizeof, pointer
 import unittest
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
-from pyads import constants, AdsSymbol
+from pyads import constants, AdsSymbol, bytes_from_dict
 
 from tests.test_connection_class import create_notification_struct
 
@@ -312,6 +312,42 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertAdsRequestsCount(3)  # WRITE, READWRITE for info and
         # final read
 
+    def test_read_structure(self):
+        """Test symbol value reading with structures."""
+        structure_def = (
+            ("i", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1),
+        )
+        values = {"i": 1, "s": "foo"}
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+
+        with self.plc:
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def)
+            read_values = symbol.read()
+
+        self.assertEqual(values, read_values)
+
+    def test_read_structure_array(self):
+        """Test symbol value reading with structures."""
+        structure_def = (
+            ("a", pyads.PLCTYPE_INT, 1),
+            ("b", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1)
+        )
+        values = [{"a": 1, "b": 2, "s": "foo"}, {"a": 3, "b": 4, "s": "bar"}]
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(
+            PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+
+        with self.plc:
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def, array_size=2)
+            read_values = symbol.read()
+
+        self.assertEqual(values, read_values)
+
     def test_write(self):
         """Test symbol value writing"""
         with self.plc:
@@ -330,6 +366,46 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertAdsRequestsCount(3)  # READWRITE for info, WRITE and
         # test read
+
+    def test_write_structure(self):
+        """Test symbol writing with structures."""
+        structure_def = (
+            ("i", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1),
+        )
+        values = {"i": 1, "s": "foo"}
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+
+        write_values = {"i": 42, "s": "bar"}
+        with self.plc:
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def)
+            symbol.write(write_values)
+            read_values = symbol.read()
+
+        self.assertEqual(write_values, read_values)
+
+    def test_write_structure_array(self):
+        """Test symbol value reading with structures."""
+        structure_def = (
+            ("a", pyads.PLCTYPE_INT, 1),
+            ("b", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1)
+        )
+        values = [{"a": 1, "b": 2, "s": "foo"}, {"a": 3, "b": 4, "s": "bar"}]
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(
+            PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+
+        write_values = [{"a": 42, "b": 43, "s": "hello"}, {"a": 44, "b": 45, "s": "world"}]
+        with self.plc:
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def, array_size=2)
+            symbol.write(write_values)
+            read_values = symbol.read()
+
+        self.assertEqual(write_values, read_values)
 
     def test_value(self):
         """Test the buffer property"""
