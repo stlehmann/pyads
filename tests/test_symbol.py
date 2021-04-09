@@ -10,6 +10,7 @@ import time
 import struct
 from ctypes import sizeof, pointer
 import unittest
+from unittest import mock
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
 from pyads import constants, AdsSymbol, bytes_from_dict
@@ -485,6 +486,20 @@ class AdsSymbolTestCase(unittest.TestCase):
         del symbol  # Force variable deletion
 
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
+
+    def test_notification_callback(self):
+        """Test notification callback"""
+
+        def my_callback(*args):
+            print(args)
+
+        self.plc.open()
+        symbol = self.plc.get_symbol(self.test_var.name)
+        symbol.add_device_notification(my_callback)
+        # new_val = 343.1215
+        # symbol.write(new_val)  # Trigger notification
+
+        # mock_callback.assertCalledOnce()
 
     def test_auto_update(self):
         """Test auto-update feature"""
