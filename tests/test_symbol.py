@@ -523,16 +523,12 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertIsNotNone(symbol._auto_update_handle)
         self.assertEqual(symbol.auto_update, True)
 
-        # Simulate value callback
-        notification = create_notification_struct(struct.pack("<d", 5334.1545))
-        symbol._value_callback(
-            pointer(notification),
-            (self.test_var.index_group, self.test_var.index_offset),
-        )
+        # Let device notification play out by writing directly (not touching the symbol itself)
+        self.plc.write(symbol.index_group, symbol.index_offset, 5334.1545, symbol.plc_type)
         self.assertEqual(symbol.value, 5334.1545)
 
-        # test immediate writing to plc if auto_update is True
-        symbol.value = 123.456
+        # Test immediate writing to plc if auto_update is True
+        symbol.value = 123.456  # Change buffer and write to PLC iff auto_update == True
         r_value = self.plc.read(
             symbol.index_group,
             symbol.index_offset,
@@ -542,7 +538,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         symbol.auto_update = False
         self.assertIsNone(symbol._auto_update_handle)
-        symbol.value = 0.0
+        symbol.value = 0.0  # With auto_update disabled, the buffer doesn't perform a write
         r_value = self.plc.read(
             symbol.index_group,
             symbol.index_offset,
