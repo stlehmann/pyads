@@ -7,10 +7,12 @@
 
 """
 import time
+from datetime import datetime, timedelta
 import struct
 from ctypes import sizeof, pointer
 import unittest
 from unittest import mock
+
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
 from pyads import constants, AdsSymbol, bytes_from_dict
@@ -56,7 +58,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         # Create PLC variable that is added by default
         self.test_var = PLCVariable(
-            "TestDouble", 0.0, ads_type=constants.ADST_REAL64, symbol_type="LREAL"
+            "TestDouble", bytes(8), ads_type=constants.ADST_REAL64, symbol_type="LREAL"
         )
         self.test_var.comment = "Some variable of type double"
         self.test_var_type = pyads.constants.PLCTYPE_LREAL  # Corresponds with "LREAL"
@@ -465,6 +467,7 @@ class AdsSymbolTestCase(unittest.TestCase):
             symbol = self.plc.get_symbol(self.test_var.name)
 
             handles = symbol.add_device_notification(my_callback)
+
             symbol.del_device_notification(handles)
 
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
@@ -488,18 +491,26 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
 
     def test_notification_callback(self):
-        """Test notification callback"""
-
-        def my_callback(*args):
-            print(args)
+        """Test notification callback with real value change"""
 
         self.plc.open()
         symbol = self.plc.get_symbol(self.test_var.name)
-        symbol.add_device_notification(my_callback)
-        # new_val = 343.1215
-        # symbol.write(new_val)  # Trigger notification
 
-        # mock_callback.assertCalledOnce()
+        # Create a mock callback
+        mock_callback = mock.MagicMock()
+        mock_callback_wrapped = self.plc.notification(pyads.PLCTYPE_LREAL)(mock_callback)
+
+        symbol.add_device_notification(mock_callback_wrapped)
+        new_val = 343.1215
+        symbol.write(new_val)  # Trigger notification
+
+        mock_callback.assert_called_once()
+        args = list(mock_callback.call_args_list[0].args)
+        self.assertGreater(args[0], 0)  # Verify notification handle
+        var_addr = (self.test_var.index_group, self.test_var.index_offset)
+        self.assertEqual(args[1], var_addr)  # Verify address
+        self.assertAlmostEqual(args[2], datetime.now(), delta=timedelta(seconds=2))  # Verify datetime
+        self.assertEqual(args[3], new_val)  # Verify new value
 
     def test_auto_update(self):
         """Test auto-update feature"""

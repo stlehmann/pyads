@@ -1175,6 +1175,9 @@ class Connection(object):
             >>>     # Remove notification
             >>>     plc.del_device_notification(handles)
 
+        Note: the `user_handle` (passed or returned) is the same as the handle returned from
+        :meth:`Connection.get_handle()`.
+
         """
         if self._port is not None:
             notification_handle, user_handle = adsSyncAddDeviceNotificationReqEx(

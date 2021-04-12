@@ -6,10 +6,10 @@ from collections import namedtuple
 logger = logging.getLogger(__name__)
 formatter = logging.Formatter("%(levelname)s:%(message)s")
 stdout_handler = logging.StreamHandler()
-stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setLevel(logging.INFO)
 stdout_handler.setFormatter(formatter)
 logger.addHandler(stdout_handler)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.propagate = False  # "Overwrite" default handler
 
 null_logger = logging.getLogger(__name__ + "_null")
