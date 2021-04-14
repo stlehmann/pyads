@@ -505,11 +505,17 @@ class AdsSymbolTestCase(unittest.TestCase):
         symbol.write(new_val)  # Trigger notification
 
         mock_callback.assert_called_once()
-        args = list(mock_callback.call_args_list[0].args)
-        self.assertGreater(int(args[0]), 0)  # Verify notification handle
+
+        args, kwargs = mock_callback.call_args
+
+        note_handle = int(args[0])
+        self.assertGreater(note_handle, 0)  # Verify notification handle
+
         var_addr = (self.test_var.index_group, self.test_var.index_offset)
         self.assertEqual(args[1], var_addr)  # Verify address
+
         self.assertAlmostEqual(args[2], datetime.now(), delta=timedelta(seconds=2))  # Verify datetime
+
         self.assertEqual(args[3], new_val)  # Verify new value
 
     def test_auto_update(self):
