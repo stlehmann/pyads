@@ -455,6 +455,7 @@ class Connection(object):
     ) -> None:
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
+        self._open = False
         if ip_address is None:
             if ams_net_id is None:
                 raise TypeError("Must provide an IP or net ID")
@@ -463,7 +464,6 @@ class Connection(object):
             self.ip_address = ip_address
         self.ams_net_id = ams_net_id
         self.ams_net_port = ams_net_port
-        self._open = False
         self._notifications = {}  # type: Dict[int, str]
         self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
 
