@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 * [#221](https://github.com/stlehmann/pyads/pull/221) CI now uses Github Actions instead of TravisCI. Also Upload to PyPi is now on automatic.
 * [#242](https://github.com/stlehmann/pyads/pull/242) Upgrade requirements.txt
+* Use TwinCAT3 default port 851 (PORT_TC3PLC1) in docs
 
 ### Removed
 

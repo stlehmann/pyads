@@ -53,7 +53,7 @@ python setup.py install
 import pyads
 
 # connect to plc and open connection
-plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
 plc.open()
 
 # read int value by name

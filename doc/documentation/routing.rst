@@ -30,7 +30,7 @@ It connects to the target and creates a route to it on your client.
    >>> import pyads
    >>> remote_ip = '192.168.0.100'
    >>> remote_ads = '5.12.82.20.1.1'
-   >>> with pyads.Connection(remote_ads, pyads.PORT_SPS1, remote_ip) as plc:
+   >>> with pyads.Connection(remote_ads, pyads.PORT_TC3PLC1, remote_ip) as plc:
    >>>     plc.read_by_name('.TAG_NAME', pyads.PLCTYPE_INT)
 
 .. note::

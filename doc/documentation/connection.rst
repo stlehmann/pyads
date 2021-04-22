@@ -12,7 +12,7 @@ Connect to a remote device
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> plc.open()
    >>> plc.close()
 
@@ -24,7 +24,7 @@ A context notation (using ``with:``) can be used to open a connection:
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> with plc:
    >>>     # ...
 
@@ -52,7 +52,7 @@ Examples:
 .. code:: python
 
   >>> import pyads
-  >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1):
+  >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1):
   >>> plc.open()
   >>>
   >>> plc.read_by_name('GVL.bool_value')  # datatype will be queried and cached
@@ -225,7 +225,7 @@ Read and write *UDINT* variables by address.
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> plc.open()
    >>> # write 65536 to memory byte MDW0
    >>> plc.write(INDEXGROUP_MEMORYBYTE, 0, 65536, pyads.PLCTYPE_UDINT)
@@ -253,7 +253,7 @@ future use.
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> var_list = ['MAIN.b_Execute', 'MAIN.str_TestString', 'MAIN.r32_TestReal']
    >>> plc.read_list_by_name(var_list)
    {'MAIN.b_Execute': True, 'MAIN.str_TestString': 'Hello World', 'MAIN.r32_TestReal': 123.45}
@@ -277,7 +277,7 @@ for an integer variable can be seen here:
    >>> from ctypes import sizeof
    >>>
    >>>
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> plc.open()
    >>> tags = {"GVL.integer_value": pyads.PLCTYPE_INT}
    >>>

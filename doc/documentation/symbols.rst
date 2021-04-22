@@ -10,7 +10,7 @@ through an :py:class:`.AdsSymbol` instance:
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> plc.open()
    >>> symbol = plc.get_symbol('global.bool_value')
 
@@ -22,7 +22,7 @@ provided:
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> plc.open()
    # Remaining info will be looked up:
    >>> symbol = plc.get_symbol('global.bool_value')
