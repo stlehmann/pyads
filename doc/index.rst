@@ -18,6 +18,7 @@ The documentation for the ADS API is available on `infosys.beckhoff.com`_.
    :maxdepth: 2
    :caption: Contents:
 
+   Home <self>
    installation
    quickstart
    documentation/index
