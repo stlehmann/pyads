@@ -539,6 +539,24 @@ class AdsSymbolTestCase(unittest.TestCase):
         )
         self.assertEqual(r_value, 123.456)
 
+    def test_read_device_info(self):
+        """Additional - Test read_device_info for AdvancedHandler."""
+        with self.plc:
+            name, version = self.plc.read_device_info()
+            self.assertEqual(name, "TestServer")
+            self.assertEqual(version.build, 3)
+
+    def test_read_state(self):
+        """Additional - Test read_state for AdvancedHandler."""
+        with self.plc:
+            state = self.plc.read_state()
+            self.assertEqual(state[0], constants.ADSSTATE_RUN)
+
+    def test_write_control(self):
+        """Additional - Test write_control for AdvancedHandler."""
+        with self.plc:
+            self.plc.write_control(constants.ADSSTATE_IDLE, 0, 0, constants.PLCTYPE_INT)
+
 
 class TypesTestCase(unittest.TestCase):
     """Basic test to cover the PLCTYPE_ARR_* functions"""

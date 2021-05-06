@@ -78,7 +78,7 @@ class BasicHandler(AbstractHandler):
             # No response data required
             response_content = "".encode("utf-8")
 
-        elif command_id == constants.ADSCOMMAND_DEVICENOTE:
+        elif command_id == constants.ADSCOMMAND_DEVICENOTE:  # pragma: no cover
             logger.info("Command received: DEVICE_NOTIFICATION")
             # No response data required
             response_content = "".encode("utf-8")
@@ -155,7 +155,7 @@ class BasicHandler(AbstractHandler):
             response_content = struct.pack("<I", len(
                 response_value)) + response_value
 
-        else:
+        else:  # pragma: no cover
             logger.info("Unknown Command: {0}".format(hex(command_id)))
             # Set error code to 'unknown command ID'
             error_code = "\x08\x00\x00\x00".encode("utf-8")

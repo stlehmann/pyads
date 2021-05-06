@@ -106,7 +106,7 @@ class AdsTestServer(threading.Thread):
 
         self.server.close()
 
-    def close(self) -> None:
+    def close(self) -> None:  # pragma: no cover
         """Close the server thread."""
         self.stop()
 
@@ -132,7 +132,7 @@ class AdsTestServer(threading.Thread):
                 # Accept connection from client
                 try:
                     client, address = self.server.accept()
-                except:
+                except:  # pragma: no cover
                     continue
 
                 logger.info("New connection from {0}:{1}".format(*address))
@@ -167,7 +167,7 @@ class AdsClientConnection(threading.Thread):
 
         super(AdsClientConnection, self).__init__(*args, **kwargs)
 
-    def stop(self) -> None:
+    def stop(self) -> None:  # pragma: no cover
         """Stop the client thread."""
         if self._run:
             logger.info(
@@ -180,7 +180,7 @@ class AdsClientConnection(threading.Thread):
 
     def close(self) -> None:
         """Close the client connection."""
-        if self.is_alive():
+        if self.is_alive():  # pragma: no cover
             self.stop()
         self.client.close()
 
@@ -192,7 +192,7 @@ class AdsClientConnection(threading.Thread):
         while self._run:
             ready, _, _ = select.select([self.client], [], [], 0.1)
 
-            if not ready:
+            if not ready:  # pragma: no cover
                 continue
 
             data, _ = self.client.recvfrom(4096)
@@ -203,7 +203,7 @@ class AdsClientConnection(threading.Thread):
                 continue
 
             # Basic data validation
-            if len(data) < 38:
+            if len(data) < 38:  # pragma: no cover
                 logger.warning(
                     "Malformed packet discarded from {0}:{1}:\n\t{data}".format(
                         *self.client_address, data=data
@@ -316,7 +316,7 @@ class AdsClientConnection(threading.Thread):
         return AmsPacket(tcp_header, ams_header)
 
 
-def main():
+def main():  # pragma: no cover
     """Main function (keep variable out of global scope)"""
     server = AdsTestServer(handler=AdvancedHandler())
     # noinspection PyBroadException
