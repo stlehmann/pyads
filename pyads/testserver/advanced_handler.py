@@ -83,7 +83,7 @@ class PLCVariable:
     def get_packed_info(self) -> bytes:
         """Get bytes array of symbol info"""
         if self.comment is None:
-            self.comment = ""
+            self.comment = ""  # pragma: no cover
         name_bytes = self.name.encode("utf-8")
         symbol_type_bytes = self.symbol_type.encode("utf-8")
         comment_bytes = self.comment.encode("utf-8")
@@ -389,7 +389,7 @@ class AdvancedHandler(AbstractHandler):
                     read_data += var.value
 
             # Else just return the value stored
-            else:
+            else:  # pragma: no cover
 
                 # read stored data
                 var = self.get_variable_by_indices(index_group, index_offset)
@@ -457,7 +457,7 @@ class AdvancedHandler(AbstractHandler):
             # No response data required
             return b""
 
-        def handle_devicenote() -> bytes:
+        def handle_devicenote() -> bytes:  # pragma: no cover
             """Handle a device notification."""
             logger.info("Command received: DEVICE_NOTIFICATION")
             # No response data required
@@ -480,7 +480,7 @@ class AdvancedHandler(AbstractHandler):
         if command_id in function_map:
             content = function_map[command_id]()
 
-        else:
+        else:  # pragma: no cover
             logger.info("Unknown Command: {0}".format(hex(command_id)))
             # Set error code to 'unknown command ID'
             error_code = "\x08\x00\x00\x00".encode("utf-8")
