@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Extended ADS TCP/IP server implementation.
 
 Extended ADS TCP/IP server implementation to allow for functional testing of
