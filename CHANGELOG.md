@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 * [#223](https://github.com/stlehmann/pyads/pull/223) Add structure support for symbols
 * [#238](https://github.com/stlehmann/pyads/pull/238) Add LINT type to DATATYPE_MAP
+* [#239](https://github.com/stlehmann/pyads/pull/239) Add device notification handling for AdvancedHandler in testserver
 
 ### Changed
 * [#221](https://github.com/stlehmann/pyads/pull/221) CI now uses Github Actions instead of TravisCI. Also Upload to PyPi is now on automatic.
