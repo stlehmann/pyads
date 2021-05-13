@@ -50,7 +50,7 @@ AmsResponseData = namedtuple("AmsResponseData",
                              ("state_flags", "error_code", "data"))
 
 
-class AbstractHandler:  # pragma: no cover
+class AbstractHandler:
     """Abstract Handler class to provide a base class for handling requests."""
 
     def handle_request(self, request: AmsPacket) -> AmsResponseData:

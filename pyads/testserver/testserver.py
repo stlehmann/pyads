@@ -105,7 +105,7 @@ class AdsTestServer(threading.Thread):
 
         self.server.close()
 
-    def close(self) -> None:  # pragma: no cover
+    def close(self) -> None:
         """Close the server thread."""
         self.stop()
 
@@ -131,7 +131,7 @@ class AdsTestServer(threading.Thread):
                 # Accept connection from client
                 try:
                     client, address = self.server.accept()
-                except:  # pragma: no cover
+                except:
                     continue
 
                 logger.info("New connection from {0}:{1}".format(*address))
@@ -166,7 +166,7 @@ class AdsClientConnection(threading.Thread):
 
         super(AdsClientConnection, self).__init__(*args, **kwargs)
 
-    def stop(self) -> None:  # pragma: no cover
+    def stop(self) -> None:
         """Stop the client thread."""
         if self._run:
             logger.info(
@@ -179,7 +179,7 @@ class AdsClientConnection(threading.Thread):
 
     def close(self) -> None:
         """Close the client connection."""
-        if self.is_alive():  # pragma: no cover
+        if self.is_alive():
             self.stop()
         self.client.close()
 
@@ -191,7 +191,7 @@ class AdsClientConnection(threading.Thread):
         while self._run:
             ready, _, _ = select.select([self.client], [], [], 0.1)
 
-            if not ready:  # pragma: no cover
+            if not ready:
                 continue
 
             data, _ = self.client.recvfrom(4096)
@@ -202,7 +202,7 @@ class AdsClientConnection(threading.Thread):
                 continue
 
             # Basic data validation
-            if len(data) < 38:  # pragma: no cover
+            if len(data) < 38:
                 logger.warning(
                     "Malformed packet discarded from {0}:{1}:\n\t{data}".format(
                         *self.client_address, data=data
