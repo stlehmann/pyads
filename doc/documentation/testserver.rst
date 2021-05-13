@@ -37,7 +37,7 @@ itself does not manage the requests and responses. Those are managed by handler
 classes. Currently there are two handlers available:
 
  * :class:`~pyads.testserver.basic_handler.BasicHandler` always returns the same static responses. No data can be saved, any returned values are always 0.
- * :class:`~pyads.testserver.advanced_handler.AdvancedHandler` keeps a list of variables and allows for reading/writing variables. If a variable does not exist yet, it will attempt to quietly create it first.
+ * :class:`~pyads.testserver.advanced_handler.AdvancedHandler` keeps a list of variables and allows for reading/writing variables. Variables need to be created upfront via :meth:`~pyads.testserver.advanced_handler.AdvancedHandler.add_variable`.
 
 Your requirements determine which handler is most suitable. You can also create your own handler by extending the
 :class:`~pyads.testserver.handler.AbstractHandler` class. Typically, the basic handler will require the least amount
@@ -139,29 +139,8 @@ Advanced Handler
 The :class:`~pyads.testserver.advanced_handler.AdvancedHandler` keeps track of variables in an internal list. You can
 read from and write to those variables like you would with a real server, using
 either the indices, name or variable handle. Any notifications will be issued
-as expected too.
-
-There are two ways of registering variables in the advanced handler:
-
-**Implicitly**: simply address the variable directly. If all the necessary
-information was provided at once, the variable will be created if it did
-not exist. The necessary information is the variable name and type. The
-indices and handle can be improvised by the handler. For example:
-
-
-.. code:: python
-
-   # Client code
-
-   with plc:
-       # This will create the variable and choose indices
-       plc.write_by_name("Main.my_var", 3.14, pyads.PLCTYPE_LREAL)
-       sym = plc.get_symbol("Main.my_var")
-       print(sym)
-       print(sym.read())
-
-**Explicitly**: define a PLC variable. The handler keeps a list of variable with
-the type :class:`~pyads.testserver.advanced_handler.PLCVariable` . You can add your own to it:
+as expected too. The handler keeps a list of variables with the type :class:`~pyads.testserver.advanced_handler.PLCVariable`.
+In order to address a variable you need to explicitly create it first:
 
 .. code:: python
 
