@@ -8,10 +8,10 @@
 
 import argparse
 
-from .testserver import AdsTestServer, AdvancedHandler, BasicHandler
+from .testserver import AdsTestServer, AdvancedHandler, BasicHandler, AbstractHandler
 
 
-def main():
+def main() -> None:
     """Main function (keep variable out of global scope)"""
 
     parser = argparse.ArgumentParser(description='Run an ADS Testserver')
@@ -21,6 +21,7 @@ def main():
                         help="testserver handler, default: advanced")
     args = parser.parse_args()
 
+    handler: AbstractHandler
     if args.handler == 'basic':
         handler = BasicHandler()
     else:
