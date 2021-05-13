@@ -20,14 +20,12 @@ def main():
         handler = AdvancedHandler()
 
     server = AdsTestServer(handler=handler)
+
     # noinspection PyBroadException
     try:
         print('Starting testserver...')
-
         server.start()
-
         print('Running testserver at {}:{}'.format(server.ip_address, server.port))
-
         server.join()
     except:
         server.close()
