@@ -1,3 +1,10 @@
+"""Abstract handler module for testserver.
+
+:author: David Browne <davidabrowne@gmail.com>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+:created on: 2016-09-13
+
+"""
 import logging
 from collections import namedtuple
 

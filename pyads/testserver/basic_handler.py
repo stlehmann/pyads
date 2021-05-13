@@ -1,3 +1,10 @@
+"""Basic handler module for testserver.
+
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+:created on: 2017-09-15
+
+"""
 from typing import List, Union
 import struct
 

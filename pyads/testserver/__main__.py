@@ -1,3 +1,11 @@
+"""The testserver run script.
+
+:author: Roberto Roos
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+:created on: 2021-04-09
+
+"""
+
 import argparse
 
 from .testserver import AdsTestServer, AdvancedHandler, BasicHandler
