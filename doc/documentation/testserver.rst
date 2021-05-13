@@ -1,7 +1,7 @@
 Testserver
 ==========
 
-A testserver was made for pyads initially for internal testing. However,
+The testserver was created initially for internal testing. However,
 you can also use the testserver to test your application. Use it when no
 real ADS server is available, for example during continuous integration or
 when TwinCAT is not installed.
@@ -21,20 +21,19 @@ console.
 .. code:: python
 
    >>> import pyads
-   >>> pyads.add_route("127.0.0.1.1.1", '127.0.0.1')
+   >>> pyads.add_route("127.0.0.1.1.1", "127.0.0.1")
 
 .. warning::
 
    The testserver functionality was originally intended only for internal
-   testing. Although it is now exposed as a user feature, the documentation
-   and any support is not guaranteed.
+   testing. The documentation and any support are not guaranteed.
 
 Handlers
 --------
 
 The server is a `socket.socket` listener, that listens to ADS-like connections and
 sends responses to requests. :class:`~pyads.testserver.testserver.AdsTestServer`
-itself does not manage the requests and responses. Those are managed my handler
+itself does not manage the requests and responses. Those are managed by handler
 classes. Currently there are two handlers available:
 
  * :class:`~pyads.testserver.basic_handler.BasicHandler` always returns the same static responses. No data can be saved, any returned values are always 0.
