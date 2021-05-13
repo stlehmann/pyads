@@ -1,8 +1,19 @@
-from typing import Optional, Union, Dict, Tuple
+"""Advanced handler module for testserver.
+
+:author: Stefan Lehmann <stlm@posteo.de>
+:license: MIT, see license file or https://opensource.org/licenses/MIT
+:created on: 2017-09-15
+
+"""
+from typing import Optional, Union, Dict, Tuple, List
 import struct
+import ctypes
+from datetime import datetime
 
 from .handler import AbstractHandler, AmsPacket, AmsResponseData, logger
-from pyads import constants
+from pyads import constants, structs
+from pyads.filetimes import dt_to_filetime
+from pyads.pyads_ex import callback_store
 
 
 class PLCVariable:
@@ -13,7 +24,8 @@ class PLCVariable:
     avoid using those directly since they are test subjects.
     """
 
-    handle_count = 0  # Keep track of the latest awarded handle
+    handle_count = 10000  # Keep track of the latest awarded handle
+    notification_count = 10  # Keep track the latest notification handle
 
     INDEX_GROUP = 12345
     INDEX_OFFSET_BASE = 10000
@@ -68,6 +80,8 @@ class PLCVariable:
 
         self.comment: str = ""
 
+        self.notifications: List[int] = []  # List of associated notification handles
+
     @property
     def size(self) -> int:
         """Return size of value."""
@@ -112,6 +126,60 @@ class PLCVariable:
         )
 
         return read_data
+
+    def write(self, value: bytes, request: AmsPacket = None):
+        """Update the variable value, respecting notifications"""
+
+        if self.value != value:
+            if self.notifications:
+
+                header = structs.SAdsNotificationHeader()
+                header.hNotification = 0
+                header.nTimeStamp = dt_to_filetime(datetime.now())
+                header.cbSampleSize = len(value)
+
+                # Perform byte-write into the header
+                dst = ctypes.addressof(header) + structs.SAdsNotificationHeader.data.offset
+                ctypes.memmove(dst, value, len(value))
+
+                for notification_handle in self.notifications:
+
+                    # It's hard to guess the exact AmsAddr from here, so instead
+                    # ignore the address and search for the note_handle
+
+                    for key, func in callback_store.items():
+
+                        # callback_store is keyed by (AmsAddr, int)
+                        if key[1] != notification_handle:
+                            continue
+
+                        header.hNotification = notification_handle
+                        addr = key[0]
+
+                        # Call c-wrapper for user callback
+                        func(addr.amsAddrStruct(), header, 0)
+
+        self.value = value
+
+    def register_notification(self) -> int:
+        """Register a new notification."""
+
+        handle = self.notification_count
+        self.notifications.append(handle)
+        self.notification_count += 1
+        return handle
+
+    def unregister_notification(self, handle: int = None):
+        """Unregister a notification.
+
+        :param handle: Set to `None` (default) to unregister all notifications
+        """
+
+        if handle is None:
+            self.notifications = []
+        else:
+            if handle in self.notifications:
+                self.notifications.remove(handle)
 
 
 class AdvancedHandler(AbstractHandler):
@@ -230,11 +298,12 @@ class AdvancedHandler(AbstractHandler):
 
             elif index_group == constants.ADSIGRP_SYM_VALBYHND:
                 var = self.get_variable_by_handle(index_offset)
-                var.value = value
+                var.write(value, request)
                 return b""
 
             var = self.get_variable_by_indices(index_group, index_offset)
-            var.value = value
+
+            var.write(value, request)
 
             # no return value needed
             return b""
@@ -302,7 +371,7 @@ class AdvancedHandler(AbstractHandler):
 
                 for index_group, index_offset, size in rq_list:
                     var = self.get_variable_by_indices(index_group, index_offset)
-                    var.value = data[offset : offset + size]
+                    var.write(data[offset : offset + size], request)
                     offset += size
 
                 read_data = struct.pack("<" + num_requests * "I", *(num_requests * [0]))
@@ -334,7 +403,7 @@ class AdvancedHandler(AbstractHandler):
                 read_data = var.value[:read_length]
 
                 # store write data
-                var.value = write_data
+                var.write(write_data, request)
 
             return struct.pack("<I", len(read_data)) + read_data
 
@@ -354,14 +423,44 @@ class AdvancedHandler(AbstractHandler):
             return b""
 
         def handle_add_devicenote() -> bytes:
-            """Handle add_devicenode request."""
-            logger.info("Command received: ADD_DEVICE_NOTIFICATION")
-            handle = ("\x0F" * 4).encode("utf-8")
-            return handle
+            """Handle add_devicenode request.
+
+            The actual callback is stored in `pyads_ex.callback_store`. All we need to do
+            here is remember to prompt the client with an updated value if a callback was
+            placed. The client will remember which callback belongs to it.
+            """
+
+            data = request.ams_header.data
+
+            index_group, index_offset, length, mode, max_delay, cycle_time = \
+                struct.unpack("<IIIIII", data[:24])
+
+            logger.info(
+                "Command received: ADD_DEVICE_NOTIFICATION (index_group={}, "
+                "index_group={})".format(index_group, index_offset)
+            )
+
+            # Return value is the notification_handle
+            # The notification handle is an incrementing value
+
+            var = self.get_variable_by_indices(index_group, index_offset)
+
+            handle = var.register_notification()
+
+            return handle.to_bytes(4, byteorder='little')
 
         def handle_delete_devicenote() -> bytes:
             """Handle delete_devicenode request."""
-            logger.info("Command received: DELETE_DEVICE_NOTIFICATION")
+
+            data = request.ams_header.data
+
+            handle = struct.unpack("<I", data[:4])[0]
+
+            logger.info("Command received: DELETE_DEVICE_NOTIFICATION (handle={})".format(handle))
+
+            var = self.get_variable_by_notification_handle(handle)
+            var.unregister_notification(handle)
+
             # No response data required
             return b""
 
@@ -434,6 +533,15 @@ class AdvancedHandler(AbstractHandler):
             "explicitly or write to it".format(name)
         )
 
+    def get_variable_by_notification_handle(self, handle: int) -> PLCVariable:
+        """Get variable by a notification handle, throw error if not found"""
+        for _, var in self._data.items():
+            if handle in var.notifications:
+                return var
+
+        raise KeyError("Notification handle `{}` could not be resolved".format(handle))
+
     def add_variable(self, var: PLCVariable) -> None:
+        """Add a new variable."""
         tup = (var.index_group, var.index_offset)
         self._data[tup] = var

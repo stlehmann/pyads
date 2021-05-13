@@ -7,10 +7,12 @@
 
 """
 import time
+from datetime import datetime, timedelta
 import struct
 from ctypes import sizeof, pointer
 import unittest
 from unittest import mock
+
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
 from pyads import constants, AdsSymbol, bytes_from_dict
@@ -56,7 +58,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         # Create PLC variable that is added by default
         self.test_var = PLCVariable(
-            "TestDouble", 0.0, ads_type=constants.ADST_REAL64, symbol_type="LREAL"
+            "TestDouble", bytes(8), ads_type=constants.ADST_REAL64, symbol_type="LREAL"
         )
         self.test_var.comment = "Some variable of type double"
         self.test_var_type = pyads.constants.PLCTYPE_LREAL  # Corresponds with "LREAL"
@@ -465,6 +467,7 @@ class AdsSymbolTestCase(unittest.TestCase):
             symbol = self.plc.get_symbol(self.test_var.name)
 
             handles = symbol.add_device_notification(my_callback)
+
             symbol.del_device_notification(handles)
 
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
@@ -488,18 +491,32 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
 
     def test_notification_callback(self):
-        """Test notification callback"""
-
-        def my_callback(*args):
-            print(args)
+        """Test notification callback with real value change"""
 
         self.plc.open()
         symbol = self.plc.get_symbol(self.test_var.name)
-        symbol.add_device_notification(my_callback)
-        # new_val = 343.1215
-        # symbol.write(new_val)  # Trigger notification
 
-        # mock_callback.assertCalledOnce()
+        # Create a mock callback
+        mock_callback = mock.MagicMock()
+        mock_callback_wrapped = self.plc.notification(pyads.PLCTYPE_LREAL)(mock_callback)
+
+        symbol.add_device_notification(mock_callback_wrapped)
+        new_val = 343.1215
+        symbol.write(new_val)  # Trigger notification
+
+        mock_callback.assert_called_once()
+
+        args, kwargs = mock_callback.call_args
+
+        note_handle = int(args[0])
+        self.assertGreater(note_handle, 0)  # Verify notification handle
+
+        var_addr = (self.test_var.index_group, self.test_var.index_offset)
+        self.assertEqual(args[1], var_addr)  # Verify address
+
+        self.assertAlmostEqual(args[2], datetime.now(), delta=timedelta(seconds=2))  # Verify datetime
+
+        self.assertEqual(args[3], new_val)  # Verify new value
 
     def test_auto_update(self):
         """Test auto-update feature"""
@@ -512,16 +529,12 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertIsNotNone(symbol._auto_update_handle)
         self.assertEqual(symbol.auto_update, True)
 
-        # Simulate value callback
-        notification = create_notification_struct(struct.pack("<d", 5334.1545))
-        symbol._value_callback(
-            pointer(notification),
-            (self.test_var.index_group, self.test_var.index_offset),
-        )
+        # Let device notification play out by writing directly (not touching the symbol itself)
+        self.plc.write(symbol.index_group, symbol.index_offset, 5334.1545, symbol.plc_type)
         self.assertEqual(symbol.value, 5334.1545)
 
-        # test immediate writing to plc if auto_update is True
-        symbol.value = 123.456
+        # Test immediate writing to plc if auto_update is True
+        symbol.value = 123.456  # Change buffer and write to PLC iff auto_update == True
         r_value = self.plc.read(
             symbol.index_group,
             symbol.index_offset,
@@ -531,13 +544,31 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         symbol.auto_update = False
         self.assertIsNone(symbol._auto_update_handle)
-        symbol.value = 0.0
+        symbol.value = 0.0  # With auto_update disabled, the buffer doesn't perform a write
         r_value = self.plc.read(
             symbol.index_group,
             symbol.index_offset,
             symbol.plc_type,
         )
         self.assertEqual(r_value, 123.456)
+
+    def test_read_device_info(self):
+        """Additional - Test read_device_info for AdvancedHandler."""
+        with self.plc:
+            name, version = self.plc.read_device_info()
+            self.assertEqual(name, "TestServer")
+            self.assertEqual(version.build, 3)
+
+    def test_read_state(self):
+        """Additional - Test read_state for AdvancedHandler."""
+        with self.plc:
+            state = self.plc.read_state()
+            self.assertEqual(state[0], constants.ADSSTATE_RUN)
+
+    def test_write_control(self):
+        """Additional - Test write_control for AdvancedHandler."""
+        with self.plc:
+            self.plc.write_control(constants.ADSSTATE_IDLE, 0, 0, constants.PLCTYPE_INT)
 
 
 class TypesTestCase(unittest.TestCase):

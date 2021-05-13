@@ -36,7 +36,7 @@ class AdsTestServer(threading.Thread):
     """Simple ADS testing server.
 
     :ivar function handler: Request handler (see `default_handler` for example)
-    :ivar str ip_address: Host address for server. Defaults to ''
+    :ivar str ip_address: Host address for server. Defaults to '127.0.0.1'
     :ivar int port: Host port to listen on, defaults to 48898
 
     """
@@ -44,7 +44,7 @@ class AdsTestServer(threading.Thread):
     def __init__(
             self,
             handler: "AbstractHandler" = None,
-            ip_address: str = "",
+            ip_address: str = "127.0.0.1",
             port: int = ADS_PORT,
             logging: bool = True,
             *args: Any,
@@ -313,18 +313,3 @@ class AdsClientConnection(threading.Thread):
         )
 
         return AmsPacket(tcp_header, ams_header)
-
-
-def main():
-    """Main function (keep variable out of global scope)"""
-    server = AdsTestServer(handler=AdvancedHandler())
-    # noinspection PyBroadException
-    try:
-        server.start()
-        server.join()
-    except:
-        server.close()
-
-
-if __name__ == "__main__":
-    main()

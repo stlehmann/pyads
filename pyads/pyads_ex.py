@@ -96,7 +96,7 @@ elif platform_is_linux():
 else:  # pragma: no cover, can not test unsupported platform
     raise RuntimeError("Unsupported platform {0}.".format(sys.platform))
 
-callback_store = dict()
+callback_store: Dict[Tuple[AmsAddr, int], Callable[[SAmsAddr, SAdsNotificationHeader, int], None]] = dict()
 
 
 class ADSError(Exception):
@@ -1164,7 +1164,7 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
     # noinspection PyUnusedLocal
-    def wrapper(addr: AmsAddr, notification: SAdsNotificationHeader, user: int) -> Callable[
+    def wrapper(addr: SAmsAddr, notification: SAdsNotificationHeader, user: int) -> Callable[
             [SAdsNotificationHeader, str], None]:
         return callback(notification, data)
 

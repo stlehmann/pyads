@@ -1,8 +1,7 @@
 pyads package
 =============
 
-Submodules
-----------
+The submodules of the Pyads package are listed below.
 
 pyads\.ads module
 -----------------
@@ -59,6 +58,39 @@ pyads\.testserver module
     :members:
     :undoc-members:
     :show-inheritance:
+
+pyads\.testserver\.testserver
+*****************************
+
+.. automodule:: pyads.testserver.testserver
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pyads\.testserver\.handler
+**************************
+
+.. automodule:: pyads.testserver.handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pyads\.testserver\.basic_handler
+********************************
+
+.. automodule:: pyads.testserver.basic_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pyads\.testserver\.advanced_handler
+***********************************
+
+.. automodule:: pyads.testserver.advanced_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 pyads\.utils module
 -------------------
