@@ -15,11 +15,10 @@ def main():
     """Main function (keep variable out of global scope)"""
 
     parser = argparse.ArgumentParser(description='Run an ADS Testserver')
-    parser.add_argument(
-        '--handler',
-        choices=['basic', 'advanced'],
-        default='advanced'
-    )
+    parser.add_argument("--host", default="127.0.0.1", help="host IP, default: 127.0.0.1")
+    parser.add_argument("-p", "--port", default=48898, help="binding port, default: 48898", type=int)
+    parser.add_argument('--handler', choices=['basic', 'advanced'], default='advanced',
+                        help="testserver handler, default: advanced")
     args = parser.parse_args()
 
     if args.handler == 'basic':
@@ -27,7 +26,11 @@ def main():
     else:
         handler = AdvancedHandler()
 
-    server = AdsTestServer(handler=handler)
+    server = AdsTestServer(
+        ip_address=args.host,
+        port=args.port,
+        handler=handler
+    )
 
     # noinspection PyBroadException
     try:
