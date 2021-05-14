@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## 3.3.5 [unreleased]
+## 3.3.6 [unreleased]
+
+## 3.3.5
 
 ### Added
 * [#223](https://github.com/stlehmann/pyads/pull/223) Add structure support for symbols
