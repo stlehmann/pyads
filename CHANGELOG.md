@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## 3.3.6 [unreleased]
+## 3.3.6
+
+### Added
+* [#249](https://github.com/stlehmann/pyads/pull/249) Add testserver package to setup.py
+
+### Changed
+
+### Removed
 
 ## 3.3.5
 
