@@ -30,6 +30,7 @@ from .structs import (
 )
 from .constants import (
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     STRING_BUFFER,
     ADSIGRP_SYM_HNDBYNAME,
     PLCTYPE_UDINT,
@@ -53,13 +54,13 @@ NOTEFUNC: Optional[Callable] = None
 # _adslib can be WinDLL or CDLL depending on OS
 _adsDLL: Union["ctypes.WinDLL", "ctypes.CDLL"]
 
-# load dynamic ADS library
+# 加载动态ADS库
 if platform_is_windows():  # pragma: no cover, skip Windows test
     dlldir_handle = None
     if sys.version_info >= (3, 8) and "TWINCAT3DIR" in os.environ:
-        # Starting with version 3.8, CPython does not consider the PATH environment
-        # variable any more when resolving DLL paths. The following works with the default
-        # installation of the Beckhoff TwinCAT ADS DLL.
+        # 从3.8版开始，CPython不考虑PATH环境
+        # 解析DLL路径时，变量不再可用。以下适用于默认设置
+        # Beckhoff TwinCAT ADS DLL的安装。
         dll_path = os.environ["TWINCAT3DIR"] + "\\..\\AdsApi\\TcAdsDll"
         if platform.architecture()[0] == "64bit":
             dll_path += "\\x64"
@@ -96,7 +97,7 @@ elif platform_is_linux():
 else:  # pragma: no cover, can not test unsupported platform
     raise RuntimeError("Unsupported platform {0}.".format(sys.platform))
 
-callback_store: Dict[Tuple[AmsAddr, int], Callable[[SAmsAddr, SAdsNotificationHeader, int], None]] = dict()
+callback_store = dict()
 
 
 class ADSError(Exception):
@@ -124,7 +125,7 @@ class ADSError(Exception):
 
 
 def router_function(fn: Callable) -> Callable:
-    """Raise a runtime error if on Win32 systems.
+    """如果在Win32系统上，将引发运行时错误。
 
     Decorator.
 
@@ -152,7 +153,7 @@ def router_function(fn: Callable) -> Callable:
 
 @router_function
 def adsAddRoute(net_id: SAmsNetId, ip_address: str) -> None:
-    """Establish a new route in the AMS Router.
+    """在AMS路由器中建立新路由.
 
     :param pyads.structs.SAmsNetId net_id: net id of routing endpoint
     :param str ip_address: ip address of the routing endpoint
@@ -192,24 +193,12 @@ def send_raw_udp_message(
         # Response should come in in less than .5 seconds, but wait longer to account for slow
         # communications
         sock.settimeout(5)
-
         # Allow TimeoutError to be raised so user can handle it how they please
-        return sock.recvfrom(expected_return_length)
 
-
-def type_is_string(plc_type: Type) -> bool:
-    """Return true if the given class is a string type."""
-
-    # If single char
-    if plc_type == PLCTYPE_STRING:
-        return True
-
-    # If char array
-    if type(plc_type).__name__ == "PyCArrayType":
-        if plc_type._type_ == PLCTYPE_STRING:
-            return True
-
-    return False
+        # Keep looping until we get a response from our PLC
+        addr = [0]
+        while addr[0] != ip_address:
+            return sock.recvfrom(expected_return_length)
 
 
 @router_function
@@ -222,7 +211,7 @@ def adsAddRouteToPLC(
     route_name: Optional[str] = None,
     added_net_id: Optional[str] = None,
 ) -> bool:
-    """Embed a new route in the PLC.
+    """在PLC中嵌入新路线.
 
     :param pyads.structs.SAmsNetId sending_net_id: sending net id
     :param str adding_host_name: host name (or IP) of the PC being added
@@ -307,7 +296,7 @@ def adsAddRouteToPLC(
 
 
 def adsGetNetIdForPLC(ip_address: str) -> str:
-    """Get AMS Net ID from IP address.
+    """从IP地址获取AMS网络ID。
     
     :param str ip_address: ip address of the PLC
     :rtype: str
@@ -485,14 +474,14 @@ def adsSyncWriteControlReqEx(
     data: Any,
     plc_data_type: Type,
 ) -> None:
-    """Change the ADS state and the machine-state of the ADS-server.
+    """更改ADS状态和ADS服务器的计算机状态。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param int ads_state: new ADS-state, according to ADSTATE constants
     :param int device_state: new machine-state
     :param data: additional data
-    :param int plc_data_type: plc datatype, according to PLCTYPE constants
+    :param int plc_data_type: plc数据类型，根据PLC TYPE常量
 
     """
     sync_write_control_request = _adsDLL.AdsSyncWriteControlReqEx
@@ -501,10 +490,20 @@ def adsSyncWriteControlReqEx(
     ads_state_c = ctypes.c_ulong(ads_state)
     device_state_c = ctypes.c_ulong(device_state)
 
-    if type_is_string(plc_data_type):
+
+
+    if plc_data_type == PLCTYPE_STRING:
         data = ctypes.c_char_p(data.encode("utf-8"))
         data_pointer = data
         data_length = len(data_pointer.value) + 1
+
+    #todo  len +1 ？？？？
+    elif plc_data_type == PLCTYPE_WSTRING:
+        data = data.encode("utf_16_le")
+        data_pointer = data  # type: Union[ctypes.c_wchar_p, ctypes.pointer]
+        data_length = len(data_pointer) + 2  # type: ignore
+
+
     else:
         data = plc_data_type(data)
         data_pointer = ctypes.pointer(data)
@@ -531,7 +530,7 @@ def adsSyncWriteReqEx(
     value: Any,
     plc_data_type: Type,
 ) -> None:
-    """Send data synchronous to an ADS-device.
+    """将数据同步发送到ADS设备。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -549,10 +548,25 @@ def adsSyncWriteReqEx(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if type_is_string(plc_data_type):
+
+
+    if plc_data_type == PLCTYPE_STRING:
         data = ctypes.c_char_p(value.encode("utf-8"))
         data_pointer = data  # type: Union[ctypes.c_char_p, ctypes.pointer]
         data_length = len(data_pointer.value) + 1  # type: ignore
+
+
+
+    elif plc_data_type == PLCTYPE_WSTRING:
+
+        from struct import pack
+
+
+        data = value.encode("utf_16_le")
+        data_pointer = data  # type: Union[ctypes.c_wchar_p, ctypes.pointer]
+        data_length = len(data_pointer) + 2  # type: ignore
+
+
 
     else:
         if type(plc_data_type).__name__ == "PyCArrayType":
@@ -589,7 +603,7 @@ def adsSyncReadWriteReqEx2(
     return_ctypes: bool = False,
     check_length: bool = True,
 ) -> Any:
-    """Read and write data synchronous from/to an ADS-device.
+    """从ADS设备同步读取和写入数据。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -615,7 +629,6 @@ def adsSyncReadWriteReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
     read_data: Optional[Any]
-    read_data_pointer: Optional[ctypes.pointer]
     response_size: int = 0
 
     if index_group == ADSIGRP_SUMUP_READ:
@@ -630,7 +643,7 @@ def adsSyncReadWriteReqEx2(
     elif index_group == ADSIGRP_SUMUP_WRITE:
         response_size = (
             index_offset * 4
-        )  # expect 4 bytes back for every value written (error data)
+        )  # 预期每个写入的值返回4个字节（错误数据）
         read_data_buf = bytearray(response_size)
         read_data = (ctypes.c_byte * len(read_data_buf)).from_buffer(read_data_buf)
         read_data_pointer = ctypes.pointer(read_data)
@@ -639,20 +652,28 @@ def adsSyncReadWriteReqEx2(
     elif read_data_type is None:
         read_data = None
         read_data_pointer = None
-        read_length = 0
+        read_length = ctypes.c_ulong(0)
     else:
-        if type_is_string(read_data_type):
+
+
+        if read_data_type == PLCTYPE_STRING:
             read_data = (STRING_BUFFER * PLCTYPE_STRING)()
+
+        elif read_data_type == PLCTYPE_WSTRING:
+            read_data = (STRING_BUFFER * PLCTYPE_WSTRING)()
         else:
             read_data = read_data_type()
 
+
         read_data_pointer = ctypes.pointer(read_data)
-        read_length = ctypes.sizeof(read_data)
+        read_length = ctypes.c_ulong(ctypes.sizeof(read_data))
 
     bytes_read = ctypes.c_ulong()
     bytes_read_pointer = ctypes.pointer(bytes_read)
 
     write_data_pointer: Optional[Union[ctypes.c_char_p, ctypes.pointer]]
+
+
     if index_group == ADSIGRP_SUMUP_READ:
         write_data_pointer = ctypes.pointer(value)
         write_length = ctypes.sizeof(value)
@@ -662,13 +683,25 @@ def adsSyncReadWriteReqEx2(
         write_length = ctypes.sizeof(write_data)
     elif write_data_type is None:
         write_data_pointer = None
-        write_length = 0
-    elif type_is_string(write_data_type):
-        # Get pointer to string
+        write_length = ctypes.c_ulong(0)
+
+
+    elif write_data_type == PLCTYPE_STRING:
+
+        # 获取指向字符串的指针
         write_data_pointer = ctypes.c_char_p(value.encode("utf-8"))
-        # Add an extra byte to the data length for the null terminator
-        write_length = len(value) + 1
+        # 为空终止符的数据长度添加一个额外的字节
+        write_length = ctypes.c_ulong(len(value) + 1)
+    #  TODO 增加wstring
+    elif write_data_type == PLCTYPE_WSTRING:
+
+
+        data = value.encode("utf_16_le")
+        write_data_pointer = data  # type: Union[ctypes.c_wchar_p, ctypes.pointer]
+        write_length = ctypes.c_ulong(len(data_pointer) + 2)  # type: ignore
+
     else:
+
         if type(write_data_type).__name__ == "PyCArrayType":
             write_data = write_data_type(*value)
         elif type(value) is write_data_type:
@@ -676,16 +709,16 @@ def adsSyncReadWriteReqEx2(
         else:
             write_data = write_data_type(value)
         write_data_pointer = ctypes.pointer(write_data)
-        write_length = ctypes.sizeof(write_data)
+        write_length = ctypes.c_ulong(ctypes.sizeof(write_data))
 
     err_code = sync_read_write_request(
         port,
         ams_address_pointer,
         index_group_c,
         index_offset_c,
-        ctypes.c_ulong(read_length),
+        read_length,
         read_data_pointer,
-        ctypes.c_ulong(write_length),
+        write_length,
         write_data_pointer,
         bytes_read_pointer,
     )
@@ -699,14 +732,16 @@ def adsSyncReadWriteReqEx2(
         expected_length = (
             read_data.entryLength
             if isinstance(read_data, SAdsSymbolEntry)
-            else read_length
+            else read_length.value
         )
 
-    # If we're reading a value of predetermined size (anything but a string),
-    # validate that the correct number of bytes were read
+    # 如果我们正在读取预定大小的值（除字符串以外的任何值），请验证是否已读取正确的字节数
+
+
     if (
         check_length
-        and not type_is_string(read_data_type)
+        and read_data_type != PLCTYPE_STRING
+        and read_data_type != PLCTYPE_WSTRING
         and bytes_read.value != expected_length
     ):
         raise RuntimeError(
@@ -718,8 +753,17 @@ def adsSyncReadWriteReqEx2(
     if return_ctypes:
         return read_data
 
-    if read_data is not None and type_is_string(read_data_type):
+
+
+    if read_data is not None and read_data_type == PLCTYPE_STRING:
         return read_data.value.decode("utf-8")
+
+    if read_data is not None and read_data_type == PLCTYPE_WSTRING:
+
+        bRet = read_data.value.encode("utf_16_le")
+
+        return bytes2utf16(bRet)
+
 
     if read_data is not None and type(read_data_type).__name__ == "PyCArrayType":
         return [i for i in read_data]
@@ -728,6 +772,12 @@ def adsSyncReadWriteReqEx2(
         return read_data.value
 
     return read_data
+
+def bytes2utf16(bytes):
+    endindex = FindWstringEnd(bytes)
+    bsret = bytes[:endindex]
+
+    return bsret.decode("utf_16_le")
 
 
 def adsSyncReadReqEx2(
@@ -739,7 +789,7 @@ def adsSyncReadReqEx2(
     return_ctypes: bool = False,
     check_length: bool = True,
 ) -> Any:
-    """Read data synchronous from an ADS-device.
+    """从ADS设备同步读取数据。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -762,8 +812,13 @@ def adsSyncReadReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if type_is_string(data_type):
+
+    if data_type == PLCTYPE_STRING:
         data = (STRING_BUFFER * PLCTYPE_STRING)()
+
+
+    elif data_type == PLCTYPE_WSTRING:
+        data = (STRING_BUFFER * PLCTYPE_WSTRING)()
     else:
         data = data_type()
 
@@ -786,11 +841,15 @@ def adsSyncReadReqEx2(
     if error_code:
         raise ADSError(error_code)
 
-    # If we're reading a value of predetermined size (anything but a string),
-    # validate that the correct number of bytes were read
+    # 如果我们正在读取预定大小的值（除字符串以外的任何值），
+    # 验证是否读取了正确的字节数
+
+
+
     if (
         check_length
-        and not type_is_string(data_type)
+        and data_type != PLCTYPE_STRING
+        and data_type != PLCTYPE_WSTRING
         and bytes_read.value != data_length.value
     ):
         raise RuntimeError(
@@ -802,16 +861,18 @@ def adsSyncReadReqEx2(
     if return_ctypes:
         return data
 
-    if type_is_string(data_type):
-        # Note: this does not catch a string with a specified size
+
+    if data_type == PLCTYPE_STRING:
         return data.value.decode("utf-8")
 
+
+    if data_type == PLCTYPE_WSTRING:
+
+
+        bRet = data.value.encode("utf_16_le")
+        return bytes2utf16(bRet)
+
     if type(data_type).__name__ == "PyCArrayType":
-
-        if type_is_string(data_type._type_):
-            # If the type is a char-array
-            return data.value.decode("utf-8")
-
         return [i for i in data]
 
     if hasattr(data, "value"):
@@ -819,9 +880,8 @@ def adsSyncReadReqEx2(
 
     return data
 
-
 def adsGetHandle(port: int, address: AmsAddr, data_name: str) -> int:
-    """Get the handle of the PLC-variable.
+    """获取PLC变量的句柄。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -863,23 +923,29 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
 
     return symbol_info
 
+def FindWstringEnd(bytes):
+    for i in range(0, len(bytes), 2):
+        if bytes[i] == 0:
+            return  i
+
+
 
 def adsSumRead(
-    port: int, address: AmsAddr, data_names: List[str], data_symbols: Dict[str, SAdsSymbolEntry],
+    port: int, address: AmsAddr, data_names: List[str], data_symbols,
     structured_data_names: List[str],
 ) -> Dict[str, Any]:
-    """Perform a sum read to get the value of multiple variables
+    """执行总和读取以获取多个变量的值
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param data_names: list of variables names to read
-    :param Dict[str, SAdsSymbolEntry] data_symbols: dictionary of ADS Symbol Info
+    :param data_symbols: list of dictionaries of ADS Symbol Info
+    :type data_symbols: dict[str, ADSSymbolInfo]
     :param structured_data_names: list of structured variable names
     :return: result: dict of variable names and values
     :rtype: dict[str, Any]
-
     """
-    result: Dict[str, Optional[Any]] = {i: None for i in data_names}
+    result = {i: None for i in data_names}
 
     num_requests = len(data_names)
     sum_req_array_type = SAdsSumRequest * num_requests
@@ -923,16 +989,49 @@ def adsSumRead(
                     sum_response,
                     offset=data_start + offset,
                 )[0]
-            else:
+            elif (data_symbols[data_name].dataType == ADST_STRING):
+
                 null_idx = sum_response[
                     data_start
                     + offset : data_start
                     + offset
                     + data_symbols[data_name].size
                 ].index(0)
+
                 value = bytearray(
                     sum_response[data_start + offset : data_start + offset + null_idx]
                 ).decode("utf-8")
+
+            elif (data_symbols[data_name].dataType == ADST_WSTRING):
+
+                ret=sum_response[
+                           data_start
+                           + offset: data_start
+                                     + offset
+                                     + data_symbols[data_name].size
+                           ]
+
+                null_idx=FindWstringEnd(ret)
+
+                def C2O(number):
+                    strs=""
+                    for i in range(8):
+                        if number&0x01<<i:
+                            strs='1'+strs
+                        else:
+                            strs = '0'+strs
+                    return int(strs,2)
+                temp =[]
+                for i in sum_response[data_start + offset: data_start + offset + null_idx]:
+                    if i<0:
+                        i= C2O(i)
+                    temp.append(i)
+
+                value =bytearray(temp).decode("utf_16_le")
+
+            else:
+                pass
+
             result[data_name] = value
         offset += data_symbols[data_name].size
 
@@ -945,8 +1044,8 @@ def adsSumWrite(
     data_names_and_values: Dict[str, Any],
     data_symbols: Dict[str, SAdsSymbolEntry],
     structured_data_names: List[str],
-) -> Dict[str, str]:
-    """Perform a sum write to write the value of multiple ADS variables
+) -> Dict[str, ADSError]:
+    """执行总和写入以写入多个ADS变量的值
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -986,8 +1085,22 @@ def adsSumWrite(
                 offset,
                 value,
             )
-        else:
+        elif(data_symbols[data_name].dataType == ADST_STRING):
+
+            valuebyte = value.encode("utf-8")
+            if len(valuebyte)>data_symbols[data_name].size-1:
+                raise ValueError("%s value Out of range "%data_name)
             buf[offset : offset + len(value)] = value.encode("utf-8")
+
+        elif (data_symbols[data_name].dataType == ADST_WSTRING):
+            valuebyte=value.encode("utf_16_le")
+            if len(valuebyte)>data_symbols[data_name].size-2:
+                raise ValueError("%s value Out of range "%data_name)
+            buf[offset : offset + len(value*2)] = valuebyte
+        else:
+            pass
+
+
         offset += data_symbols[data_name].size
 
     sum_response = adsSyncReadWriteReqEx2(
@@ -1027,7 +1140,7 @@ def adsSyncReadByNameEx(
     handle: int = None,
     check_length: bool = True,
 ) -> Any:
-    """Read data synchronous from an ADS-device from data name.
+    """从数据名称读取与ADS设备同步的数据。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -1049,7 +1162,7 @@ def adsSyncReadByNameEx(
     else:
         no_handle = False
 
-    # Read the value of a PLC-variable, via handle
+    # 通过句柄读取PLC变量的值
     value = adsSyncReadReqEx2(
         port,
         address,
@@ -1074,7 +1187,7 @@ def adsSyncWriteByNameEx(
     data_type: Type,
     handle: int = None,
 ) -> None:
-    """Send data synchronous to an ADS-device from data name.
+    """从数据名称同步发送数据到ADS设备。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -1090,7 +1203,7 @@ def adsSyncWriteByNameEx(
     else:
         no_handle = False
 
-    # Write the value of a PLC-variable, via handle
+    # 通过句柄写入PLC变量的值
     adsSyncWriteReqEx(port, address, ADSIGRP_SYM_VALBYHND, handle, value, data_type)
 
     if no_handle is True:
@@ -1105,7 +1218,7 @@ def adsSyncAddDeviceNotificationReqEx(
     callback: Callable,
     user_handle: Optional[int] = None,
 ) -> Tuple[int, int]:
-    """Add a device notification.
+    """添加设备通知。
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr adr: local or remote AmsAddr
@@ -1123,6 +1236,7 @@ def adsSyncAddDeviceNotificationReqEx(
         raise TypeError("Callback function type can't be None")
 
     adsSyncAddDeviceNotificationReqFct = _adsDLL.AdsSyncAddDeviceNotificationReqEx
+
 
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     if isinstance(data, str):
@@ -1164,7 +1278,7 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
     # noinspection PyUnusedLocal
-    def wrapper(addr: SAmsAddr, notification: SAdsNotificationHeader, user: int) -> Callable[
+    def wrapper(addr: AmsAddr, notification: SAdsNotificationHeader, user: int) -> Callable[
             [SAdsNotificationHeader, str], None]:
         return callback(notification, data)
 

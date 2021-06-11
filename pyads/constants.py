@@ -3,7 +3,7 @@
 
 :author: Stefan Lehmann <stlm@posteo.de>
 :license: MIT, see license file or https://opensource.org/licenses/MIT
-:created on: 2018-06-11 18:15:53
+:created on 2018-06-11 18:15:53
 
 """
 from typing import Type, Dict, Callable, Union
@@ -22,6 +22,7 @@ from ctypes import (
     c_char,
     c_int64,
     c_uint64,
+    c_wchar
 )
 
 STRING_BUFFER: int = 1024
@@ -39,6 +40,7 @@ PLCTYPE_LREAL = c_double
 PLCTYPE_REAL = c_float
 PLCTYPE_SINT = c_int8
 PLCTYPE_STRING = c_char
+PLCTYPE_WSTRING = c_wchar
 PLCTYPE_TOD = c_int32
 PLCTYPE_UBYTE = c_ubyte
 PLCTYPE_UDINT = c_uint32
@@ -64,6 +66,7 @@ PLCSimpleDataType = Union[
     PLCTYPE_REAL,
     PLCTYPE_SINT,
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     PLCTYPE_TOD,
     PLCTYPE_UBYTE,
     PLCTYPE_UDINT,
@@ -92,7 +95,6 @@ DATATYPE_MAP: Dict[Type, str] = {
     PLCTYPE_UDINT: "<I",
     PLCTYPE_UINT: "<H",
     PLCTYPE_USINT: "<B",
-    PLCTYPE_LINT: "<q",
     PLCTYPE_ULINT: "<Q",
     PLCTYPE_WORD: "<H",
 }
@@ -132,6 +134,7 @@ ads_type_to_ctype = {
     ADST_REAL64: PLCTYPE_LREAL,
     # ADST_BIGTYPE
     ADST_STRING: PLCTYPE_STRING,
+    ADST_WSTRING: PLCTYPE_WSTRING,
     # ADST_WSTRING
     # ADST_REAL80
     ADST_BIT: PLCTYPE_BOOL,
@@ -306,7 +309,7 @@ ADSTRANS_NOTRANS: int = 0  #: no notifications
 ADSTRANS_CLIENTCYCLE: int = 1
 ADSTRANS_CLIENT1REQ: int = 2
 ADSTRANS_SERVERCYCLE: int = 3  #: notify on a cyclic base
-ADSTRANS_SERVERONCHA: int = 4  #: notify everytime the value changes
+ADSTRANS_SERVERONCHA: int = 4  #: 每次值更改时通知
 
 # symbol flags
 ADSSYMBOLFLAG_PERSISTENT = 0x00000001

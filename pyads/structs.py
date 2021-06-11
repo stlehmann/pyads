@@ -144,17 +144,17 @@ class AmsAddr(object):
 
 
 class NotificationAttrib(object):
-    """Notification Attribute."""
+    """通知属性."""
 
     def __init__(
         self, length: int, trans_mode: int = ADSTRANS_SERVERONCHA, max_delay: float = 1e-4, cycle_time: float = 1e-4
     ) -> None:
-        """Create a new NotificationAttrib object.
+        """创建一个新的NotificationAttrib对象.
 
-        :param int length: length of the data
-        :param int trans_mode: transmission mode
-        :param float max_delay: maximum delay in ms
-        :param float cycle_time: cycle time in ms
+        :param int length: 数据长度
+        :param int trans_mode: 传输方式
+        :param float max_delay:最大延迟（毫秒）
+        :param float cycle_time: 周期时间（毫秒）
 
         """
         self._attrib = SAdsNotificationAttrib()
@@ -284,8 +284,6 @@ class SAdsSymbolEntry(Structure):
     :ivar commentLength: length of comment
 
     A complete example could be:
-
-    .. code:: python
 
         value: 57172            # Current value
         info.entryLength: 88    # Total storage space for this symbol

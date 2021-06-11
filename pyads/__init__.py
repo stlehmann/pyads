@@ -38,6 +38,7 @@ from .constants import (
     PLCTYPE_REAL,
     PLCTYPE_SINT,
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     PLCTYPE_TIME,
     PLCTYPE_TOD,
     PLCTYPE_ULINT,
@@ -116,4 +117,9 @@ from .constants import (
 
 from .symbol import AdsSymbol
 
+<<<<<<< HEAD
+__version__ = '3.3.7
+'
+=======
 __version__ = '3.3.7'
+>>>>>>> 4bdfef5527b7cffd418e21b2decc17c9a8d311d8
