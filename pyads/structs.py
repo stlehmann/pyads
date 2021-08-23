@@ -330,7 +330,7 @@ class SAdsSymbolEntry(Structure):
     def _get_string(self, offset: int, length: int) -> str:
         """Get portion of the bigger string buffer"""
         return bytes(self.stringBuffer[offset:(offset + length)]) \
-            .decode("utf-8")
+            .decode("windows-1252")
 
     @property
     def name(self) -> str:
