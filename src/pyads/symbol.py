@@ -162,7 +162,14 @@ class AdsSymbol:
         info = adsGetSymbolInfo(self._plc._port, self._plc._adr, self.name)
 
         self.index_group = info.iGroup
-        self.index_offset = info.iOffs
+        if self.index_group == 0xF019:
+            # For function block properties with monitoring = call
+            # get symbol using handle instead
+            self.index_group = constants.ADSIGRP_SYM_VALBYHND
+            self.index_offset = self._plc.get_handle(self.name)
+        else:
+            self.index_offset = info.iOffs
+
         if info.comment:
             self.comment = info.comment
 
@@ -233,6 +240,8 @@ class AdsSymbol:
             self.clear_device_notifications()
         except ADSError:
             pass  # Quietly continue, without a connection no cleanup could be done
+        if self.index_group == constants.ADSIGRP_SYM_VALBYHND:
+            self._plc.release_handle(self.index_offset)
 
     def add_device_notification(
             self,
