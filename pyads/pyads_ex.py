@@ -619,7 +619,7 @@ def adsSyncReadWriteReqEx2(
     response_size: int = 0
 
     if index_group == ADSIGRP_SUMUP_READ:
-        response_size = ctypes.sizeof(ctypes.c_ulong) * len(value)
+        response_size = 4 * len(value)
         for _ in value:
             response_size += _.size
         read_data_buf = bytearray(response_size)
