@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 3.3.6
 
 ### Added
+
+### Changed
+* [#264](https://github.com/stlehmann/pyads/pull/264) Fix error when using read_list_by_name on Linux machines
+
+### Removed
+
+## 3.3.6
+
+### Added
 * [#249](https://github.com/stlehmann/pyads/pull/249) Add testserver package to setup.py
 
 ### Changed
