@@ -93,7 +93,7 @@ elif platform_is_linux():
         ctypes.POINTER(SAdsNotificationHeader),
         ctypes.c_ulong,
     )
-    
+
 elif platform_is_freebsd():
     # try to load local libTcAdsDll.so in favor to global one
     local_adslib = os.path.join(os.path.dirname(__file__), "libTcAdsDll.so")
@@ -110,7 +110,7 @@ elif platform_is_freebsd():
         ctypes.POINTER(SAdsNotificationHeader),
         ctypes.c_ulong,
     )
-    
+
 else:  # pragma: no cover, can not test unsupported platform
     raise RuntimeError("Unsupported platform {0}.".format(sys.platform))
 
