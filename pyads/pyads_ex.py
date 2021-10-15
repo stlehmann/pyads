@@ -212,6 +212,35 @@ def type_is_string(plc_type: Type) -> bool:
     return False
 
 
+def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
+    """Convert ctypes data object to a regular value based on the PLCTYPE_* property.
+
+    Typical usage is:
+
+    .. code:: python
+
+        obj = my_plc_type.from_buffer(my_buffer)
+        value = get_value_from_ctype_data(obj, my_plc_type)
+
+    :param read_data: ctypes._CData object
+    :param plc_type: pyads.PLCTYPE_* constant (i.e. a ctypes-like type)
+    """
+
+    if read_data is None:
+        return None
+
+    if type_is_string(plc_type):
+        return read_data.value.decode("utf-8")
+
+    if type(plc_type).__name__ == "PyCArrayType":
+        return [i for i in read_data]
+
+    if hasattr(read_data, "value"):
+        return read_data.value
+
+    return read_data  # Just return the object itself, don't throw an error
+
+
 @router_function
 def adsAddRouteToPLC(
     sending_net_id: str,
@@ -718,16 +747,7 @@ def adsSyncReadWriteReqEx2(
     if return_ctypes:
         return read_data
 
-    if read_data is not None and type_is_string(read_data_type):
-        return read_data.value.decode("utf-8")
-
-    if read_data is not None and type(read_data_type).__name__ == "PyCArrayType":
-        return [i for i in read_data]
-
-    if read_data is not None and hasattr(read_data, "value"):
-        return read_data.value
-
-    return read_data
+    return get_value_from_ctype_data(read_data, read_data_type)
 
 
 def adsSyncReadReqEx2(
@@ -802,22 +822,7 @@ def adsSyncReadReqEx2(
     if return_ctypes:
         return data
 
-    if type_is_string(data_type):
-        # Note: this does not catch a string with a specified size
-        return data.value.decode("utf-8")
-
-    if type(data_type).__name__ == "PyCArrayType":
-
-        if type_is_string(data_type._type_):
-            # If the type is a char-array
-            return data.value.decode("utf-8")
-
-        return [i for i in data]
-
-    if hasattr(data, "value"):
-        return data.value
-
-    return data
+    return get_value_from_ctype_data(data, data_type)
 
 
 def adsGetHandle(port: int, address: AmsAddr, data_name: str) -> int:
@@ -864,6 +869,43 @@ def adsGetSymbolInfo(port: int, address: AmsAddr, data_name: str) -> SAdsSymbolE
     return symbol_info
 
 
+def adsSumReadBytes(
+    port: int,
+    address: AmsAddr,
+    data_symbols: List[Tuple[int, int, int]],
+) -> Any:
+    """Perform a sum read for multiple variables, returning the bytes
+
+    This version does not do any processing, and will simply return the concatenation
+    of the bytes of the target symbols.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :param pyads.structs.AmsAddr address: local or remote AmsAddr
+    :param data_symbols: list of tuples like: (index_group, index_offset, size)
+    """
+    num_requests = len(data_symbols)
+    sum_req_array_type = SAdsSumRequest * num_requests
+    sum_req_array = sum_req_array_type()
+
+    for i, data_symbol in enumerate(data_symbols):
+        idx_group, idx_offset, size = data_symbol
+        sum_req_array[i].iGroup = idx_group
+        sum_req_array[i].iOffset = idx_offset
+        sum_req_array[i].size = size
+
+    return adsSyncReadWriteReqEx2(
+        port,
+        address,
+        ADSIGRP_SUMUP_READ,
+        num_requests,
+        None,
+        sum_req_array,
+        None,
+        return_ctypes=False,
+        check_length=False,
+    )
+
+
 def adsSumRead(
     port: int, address: AmsAddr, data_names: List[str], data_symbols: Dict[str, SAdsSymbolEntry],
     structured_data_names: List[str],
@@ -882,28 +924,18 @@ def adsSumRead(
     result: Dict[str, Optional[Any]] = {i: None for i in data_names}
 
     num_requests = len(data_names)
-    sum_req_array_type = SAdsSumRequest * num_requests
-    sum_req_array = sum_req_array_type()
 
-    for i, value in enumerate(data_names):
-        sum_req_array[i].iGroup = data_symbols[value].iGroup
-        sum_req_array[i].iOffset = data_symbols[value].iOffs
-        sum_req_array[i].size = data_symbols[value].size
+    symbol_infos = [
+        (data_symbols[name].iGroup, data_symbols[name].iOffs,
+         data_symbols[name].size) for name in data_names
+    ]
+    # When a read is split, `data_symbols` will be bigger than `data_names`
+    # Therefore we avoid looping over `data_symbols`
 
-    sum_response = adsSyncReadWriteReqEx2(
-        port,
-        address,
-        ADSIGRP_SUMUP_READ,
-        num_requests,
-        None,
-        sum_req_array,
-        None,
-        return_ctypes=False,
-        check_length=False,
-    )
+    sum_response = adsSumReadBytes(port, address, symbol_infos)
 
-    offset = 0
     data_start = 4 * num_requests
+    offset = data_start
 
     for i, data_name in enumerate(data_names):
         error = struct.unpack_from("<I", sum_response, offset=i * 4)[0]
@@ -912,8 +944,7 @@ def adsSumRead(
         else:
             if data_name in structured_data_names:
                 value = sum_response[
-                    data_start + offset :
-                    data_start + offset + data_symbols[data_name].size]
+                    offset: offset + data_symbols[data_name].size]
             elif (
                 data_symbols[data_name].dataType != ADST_STRING
                 and data_symbols[data_name].dataType != ADST_WSTRING
@@ -921,22 +952,48 @@ def adsSumRead(
                 value = struct.unpack_from(
                     DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
                     sum_response,
-                    offset=data_start + offset,
+                    offset=offset,
                 )[0]
             else:
                 null_idx = sum_response[
-                    data_start
-                    + offset : data_start
-                    + offset
-                    + data_symbols[data_name].size
+                    offset: offset + data_symbols[data_name].size
                 ].index(0)
                 value = bytearray(
-                    sum_response[data_start + offset : data_start + offset + null_idx]
+                    sum_response[offset: offset + null_idx]
                 ).decode("utf-8")
             result[data_name] = value
         offset += data_symbols[data_name].size
 
     return result
+
+
+def adsSumWriteBytes(
+    port: int,
+    address: AmsAddr,
+    num_requests: int,
+    buffer: bytes,
+) -> List[str]:
+    """Perform a sum write of concatenated bytes to multiple symbols.
+
+    :return: List of errors
+    """
+
+    sum_response = adsSyncReadWriteReqEx2(
+        port,
+        address,
+        ADSIGRP_SUMUP_WRITE,
+        num_requests,
+        None,
+        buffer,
+        None,
+        return_ctypes=False,
+        check_length=False,
+    )
+
+    errors = list(struct.iter_unpack("<I", sum_response))
+    error_descriptions = [ERROR_CODES[i[0]] for i in errors]
+
+    return error_descriptions
 
 
 def adsSumWrite(
@@ -990,20 +1047,12 @@ def adsSumWrite(
             buf[offset : offset + len(value)] = value.encode("utf-8")
         offset += data_symbols[data_name].size
 
-    sum_response = adsSyncReadWriteReqEx2(
+    error_descriptions = adsSumWriteBytes(
         port,
         address,
-        ADSIGRP_SUMUP_WRITE,
         num_requests,
-        None,
         buf,
-        None,
-        return_ctypes=False,
-        check_length=False,
     )
-
-    errors = list(struct.iter_unpack("<I", sum_response))
-    error_descriptions = [ERROR_CODES[i[0]] for i in errors]
 
     return dict(zip(data_names_and_values.keys(), error_descriptions))
 

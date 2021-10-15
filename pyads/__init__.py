@@ -14,7 +14,6 @@ from .ads import (
     add_route,
     add_route_to_plc,
     delete_route,
-    Connection,
     set_local_address,
     set_timeout,
     size_of_structure,
@@ -22,6 +21,8 @@ from .ads import (
     bytes_from_dict,
     StructureDef,
 )
+
+from .connection import Connection
 
 from .pyads_ex import ADSError
 
