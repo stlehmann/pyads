@@ -19,6 +19,14 @@ pyads\.constants module
     :undoc-members:
     :show-inheritance:
 
+pyads\.connection module
+------------------------
+
+.. automodule:: pyads.connection
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pyads\.errorcodes module
 ------------------------
 
