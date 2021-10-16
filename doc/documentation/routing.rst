@@ -90,12 +90,6 @@ allow connections to a PC with the Hostname “MyPC”
    >>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, PLC_USERNAME, PLC_PASSWORD, route_name=ROUTE_NAME)
    >>> pyads.close_port()
 
-When adding the route in TwinCAT make sure to use the following settings::
+.. note::
 
-  AMS Net Id:     192.168.0.1.1.1 # Derived from the IP address of your ADS client
-  Address:        192.168.0.1     # Use the IP which is connected to the TwinCAT target
-  Transport Type: TCP/IP
-  Remote Route:   None / Server
-  Unidirectional: false
-  Secure ADS:     false
-
+    When adding the route in TwinCAT make sure to deactivate the unidirectional option.
