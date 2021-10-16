@@ -89,3 +89,7 @@ allow connections to a PC with the Hostname “MyPC”
    >>> pyads.set_local_address(SENDER_AMS)
    >>> pyads.add_route_to_plc(SENDER_AMS, HOSTNAME, PLC_IP, PLC_USERNAME, PLC_PASSWORD, route_name=ROUTE_NAME)
    >>> pyads.close_port()
+
+.. note::
+
+    When adding the route in TwinCAT make sure to deactivate the unidirectional option.
