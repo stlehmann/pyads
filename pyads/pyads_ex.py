@@ -15,7 +15,7 @@ import sys
 from contextlib import closing
 from functools import wraps
 
-from .utils import platform_is_linux, platform_is_windows
+from .utils import platform_is_linux, platform_is_windows, platform_is_freebsd
 from .structs import (
     AmsAddr,
     SAmsAddr,
@@ -94,7 +94,7 @@ elif platform_is_linux():
         ctypes.c_ulong,
     )
     
-elif sys.platform.startswith("freebsd"):
+elif platform_is_freebsd():
     # try to load local libTcAdsDll.so in favor to global one
     local_adslib = os.path.join(os.path.dirname(__file__), "libTcAdsDll.so")
     if os.path.isfile(local_adslib):
