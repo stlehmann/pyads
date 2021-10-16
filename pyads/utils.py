@@ -23,6 +23,11 @@ def platform_is_windows() -> bool:
     return sys.platform == "win32" or sys.platform == "cli"
 
 
+def platform_is_freebsd() -> bool:
+    """Return True if current platform is FreeBSD."""
+    return sys.platform.startswith("freebsd")
+
+
 def deprecated(message: Optional[str] = None) -> Callable:
     """Decorator for deprecated functions.
 
