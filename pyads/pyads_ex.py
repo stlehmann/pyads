@@ -266,6 +266,9 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
     if type_is_string(plc_type):
         return read_data.value.decode("utf-8")
 
+    if type_is_wstring(plc_type):
+        return read_data.value
+
     if type(plc_type).__name__ == "PyCArrayType":
         return [i for i in read_data]
 
@@ -567,7 +570,11 @@ def adsSyncWriteControlReqEx(
     if type_is_string(plc_data_type):
         data = ctypes.c_char_p(data.encode("utf-8"))
         data_pointer = data
-        data_length = len(data_pointer.value) + 1
+        data_length = len(data_pointer.value) + 1  # add 1 byte for null terminator
+    elif type_is_wstring(plc_data_type):
+        data = ctypes.c_wchar_p(data)
+        data_pointer = data
+        data_length = 2 * (len(data_pointer.value) + 1)  # add 2 bytes for wchar null terminator
     else:
         data = plc_data_type(data)
         data_pointer = ctypes.pointer(data)
@@ -614,8 +621,13 @@ def adsSyncWriteReqEx(
 
     if type_is_string(plc_data_type):
         data = ctypes.c_char_p(value.encode("utf-8"))
-        data_pointer = data  # type: Union[ctypes.c_char_p, ctypes.pointer]
+        data_pointer = data  # type: Union[ctypes.c_char_p, ctypes.c_wchar_p, ctypes.pointer]
         data_length = len(data_pointer.value) + 1  # type: ignore
+
+    elif type_is_wstring(plc_data_type):
+        data = ctypes.c_wchar_p(value)
+        data_pointer = data
+        data_length = 2 * (len(data_pointer.value) + 1)  # type: ignore
 
     else:
         if type(plc_data_type).__name__ == "PyCArrayType":
@@ -706,6 +718,8 @@ def adsSyncReadWriteReqEx2(
     else:
         if type_is_string(read_data_type):
             read_data = (STRING_BUFFER * PLCTYPE_STRING)()
+        elif type_is_wstring(read_data_type):
+            read_data = (STRING_BUFFER * PLCTYPE_WSTRING)()
         else:
             read_data = read_data_type()
 
@@ -715,7 +729,7 @@ def adsSyncReadWriteReqEx2(
     bytes_read = ctypes.c_ulong()
     bytes_read_pointer = ctypes.pointer(bytes_read)
 
-    write_data_pointer: Optional[Union[ctypes.c_char_p, ctypes.pointer]]
+    write_data_pointer: Optional[Union[ctypes.c_char_p, ctypes.c_wchar_p, ctypes.pointer]]
     if index_group == ADSIGRP_SUMUP_READ:
         write_data_pointer = ctypes.pointer(value)
         write_length = ctypes.sizeof(value)
@@ -731,6 +745,10 @@ def adsSyncReadWriteReqEx2(
         write_data_pointer = ctypes.c_char_p(value.encode("utf-8"))
         # Add an extra byte to the data length for the null terminator
         write_length = len(value) + 1
+    elif type_is_wstring(write_data_type):
+        # get pointer to string
+        write_data_pointer = ctypes.c_wchar_p(value)
+        write_length = 2 * (len(value) + 1)  # 2 bytes for wchar
     else:
         if type(write_data_type).__name__ == "PyCArrayType":
             write_data = write_data_type(*value)
@@ -765,11 +783,11 @@ def adsSyncReadWriteReqEx2(
             else read_length
         )
 
-    # If we're reading a value of predetermined size (anything but a string),
+    # If we're reading a value of predetermined size (anything but a string or wstring),
     # validate that the correct number of bytes were read
     if (
         check_length
-        and not type_is_string(read_data_type)
+        and not (type_is_string(read_data_type) or type_is_wstring(read_data_type))
         and bytes_read.value != expected_length
     ):
         raise RuntimeError(
@@ -818,6 +836,8 @@ def adsSyncReadReqEx2(
 
     if type_is_string(data_type):
         data = (STRING_BUFFER * PLCTYPE_STRING)()
+    elif type_is_wstring(data_type):
+        data = (STRING_BUFFER * PLCTYPE_WSTRING)()
     else:
         data = data_type()
 
@@ -840,11 +860,11 @@ def adsSyncReadReqEx2(
     if error_code:
         raise ADSError(error_code)
 
-    # If we're reading a value of predetermined size (anything but a string),
+    # If we're reading a value of predetermined size (anything but a string or wstring),
     # validate that the correct number of bytes were read
     if (
         check_length
-        and not type_is_string(data_type)
+        and not(type_is_string(data_type) or type_is_wstring(data_type))
         and bytes_read.value != data_length.value
     ):
         raise RuntimeError(
