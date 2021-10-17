@@ -30,6 +30,7 @@ from .structs import (
 )
 from .constants import (
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     STRING_BUFFER,
     ADSIGRP_SYM_HNDBYNAME,
     PLCTYPE_UDINT,
@@ -225,6 +226,21 @@ def type_is_string(plc_type: Type) -> bool:
     # If char array
     if type(plc_type).__name__ == "PyCArrayType":
         if plc_type._type_ == PLCTYPE_STRING:
+            return True
+
+    return False
+
+
+def type_is_wstring(plc_type: Type) -> bool:
+    """Return True if the given class is a WSTRING type."""
+
+    # If single char
+    if plc_type == PLCTYPE_WSTRING:
+        return True
+
+    # If char array
+    if type(plc_type).__name__ == "PyCArrayType":
+        if plc_type._type_ == PLCTYPE_WSTRING:
             return True
 
     return False
