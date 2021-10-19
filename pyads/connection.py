@@ -904,7 +904,7 @@ class Connection(object):
             offset += 12
 
         if isinstance(symbols, dict):
-            new_values = list(symbols.keys())
+            new_values = list(symbols.values())
         else:
             new_values = None
 

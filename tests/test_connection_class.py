@@ -7,7 +7,7 @@
 
 """
 import ctypes
-from ctypes import addressof, memmove, resize, sizeof, pointer
+from ctypes import memmove, resize, sizeof, pointer
 import datetime
 import time
 import unittest
@@ -15,7 +15,7 @@ import pyads
 import struct
 from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler, PLCVariable
 from pyads.structs import NotificationAttrib
-from pyads import constants, structs
+from pyads import constants, structs, AdsSymbol
 from collections import OrderedDict
 
 # These are pretty arbitrary
@@ -1441,6 +1441,97 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         """Test write_control for AdvancedHandler."""
         with self.plc:
             self.plc.write_control(constants.ADSSTATE_IDLE, 0, 0, constants.PLCTYPE_INT)
+
+
+class ConnectionSymbolListTestCase(unittest.TestCase):
+    """Testcase for the symbol list methods of the Connection class.
+
+    This is a separate test case to use the advanced handler with a few prepared
+    dummy variables.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # type: () -> None
+        """Setup the ADS test server."""
+        cls.handler = AdvancedHandler()
+        cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
+        cls.test_server.start()
+
+        # wait a bit otherwise error might occur
+        time.sleep(1)
+
+    @classmethod
+    def tearDownClass(cls):
+        # type: () -> None
+        """Tear down the test server."""
+        cls.test_server.stop()
+
+        # wait a bit for server to shutdown
+        time.sleep(1)
+
+    def setUp(self):
+        # type: () -> None
+        """Establish connection to the test server."""
+
+        # Clear test server and handler
+        self.test_server.request_history = []
+        self.handler.reset()
+
+        # Create PLC variables that are added by default
+        self.vars = [
+            PLCVariable(
+                "Double1", struct.pack("d", 3.14), ads_type=constants.ADST_REAL64,
+                symbol_type="LREAL"
+            ),
+            PLCVariable(
+                "Double2", struct.pack("d", 1.54), ads_type=constants.ADST_REAL64,
+                symbol_type="LREAL"
+            ),
+            PLCVariable(
+                "Int1", struct.pack("H", 420), ads_type=constants.ADST_UINT16,
+                symbol_type="UINT"
+            ),
+        ]
+
+        for var in self.vars:
+            self.handler.add_variable(var)
+
+        self.plc = pyads.Connection(
+            TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS
+        )
+
+    def test_read_list_of_symbols(self):
+        """Test reading a list of symbols at once."""
+
+        with self.plc:
+            symbols = [AdsSymbol(self.plc, name=var.name) for var in self.vars]
+
+            result = self.plc.read_list_of_symbols(symbols)
+
+        expected = {"Double1": 3.14, "Double2": 1.54, "Int1": 420}
+        self.assertEqual(expected, result)
+
+        # Also check variable buffer
+        for symbol in symbols:
+            self.assertEqual(expected[symbol.name], symbol._value)
+
+    def test_write_list_of_symbols(self):
+        """Test writing a list of symbols at once, using a dictionary"""
+
+        with self.plc:
+            symbols = [AdsSymbol(self.plc, name=var.name) for var in self.vars]
+
+            values = [16.16, 25.55, 53]
+            symbols_with_data = dict(zip(symbols, values))
+
+            result = self.plc.write_list_of_symbols(symbols_with_data)
+
+            self.assertEqual(result, ['no error'] * 3)
+
+            for i, symbol in enumerate(symbols):
+                real_value = symbol.read()
+                self.assertEqual(real_value, values[i])
 
 
 if __name__ == "__main__":
