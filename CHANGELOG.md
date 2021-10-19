@@ -11,7 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#247](https://github.com/stlehmann/pyads/pull/247) Add support for FreeBSD (tc/bsd)
 
 ### Changed
-* [#269](https://github.com/stlehmann/pyads/pull/269) Refactor Connection class in its own module, add helper functions 
+* [#269](https://github.com/stlehmann/pyads/pull/269) Refactor Connection class in its own module, add helper functions
+* [#260](https://github.com/stlehmann/pyads/pull/260) Fix decoding of symbol comments
 
 ### Removed
 
