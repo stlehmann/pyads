@@ -548,6 +548,40 @@ class Connection(object):
             check_length=check_length,
         )
 
+    def _read_list(
+            self,
+            data_symbols: Dict[str, Union[SAdsSymbolEntry, Tuple]],
+            ads_sub_commands: int,
+            structure_defs: Dict[str, StructureDef],
+    ) -> Dict[str, Any]:
+        """Perform read for a list of variables.
+
+        See :meth:`Connection.read_list_by_name`.
+        """
+
+        data_names = list(data_symbols.keys())
+
+        # Limit request side, split into multiple if needed
+        if len(data_names) <= ads_sub_commands:
+            data_names_list = [data_names]  # Turn into list of a single element
+        else:
+            data_names_list = _list_slice_generator(data_names, ads_sub_commands)
+
+        return_data: Dict[str, Any] = {}
+
+        for data_names_slice in data_names_list:
+
+            result = adsSumRead(self._port, self._adr, data_names_slice, data_symbols,
+                                list(structure_defs.keys()))  # type: ignore
+
+            for data_name, structure_def in structure_defs.items():  # type: ignore
+                result[data_name] = dict_from_bytes(result[data_name],
+                                                    structure_def)  # type: ignore
+
+            return_data.update(result)
+
+        return return_data
+
     def read_list_by_name(
             self,
             data_names: List[str],
@@ -576,36 +610,95 @@ class Connection(object):
             structure_defs = {}
 
         if cache_symbol_info:
-            new_items = [i for i in data_names if i not in self._symbol_info_cache]
+            new_items = [name for name in data_names if name not in self._symbol_info_cache]
             new_cache = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+                name: adsGetSymbolInfo(self._port, self._adr, name) for name in new_items
             }
             self._symbol_info_cache.update(new_cache)
-            data_symbols = {i: self._symbol_info_cache[i] for i in data_names}
+            data_symbols = {
+                name: self._symbol_info_cache[name] for name in data_names
+            }
         else:
             data_symbols = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
+                name: adsGetSymbolInfo(self._port, self._adr, name) for name in data_names
             }
 
-        def sum_read(port: int, adr: AmsAddr, data_names: List[str],
-                     data_symbols: Dict) -> Dict[str, str]:
-            result = adsSumRead(port, adr, data_names, data_symbols,
-                                list(structure_defs.keys()))  # type: ignore
+        return self._read_list(data_symbols, ads_sub_commands, structure_defs)
 
-            for data_name, structure_def in structure_defs.items():  # type: ignore
-                result[data_name] = dict_from_bytes(result[data_name],
-                                                    structure_def)  # type: ignore
+    def read_list_of_symbols(
+            self,
+            symbols: List[AdsSymbol],
+            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+    ):
+        """Read new values for a list of AdsSymbols using a single ADS call.
 
-            return result
+        The outputs will be returned as a dictionary, but the cache of each symbol will
+        be updated too.
 
-        if len(data_names) <= ads_sub_commands:
-            return sum_read(self._port, self._adr, data_names, data_symbols)
+        Comparable to :meth:`Connection.read_list_by_name`.
+        See also :class:`pyads.AdsSymbol`.
 
-        return_data: Dict[str, Any] = {}
-        for data_names_slice in _list_slice_generator(data_names, ads_sub_commands):
-            return_data.update(
-                sum_read(self._port, self._adr, data_names_slice, data_symbols)
-            )
+        :param symbols: List if symbol instances
+        :param ads_sub_commands: Max. number of symbols per call (see
+                                 `read_list_by_name`)
+        """
+
+        for symbol in symbols:
+            if symbol.is_structure:
+                raise ValueError("Method not available for structured variables")
+
+        # Relying on `adsSumRead()` is tricky, because we do not have the `dataType`
+        # (integer) for each symbol, we only have the ctypes-type.
+
+        data_symbols = {
+            symbol.name: (symbol.index_group, symbol.index_offset,
+                          symbol.plc_type) for symbol in symbols
+        }
+
+        result = self._read_list(data_symbols, ads_sub_commands, {})
+
+        # Add result to symbols cache
+        for symbol in symbols:
+            symbol._value = result[symbol.name]
+
+        return result
+
+    def _write_list(
+            self,
+            data_symbols: Dict[Union[SAdsSymbolEntry, Tuple]],
+            values: Dict[str, Any],
+            ads_sub_commands: int,
+            structure_defs: Dict[str, StructureDef],
+    ) -> Dict[str, str]:
+        """Write a list of variables.
+
+        See :meth:`write_list_by_name`.
+        """
+
+        if structure_defs is None:
+            structure_defs = {}
+
+        for name, structure_def in structure_defs.items():
+            values[name] = bytes_from_dict(values[name], structure_def)
+
+        structured_data_names = list(structure_defs.keys())
+
+        if len(values) <= ads_sub_commands:
+            data_names_list = [values]  # Turn into array of single element
+            # return adsSumWrite(
+            #     self._port, self._adr, data_names_and_values, data_symbols,
+            #     structured_data_names
+            # )
+        else:
+            data_names_list = _dict_slice_generator(values, ads_sub_commands)
+
+        return_data: Dict[str, str] = {}
+        for data_names_slice in data_names_list:
+
+            result = adsSumWrite(self._port, self._adr, data_names_slice, data_symbols,
+                                 structured_data_names)
+            return_data.update(result)
+
         return return_data
 
     def write_list_by_name(
@@ -636,13 +729,10 @@ class Connection(object):
 
         """
         if cache_symbol_info:
-            new_items = [
-                i
-                for i in data_names_and_values.keys()
-                if i not in self._symbol_info_cache
-            ]
+            new_items = [name for name in data_names_and_values.keys()
+                         if name not in self._symbol_info_cache]
             new_cache = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+                name: adsGetSymbolInfo(self._port, self._adr, name) for name in new_items
             }
             self._symbol_info_cache.update(new_cache)
             data_symbols = {
@@ -650,8 +740,8 @@ class Connection(object):
             }
         else:
             data_symbols = {
-                i: adsGetSymbolInfo(self._port, self._adr, i)
-                for i in data_names_and_values.keys()
+                name: adsGetSymbolInfo(self._port, self._adr, name)
+                for name in data_names_and_values.keys()
             }
 
         if structure_defs is None:
@@ -659,26 +749,53 @@ class Connection(object):
         else:
             data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
 
-        for name, structure_def in structure_defs.items():
-            data_names_and_values[name] = bytes_from_dict(data_names_and_values[name],
-                                                          structure_def)
+        return self._write_list(data_symbols, data_names_and_values, ads_sub_commands, structure_defs)
 
-        structured_data_names = list(structure_defs.keys())
+    def write_list_of_symbols(
+            self,
+            symbols_and_values: Dict[AdsSymbol, Any],
+            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+    ):
+        """Write new values to a list of symbols.
 
-        if len(data_names_and_values) <= ads_sub_commands:
-            return adsSumWrite(
-                self._port, self._adr, data_names_and_values, data_symbols,
-                structured_data_names
-            )
+        Either specify a dict of symbols, or first set the `_value` property of
+        each symbol and then pass them as a list.
 
-        return_data: Dict[str, str] = {}
-        for data_names_slice in _dict_slice_generator(data_names_and_values,
-                                                      ads_sub_commands):
-            return_data.update(
-                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols,
-                            structured_data_names)
-            )
-        return return_data
+        For example:
+
+        .. code:: python
+
+            # Using dict
+            new_data = {symbol1: 3.14, symbol2: False}
+            plc.write_list_of_symbols(new_data)
+
+            # Using cache
+            symbol1._value = 3.14
+            symbol2._value = False
+            plc.write_list_of_symbols([symbol1, symbol2])
+
+        Comparable to :meth:`Connection.write_list_by_name`.
+        See also :class:`pyads.AdsSymbol`.
+
+        :param symbols_and_values: Symbols to write to
+        :param ads_sub_commands: Max. number of symbols per call (see
+                                 `write_list_by_name`)
+        """
+
+        for symbol in symbols_and_values.keys():
+            if symbol.is_structure:
+                raise ValueError("Method not available for structured variables")
+
+        data_symbols = {
+            symbol.name: (symbol.index_group, symbol.index_offset,
+                          symbol.plc_type) for symbol in symbols_and_values.keys()
+        }
+
+        data_names_and_values = {symbol.name: value for symbol, value in
+                                 symbols_and_values.items()}
+
+        return self._write_list(data_symbols, data_names_and_values,
+                                ads_sub_commands, {})
 
     def read_structure_by_name(
             self,
@@ -804,139 +921,6 @@ class Connection(object):
         return self.write_by_name(
             data_name, byte_values, c_ubyte * structure_size, handle=handle
         )
-
-    def read_list_of_symbols(
-            self,
-            symbols: List[AdsSymbol],
-            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
-    ):
-        """Read new values for a list of AdsSymbols using a single ADS call.
-
-        The outputs will be returned as a dictionary, but the cache of each symbol will
-        be updated too.
-
-        Comparable to :meth:`Connection.read_list_by_name`.
-        See also :class:`pyads.AdsSymbol`.
-
-        :param symbols: List if symbol instances
-        :param ads_sub_commands: Max. number of symbols per call (see
-                                 `read_list_by_name`)
-        """
-
-        # Relying on `adsSumRead()` is tricky, because we do not have the `dataType`
-        # (integer) for each symbol, we only have the ctypes-type.
-        # Instead a very similar low-level read is done.
-
-        # Allocate return dict
-        result = {symbol.name: None for symbol in symbols}
-
-        symbol_infos = [(sym.index_group, sym.index_offset, sizeof(sym.plc_type))
-                        for sym in symbols]
-
-        sum_response = adsSumReadBytes(self._port, self._adr, symbol_infos)
-
-        data_start = 4 * len(symbols)
-        offset = data_start
-
-        for i, symbol in enumerate(symbols):
-
-            if symbol.is_structure:
-                raise ValueError("Method not available for structured variables")
-
-            # Check if read was successful for this variable
-            error = struct.unpack_from("<I", sum_response, offset=i * 4)[0]
-            if error:
-                result[symbol.name] = ERROR_CODES[error]
-            else:
-                obj = symbol.plc_type.from_buffer(sum_response, offset)
-
-                value = get_value_from_ctype_data(obj, symbol.plc_type)
-
-                result[symbol.name] = value
-                symbol._value = value  # Update symbol cache
-
-            offset += sizeof(symbol.plc_type)
-
-        return result
-
-    def write_list_of_symbols(
-            self,
-            symbols: Union[List[AdsSymbol], Dict[AdsSymbol, Any]],
-    ):
-        """Write new values to a list of symbols.
-
-        Either specify a dict of symbols, or first set the `_value` property of
-        each symbol and then pass them as a list.
-
-        For example:
-
-        .. code:: python
-
-            # Using dict
-            new_data = {symbol1: 3.14, symbol2: False}
-            plc.write_list_of_symbols(new_data)
-
-            # Using cache
-            symbol1._value = 3.14
-            symbol2._value = False
-            plc.write_list_of_symbols([symbol1, symbol2])
-
-        Comparable to :meth:`Connection.write_list_by_name`.
-        See also :class:`pyads.AdsSymbol`.
-
-        :param symbols: Symbols to write to
-        """
-
-        # Initialize big buffer with new data to send over
-        offset = 0
-        num_requests = len(symbols)
-        total_request_size = num_requests * 3 * 4  # iGroup, iOffset & size
-
-        for symbol in symbols:
-            total_request_size += sizeof(symbol.plc_type)
-
-        buf = bytearray(total_request_size)
-
-        for symbol in symbols:
-            struct.pack_into("<I", buf, offset, symbol.index_group)
-            struct.pack_into("<I", buf, offset + 4, symbol.index_offset)
-            struct.pack_into("<I", buf, offset + 8, sizeof(symbol.plc_type))
-            offset += 12
-
-        if isinstance(symbols, dict):
-            new_values = list(symbols.values())
-        else:
-            new_values = None
-
-        for i, symbol in enumerate(symbols):
-
-            if symbol.is_structure:
-                raise ValueError("List write not supported for struct symbols")
-
-            new_value = new_values[i] if new_values is not None else symbol._value
-
-            # Convert value to bytes and insert into buffer
-            if type_is_string(symbol.plc_type):
-                buf[offset: offset + len(new_value)] = new_value.encode("utf-8")
-            else:
-                if type(symbol.plc_type).__name__ == "PyCArrayType":
-                    write_data = symbol.plc_type(*new_value)
-                elif type(new_value) is symbol.plc_type:
-                    write_data = new_value
-                else:
-                    write_data = symbol.plc_type(new_value)
-                buf[offset: offset + sizeof(symbol.plc_type)] = bytes(write_data)
-
-            offset += sizeof(symbol.plc_type)
-
-        error_descriptions = adsSumWriteBytes(
-            self._port,
-            self._adr,
-            num_requests,
-            buf,
-        )
-
-        return error_descriptions
 
     def add_device_notification(
             self,

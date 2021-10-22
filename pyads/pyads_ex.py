@@ -7,6 +7,7 @@
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional, List, Dict
 import ctypes
+from ctypes import sizeof
 import os
 import platform
 import socket
@@ -925,28 +926,41 @@ def adsSumReadBytes(
 
 
 def adsSumRead(
-    port: int, address: AmsAddr, data_names: List[str], data_symbols: Dict[str, SAdsSymbolEntry],
+    port: int,
+    address: AmsAddr,
+    data_names: List[str],
+    data_symbols: Dict[str, Union[SAdsSymbolEntry, Tuple]],
     structured_data_names: List[str],
 ) -> Dict[str, Any]:
     """Perform a sum read to get the value of multiple variables
 
+    `data_symbols` can be either instances of `SAdsSymbolEntry`, or just tuples of
+    information according to (idx_group, idx_offset, plc_type). Note that the type is a
+    ctypes based type, not an integer like in `SAdsSymbolEntry`.
+
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
     :param data_names: list of variables names to read
-    :param Dict[str, SAdsSymbolEntry] data_symbols: dictionary of ADS Symbol Info
+    :param data_symbols: dictionary of ADS Symbol Info
     :param structured_data_names: list of structured variable names
     :return: result: dict of variable names and values
-    :rtype: dict[str, Any]
-
     """
     result: Dict[str, Optional[Any]] = {i: None for i in data_names}
 
     num_requests = len(data_names)
 
-    symbol_infos = [
-        (data_symbols[name].iGroup, data_symbols[name].iOffs,
-         data_symbols[name].size) for name in data_names
-    ]
+    type_symbol_entry = not isinstance(data_symbols[data_names[0]], tuple)
+
+    if type_symbol_entry:
+        symbol_infos = [
+            (data_symbols[name].iGroup, data_symbols[name].iOffs,
+             data_symbols[name].size) for name in data_names
+        ]
+    else:
+        symbol_infos = [
+            (data_symbols[name][0], data_symbols[name][1],
+             sizeof(data_symbols[name][2])) for name in data_names
+        ]
     # When a read is split, `data_symbols` will be bigger than `data_names`
     # Therefore we avoid looping over `data_symbols`
 
@@ -957,30 +971,38 @@ def adsSumRead(
 
     for i, data_name in enumerate(data_names):
         error = struct.unpack_from("<I", sum_response, offset=i * 4)[0]
+
+        symbol = data_symbols[data_name]
+        size = symbol.size if type_symbol_entry else sizeof(symbol[2])
+
         if error:
             result[data_name] = ERROR_CODES[error]
         else:
+            sum_response_subset = sum_response[offset: offset + size]
+
             if data_name in structured_data_names:
-                value = sum_response[
-                    offset: offset + data_symbols[data_name].size]
-            elif (
-                data_symbols[data_name].dataType != ADST_STRING
-                and data_symbols[data_name].dataType != ADST_WSTRING
-            ):
-                value = struct.unpack_from(
-                    DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
-                    sum_response,
-                    offset=offset,
-                )[0]
+                value = sum_response_subset
             else:
-                null_idx = sum_response[
-                    offset: offset + data_symbols[data_name].size
-                ].index(0)
-                value = bytearray(
-                    sum_response[offset: offset + null_idx]
-                ).decode("utf-8")
+                if type_symbol_entry:   # Data type (int)
+                    if symbol.dataType != ADST_STRING and symbol.dataType != ADST_WSTRING:
+                        value = struct.unpack_from(
+                            DATATYPE_MAP[ads_type_to_ctype[symbol.dataType]],
+                            sum_response,
+                            offset=offset,
+                        )[0]
+                    else:
+                        null_idx = sum_response_subset.index(0)
+                        value = bytearray(
+                            sum_response[offset: offset + null_idx]
+                        ).decode("utf-8")
+                else:                   # PLC Type (ctypes)
+                    # Create ctypes instance, then convert to Python value
+                    obj = symbol[2].from_buffer(sum_response, offset)
+                    value = get_value_from_ctype_data(obj, symbol[2])
+
             result[data_name] = value
-        offset += data_symbols[data_name].size
+
+        offset += size
 
     return result
 
@@ -1018,10 +1040,14 @@ def adsSumWrite(
     port: int,
     address: AmsAddr,
     data_names_and_values: Dict[str, Any],
-    data_symbols: Dict[str, SAdsSymbolEntry],
+    data_symbols: Dict[str, Union[SAdsSymbolEntry, Tuple]],
     structured_data_names: List[str],
 ) -> Dict[str, str]:
     """Perform a sum write to write the value of multiple ADS variables
+
+    `data_symbols` can be either instances of `SAdsSymbolEntry`, or just tuples of
+    information according to (idx_group, idx_offset, plc_type). Note that the type is a
+    ctypes based type, not an integer like in `SAdsSymbolEntry`.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param pyads.structs.AmsAddr address: local or remote AmsAddr
@@ -1033,37 +1059,68 @@ def adsSumWrite(
     :return: result: dict of variable names and error codes
     :rtype: dict[str, ADSError]
     """
+
+    type_symbol_entry = not isinstance(data_symbols[list(data_names_and_values)[0]], tuple)
+
     offset = 0
     num_requests = len(data_names_and_values)
     total_request_size = num_requests * 3 * 4  # iGroup, iOffset & size
 
     for data_name in data_names_and_values.keys():
-        total_request_size += data_symbols[data_name].size
+        symbol = data_symbols[data_name]
+        total_request_size += symbol.size if type_symbol_entry else sizeof(symbol[2])
 
     buf = bytearray(total_request_size)
 
     for data_name in data_names_and_values.keys():
-        struct.pack_into("<I", buf, offset, data_symbols[data_name].iGroup)
-        struct.pack_into("<I", buf, offset + 4, data_symbols[data_name].iOffs)
-        struct.pack_into("<I", buf, offset + 8, data_symbols[data_name].size)
+        symbol = data_symbols[data_name]
+
+        if type_symbol_entry:
+            idx_group = symbol.iGroup
+            idx_offset = symbol.iOffs
+            size = symbol.size
+        else:
+            idx_group = symbol[0]
+            idx_offset = symbol[1]
+            size = sizeof(symbol[2])
+
+        struct.pack_into("<I", buf, offset, idx_group)
+        struct.pack_into("<I", buf, offset + 4, idx_offset)
+        struct.pack_into("<I", buf, offset + 8, size)
         offset += 12
 
     for data_name, value in data_names_and_values.items():
+
+        symbol = data_symbols[data_name]
+        size = symbol.size if type_symbol_entry else sizeof(symbol[2])
+
         if data_name in structured_data_names:
-            buf[offset : offset + data_symbols[data_name].size] = value
-        elif (
-            data_symbols[data_name].dataType != ADST_STRING
-            and data_symbols[data_name].dataType != ADST_WSTRING
-        ):
-            struct.pack_into(
-                DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
-                buf,
-                offset,
-                value,
-            )
+            buf[offset: offset + size] = value
         else:
-            buf[offset : offset + len(value)] = value.encode("utf-8")
-        offset += data_symbols[data_name].size
+            if type_symbol_entry:
+                if symbol.dataType != ADST_STRING and symbol.dataType != ADST_WSTRING:
+                    struct.pack_into(
+                        DATATYPE_MAP[ads_type_to_ctype[symbol.dataType]],
+                        buf,
+                        offset,
+                        value,
+                    )
+                else:
+                    buf[offset: offset + len(value)] = value.encode("utf-8")
+            else:
+                if type_is_string(symbol[2]):
+                    buf[offset: offset + len(value)] = value.encode("utf-8")
+                else:
+                    # Create ctypes instance from Python value
+                    if type(symbol[2]).__name__ == "PyCArrayType":
+                        write_data = symbol.plc_type(*value)
+                    elif type(value) is symbol[2]:
+                        write_data = value
+                    else:
+                        write_data = symbol[2](value)
+                    buf[offset: offset + size] = bytes(write_data)
+
+        offset += size
 
     error_descriptions = adsSumWriteBytes(
         port,

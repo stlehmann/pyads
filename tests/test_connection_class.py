@@ -1527,7 +1527,8 @@ class ConnectionSymbolListTestCase(unittest.TestCase):
 
             result = self.plc.write_list_of_symbols(symbols_with_data)
 
-            self.assertEqual(result, ['no error'] * 3)
+            expected = {"Double1": "no error", "Double2": "no error", "Int1": "no error"}
+            self.assertEqual(expected, result)
 
             for i, symbol in enumerate(symbols):
                 real_value = symbol.read()
