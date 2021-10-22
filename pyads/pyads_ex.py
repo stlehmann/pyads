@@ -115,7 +115,9 @@ elif platform_is_freebsd():
 else:  # pragma: no cover, can not test unsupported platform
     raise RuntimeError("Unsupported platform {0}.".format(sys.platform))
 
-callback_store: Dict[Tuple[AmsAddr, int], Callable[[SAmsAddr, SAdsNotificationHeader, int], None]] = dict()
+callback_store: Dict[
+    Tuple[AmsAddr, int], Callable[[SAmsAddr, SAdsNotificationHeader, int], None]
+] = dict()
 
 
 class ADSError(Exception):
@@ -356,11 +358,11 @@ def adsAddRouteToPLC(
 
 def adsGetNetIdForPLC(ip_address: str) -> str:
     """Get AMS Net ID from IP address.
-    
+
     :param str ip_address: ip address of the PLC
     :rtype: str
     :return: net id of the device at the provided ip address
-    
+
     """
     # The head of the UDP AMS packet containing host routing information
     data_header = struct.pack(
@@ -953,13 +955,21 @@ def adsSumRead(
 
     if type_symbol_entry:
         symbol_infos = [
-            (data_symbols[name].iGroup, data_symbols[name].iOffs,
-             data_symbols[name].size) for name in data_names
+            (
+                data_symbols[name].iGroup,
+                data_symbols[name].iOffs,
+                data_symbols[name].size,
+            )
+            for name in data_names
         ]
     else:
         symbol_infos = [
-            (data_symbols[name][0], data_symbols[name][1],
-             sizeof(data_symbols[name][2])) for name in data_names
+            (
+                data_symbols[name][0],
+                data_symbols[name][1],
+                sizeof(data_symbols[name][2]),
+            )
+            for name in data_names
         ]
     # When a read is split, `data_symbols` will be bigger than `data_names`
     # Therefore we avoid looping over `data_symbols`
@@ -978,13 +988,16 @@ def adsSumRead(
         if error:
             result[data_name] = ERROR_CODES[error]
         else:
-            sum_response_subset = sum_response[offset: offset + size]
+            sum_response_subset = sum_response[offset : offset + size]
 
             if data_name in structured_data_names:
                 value = sum_response_subset
             else:
-                if type_symbol_entry:   # Data type (int)
-                    if symbol.dataType != ADST_STRING and symbol.dataType != ADST_WSTRING:
+                if type_symbol_entry:  # Data type (int)
+                    if (
+                        symbol.dataType != ADST_STRING
+                        and symbol.dataType != ADST_WSTRING
+                    ):
                         value = struct.unpack_from(
                             DATATYPE_MAP[ads_type_to_ctype[symbol.dataType]],
                             sum_response,
@@ -993,9 +1006,9 @@ def adsSumRead(
                     else:
                         null_idx = sum_response_subset.index(0)
                         value = bytearray(
-                            sum_response[offset: offset + null_idx]
+                            sum_response[offset : offset + null_idx]
                         ).decode("utf-8")
-                else:                   # PLC Type (ctypes)
+                else:  # PLC Type (ctypes)
                     # Create ctypes instance, then convert to Python value
                     obj = symbol[2].from_buffer(sum_response, offset)
                     value = get_value_from_ctype_data(obj, symbol[2])
@@ -1060,7 +1073,9 @@ def adsSumWrite(
     :rtype: dict[str, ADSError]
     """
 
-    type_symbol_entry = not isinstance(data_symbols[list(data_names_and_values)[0]], tuple)
+    type_symbol_entry = not isinstance(
+        data_symbols[list(data_names_and_values)[0]], tuple
+    )
 
     offset = 0
     num_requests = len(data_names_and_values)
@@ -1095,7 +1110,7 @@ def adsSumWrite(
         size = symbol.size if type_symbol_entry else sizeof(symbol[2])
 
         if data_name in structured_data_names:
-            buf[offset: offset + size] = value
+            buf[offset : offset + size] = value
         else:
             if type_symbol_entry:
                 if symbol.dataType != ADST_STRING and symbol.dataType != ADST_WSTRING:
@@ -1106,10 +1121,10 @@ def adsSumWrite(
                         value,
                     )
                 else:
-                    buf[offset: offset + len(value)] = value.encode("utf-8")
+                    buf[offset : offset + len(value)] = value.encode("utf-8")
             else:
                 if type_is_string(symbol[2]):
-                    buf[offset: offset + len(value)] = value.encode("utf-8")
+                    buf[offset : offset + len(value)] = value.encode("utf-8")
                 else:
                     # Create ctypes instance from Python value
                     if type(symbol[2]).__name__ == "PyCArrayType":
@@ -1118,7 +1133,7 @@ def adsSumWrite(
                         write_data = value
                     else:
                         write_data = symbol[2](value)
-                    buf[offset: offset + size] = bytes(write_data)
+                    buf[offset : offset + size] = bytes(write_data)
 
         offset += size
 
@@ -1288,8 +1303,9 @@ def adsSyncAddDeviceNotificationReqEx(
     adsSyncAddDeviceNotificationReqFct.restype = ctypes.c_long
 
     # noinspection PyUnusedLocal
-    def wrapper(addr: SAmsAddr, notification: SAdsNotificationHeader, user: int) -> Callable[
-            [SAdsNotificationHeader, str], None]:
+    def wrapper(
+        addr: SAmsAddr, notification: SAdsNotificationHeader, user: int
+    ) -> Callable[[SAdsNotificationHeader, str], None]:
         return callback(notification, data)
 
     # noinspection PyTypeChecker
