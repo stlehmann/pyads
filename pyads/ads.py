@@ -314,7 +314,7 @@ def dict_from_bytes(
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
-                        bytearray(byte_list[index : (index + (str_len + 1))])
+                        bytearray(byte_list[index: (index + (str_len + 1))])
                         .partition(b"\0")[0]
                         .decode("utf-8")
                     )
@@ -326,7 +326,7 @@ def dict_from_bytes(
                     var_array.append(
                         struct.unpack(
                             DATATYPE_MAP[plc_datatype],
-                            bytearray(byte_list[index : (index + n_bytes)]),
+                            bytearray(byte_list[index: (index + n_bytes)]),
                         )[0]
                     )
                     index += n_bytes

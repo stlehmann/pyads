@@ -68,17 +68,13 @@ from .pyads_ex import (
     adsGetNetIdForPLC,
     adsGetSymbolInfo,
     adsSumRead,
-    adsSumReadBytes,
     adsSumWrite,
-    adsSumWriteBytes,
     adsReleaseHandle,
     adsSyncReadByNameEx,
     adsSyncWriteByNameEx,
     adsSyncAddDeviceNotificationReqEx,
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
-    get_value_from_ctype_data,
-    type_is_string,
 )
 from .structs import (
     AmsAddr,
@@ -96,7 +92,6 @@ from .ads import (
     bytes_from_dict,
     size_of_structure,
 )
-from .errorcodes import ERROR_CODES
 from .symbol import AdsSymbol
 from .utils import decode_ads
 
@@ -114,7 +109,8 @@ class Connection(object):
     """
 
     def __init__(
-        self, ams_net_id: str = None, ams_net_port: int = None, ip_address: str = None
+            self, ams_net_id: str = None, ams_net_port: int = None,
+            ip_address: str = None
     ) -> None:
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
@@ -171,9 +167,8 @@ class Connection(object):
         # If the connection is already closed, nothing new will happen
         self.close()
 
-    def _query_plc_datatype_from_name(
-        self, data_name: str, cache_symbol_info: bool
-    ) -> Type:
+    def _query_plc_datatype_from_name(self, data_name: str,
+                                      cache_symbol_info: bool) -> Type:
         """Return the plc_datatype by reading SymbolInfo from the target.
 
         If cache_symbol_info is True then the SymbolInfo will be cached and adsGetSymbolInfo
@@ -275,7 +270,7 @@ class Connection(object):
         return None
 
     def write_control(
-        self, ads_state: int, device_state: int, data: Any, plc_datatype: Type
+            self, ads_state: int, device_state: int, data: Any, plc_datatype: Type
     ) -> None:
         """Change the ADS state and the machine-state of the ADS-server.
 
@@ -311,11 +306,8 @@ class Connection(object):
         return None
 
     def write(
-        self,
-        index_group: int,
-        index_offset: int,
-        value: Any,
-        plc_datatype: Type["PLCDataType"],
+            self, index_group: int, index_offset: int, value: Any,
+            plc_datatype: Type["PLCDataType"]
     ) -> None:
         """Send data synchronous to an ADS-device.
 
@@ -333,14 +325,14 @@ class Connection(object):
             )
 
     def read_write(
-        self,
-        index_group: int,
-        index_offset: int,
-        plc_read_datatype: Optional[Type["PLCDataType"]],
-        value: Any,
-        plc_write_datatype: Optional[Type["PLCDataType"]],
-        return_ctypes: bool = False,
-        check_length: bool = True,
+            self,
+            index_group: int,
+            index_offset: int,
+            plc_read_datatype: Optional[Type["PLCDataType"]],
+            value: Any,
+            plc_write_datatype: Optional[Type["PLCDataType"]],
+            return_ctypes: bool = False,
+            check_length: bool = True,
     ) -> Any:
         """Read and write data synchronous from/to an ADS-device.
 
@@ -374,12 +366,12 @@ class Connection(object):
         return None
 
     def read(
-        self,
-        index_group: int,
-        index_offset: int,
-        plc_datatype: Type["PLCDataType"],
-        return_ctypes: bool = False,
-        check_length: bool = True,
+            self,
+            index_group: int,
+            index_offset: int,
+            plc_datatype: Type["PLCDataType"],
+            return_ctypes: bool = False,
+            check_length: bool = True,
     ) -> Any:
         """Read data synchronous from an ADS-device.
 
@@ -409,15 +401,15 @@ class Connection(object):
         return None
 
     def get_symbol(
-        self,
-        name: Optional[str] = None,
-        index_group: Optional[int] = None,
-        index_offset: Optional[int] = None,
-        plc_datatype: Optional[Union[Type["PLCDataType"], str]] = None,
-        comment: Optional[str] = None,
-        auto_update: bool = False,
-        structure_def: Optional["StructureDef"] = None,
-        array_size: Optional[int] = 1,
+            self,
+            name: Optional[str] = None,
+            index_group: Optional[int] = None,
+            index_offset: Optional[int] = None,
+            plc_datatype: Optional[Union[Type["PLCDataType"], str]] = None,
+            comment: Optional[str] = None,
+            auto_update: bool = False,
+            structure_def: Optional["StructureDef"] = None,
+            array_size: Optional[int] = 1,
     ) -> AdsSymbol:
         """Create a symbol instance
 
@@ -460,17 +452,9 @@ class Connection(object):
 
         """
 
-        return AdsSymbol(
-            self,
-            name,
-            index_group,
-            index_offset,
-            plc_datatype,
-            comment,
-            auto_update=auto_update,
-            structure_def=structure_def,
-            array_size=array_size,
-        )
+        return AdsSymbol(self, name, index_group, index_offset, plc_datatype,
+                         comment, auto_update=auto_update, structure_def=structure_def,
+                         array_size=array_size)
 
     def get_all_symbols(self) -> List[AdsSymbol]:
         """Read all symbols from an ADS-device.
@@ -488,9 +472,8 @@ class Connection(object):
             sym_count = struct.unpack("I", symbol_size_msg[0:4])[0]
             sym_list_length = struct.unpack("I", symbol_size_msg[4:8])[0]
 
-            data_type_creation_fn: Type = cast(
-                "Type", partial(create_string_buffer, sym_list_length)
-            )
+            data_type_creation_fn: Type = cast("Type", partial(create_string_buffer,
+                                                               sym_list_length))
             symbol_list_msg = self.read(
                 ADSIGRP_SYM_UPLOAD,
                 ADSIOFFS_DEVDATA_ADSSTATE,
@@ -502,10 +485,10 @@ class Connection(object):
 
             for idx in range(sym_count):
                 read_length, index_group, index_offset = struct.unpack(
-                    "III", symbol_list_msg[ptr + 0 : ptr + 12]
+                    "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
                 name_length, type_length, comment_length = struct.unpack(
-                    "HHH", symbol_list_msg[ptr + 24 : ptr + 30]
+                    "HHH", symbol_list_msg[ptr + 24: ptr + 30]
                 )
 
                 name_start_ptr = ptr + 30
@@ -520,14 +503,10 @@ class Connection(object):
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
-                symbol = AdsSymbol(
-                    plc=self,
-                    name=name,
-                    index_group=index_group,
-                    index_offset=index_offset,
-                    symbol_type=symbol_type,
-                    comment=comment,
-                )
+                symbol = AdsSymbol(plc=self, name=name,
+                                   index_group=index_group,
+                                   index_offset=index_offset,
+                                   symbol_type=symbol_type, comment=comment)
                 symbols.append(symbol)
         return symbols
 
@@ -546,7 +525,7 @@ class Connection(object):
         return None
 
     def release_handle(self, handle: int) -> None:
-        """Release handle of a PLC-variable.
+        """ Release handle of a PLC-variable.
 
         :param int handle: handle of PLC-variable to be released
         """
@@ -554,13 +533,13 @@ class Connection(object):
             adsReleaseHandle(self._port, self._adr, handle)
 
     def read_by_name(
-        self,
-        data_name: str,
-        plc_datatype: Optional[Type["PLCDataType"]] = None,
-        return_ctypes: bool = False,
-        handle: Optional[int] = None,
-        check_length: bool = True,
-        cache_symbol_info: bool = True,
+            self,
+            data_name: str,
+            plc_datatype: Optional[Type["PLCDataType"]] = None,
+            return_ctypes: bool = False,
+            handle: Optional[int] = None,
+            check_length: bool = True,
+            cache_symbol_info: bool = True,
     ) -> Any:
         """Read data synchronous from an ADS-device from data name.
 
@@ -582,9 +561,8 @@ class Connection(object):
             return
 
         if plc_datatype is None:
-            plc_datatype = self._query_plc_datatype_from_name(
-                data_name, cache_symbol_info
-            )
+            plc_datatype = self._query_plc_datatype_from_name(data_name,
+                                                              cache_symbol_info)
 
         return adsSyncReadByNameEx(
             self._port,
@@ -751,11 +729,11 @@ class Connection(object):
         return return_data
 
     def write_list_by_name(
-        self,
-        data_names_and_values: Dict[str, Any],
-        cache_symbol_info: bool = True,
-        ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
-        structure_defs: Optional[Dict[str, StructureDef]] = None,
+            self,
+            data_names_and_values: Dict[str, Any],
+            cache_symbol_info: bool = True,
+            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+            structure_defs: Optional[Dict[str, StructureDef]] = None,
     ) -> Dict[str, str]:
         """Write a list of variables.
 
@@ -837,12 +815,12 @@ class Connection(object):
         )
 
     def read_structure_by_name(
-        self,
-        data_name: str,
-        structure_def: StructureDef,
-        array_size: Optional[int] = 1,
-        structure_size: Optional[int] = None,
-        handle: Optional[int] = None,
+            self,
+            data_name: str,
+            structure_def: StructureDef,
+            array_size: Optional[int] = 1,
+            structure_size: Optional[int] = None,
+            handle: Optional[int] = None,
     ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         """Read a structure of multiple types.
 
@@ -885,12 +863,12 @@ class Connection(object):
         return None
 
     def write_by_name(
-        self,
-        data_name: str,
-        value: Any,
-        plc_datatype: Optional[Type["PLCDataType"]] = None,
-        handle: Optional[int] = None,
-        cache_symbol_info: bool = True,
+            self,
+            data_name: str,
+            value: Any,
+            plc_datatype: Optional[Type["PLCDataType"]] = None,
+            handle: Optional[int] = None,
+            cache_symbol_info: bool = True,
     ) -> None:
         """Send data synchronous to an ADS-device from data name.
 
@@ -908,22 +886,21 @@ class Connection(object):
             return
 
         if plc_datatype is None:
-            plc_datatype = self._query_plc_datatype_from_name(
-                data_name, cache_symbol_info
-            )
+            plc_datatype = self._query_plc_datatype_from_name(data_name,
+                                                              cache_symbol_info)
 
         return adsSyncWriteByNameEx(
             self._port, self._adr, data_name, value, plc_datatype, handle=handle
         )
 
     def write_structure_by_name(
-        self,
-        data_name: str,
-        value: Union[Dict[str, Any], List[Dict[str, Any]]],
-        structure_def: StructureDef,
-        array_size: Optional[int] = 1,
-        structure_size: Optional[int] = None,
-        handle: Optional[int] = None,
+            self,
+            data_name: str,
+            value: Union[Dict[str, Any], List[Dict[str, Any]]],
+            structure_def: StructureDef,
+            array_size: Optional[int] = 1,
+            structure_size: Optional[int] = None,
+            handle: Optional[int] = None,
     ) -> None:
         """Write a structure of multiple types.
 
@@ -963,11 +940,11 @@ class Connection(object):
         )
 
     def add_device_notification(
-        self,
-        data: Union[str, Tuple[int, int]],
-        attr: NotificationAttrib,
-        callback: Callable,
-        user_handle: Optional[int] = None,
+            self,
+            data: Union[str, Tuple[int, int]],
+            attr: NotificationAttrib,
+            callback: Callable,
+            user_handle: Optional[int] = None,
     ) -> Optional[Tuple[int, int]]:
         """Add a device notification.
 
@@ -1022,7 +999,7 @@ class Connection(object):
         return None
 
     def del_device_notification(
-        self, notification_handle: int, user_handle: int
+            self, notification_handle: int, user_handle: int
     ) -> None:
         """Remove a device notification.
 
@@ -1051,7 +1028,8 @@ class Connection(object):
             adsSyncSetTimeoutEx(self._port, ms)
 
     def notification(
-        self, plc_datatype: Optional[Type] = None, timestamp_as_filetime: bool = False
+            self, plc_datatype: Optional[Type] = None,
+            timestamp_as_filetime: bool = False
     ) -> Callable:
         """Decorate a callback function.
 
@@ -1101,7 +1079,7 @@ class Connection(object):
         """
 
         def notification_decorator(
-            func: Callable[[int, str, Union[datetime, int], Any], None]
+                func: Callable[[int, str, Union[datetime, int], Any], None]
         ) -> Callable[[Any, str], None]:
             def func_wrapper(notification: Any, data_name: str) -> None:
                 h_notification, timestamp, value = self.parse_notification(
@@ -1115,53 +1093,53 @@ class Connection(object):
 
     # noinspection PyMethodMayBeStatic
     def parse_notification(
-        self,
-        notification: Any,
-        plc_datatype: Optional[Type],
-        timestamp_as_filetime: bool = False,
+            self,
+            notification: Any,
+            plc_datatype: Optional[Type],
+            timestamp_as_filetime: bool = False,
     ) -> Tuple[int, Union[datetime, int], Any]:
         # noinspection PyTypeChecker
         """Parse a notification.
 
-        Convert the data of the NotificationHeader into the fitting Python type.
+                        Convert the data of the NotificationHeader into the fitting Python type.
 
-        :param notification: The notification we recieve from PLC datatype to be
-            converted. This can be any basic PLC datatype or a `ctypes.Structure`.
-        :param plc_datatype: The PLC datatype that needs to be converted. This can
-            be any basic PLC datatype or a `ctypes.Structure`.
-        :param timestamp_as_filetime: Whether the notification timestamp should be returned
-            as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
-            via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
-            microseconds, while FILETIME allows for 100 ns. This may be relevant when using
-            task cycle times such as 62.5 µs. Default: False.
+                        :param notification: The notification we recieve from PLC datatype to be
+                            converted. This can be any basic PLC datatype or a `ctypes.Structure`.
+                        :param plc_datatype: The PLC datatype that needs to be converted. This can
+                            be any basic PLC datatype or a `ctypes.Structure`.
+                        :param timestamp_as_filetime: Whether the notification timestamp should be returned
+                            as `datetime.datetime` (False) or Windows `FILETIME` as originally transmitted
+                            via ADS (True). Be aware that the precision of `datetime.datetime` is limited to
+                            microseconds, while FILETIME allows for 100 ns. This may be relevant when using
+                            task cycle times such as 62.5 µs. Default: False.
 
-        :rtype: (int, int, Any)
-        :returns: notification handle, timestamp, value
+                        :rtype: (int, int, Any)
+                        :returns: notification handle, timestamp, value
 
-        **Usage**:
+                        **Usage**:
 
-        >>> import pyads
-        >>> from ctypes import sizeof
-        >>>
-        >>> # Connect to the local TwinCAT PLC
-        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
-        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
-        >>>
-        >>> # Create callback function that prints the value
-        >>> def mycallback(notification: SAdsNotificationHeader, data: str) -> None:
-        >>>     data_type = tag[data]
-        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
-        >>>     print(value)
-        >>>
-        >>> with plc:
-        >>>     # Add notification with default settings
-        >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
-        >>>
-        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
-        >>>
-        >>>     # Remove notification
-        >>>     plc.del_device_notification(handles)
-        """
+                        >>> import pyads
+                        >>> from ctypes import sizeof
+                        >>>
+                        >>> # Connect to the local TwinCAT PLC
+                        >>> plc = pyads.Connection('127.0.0.1.1.1', 851)
+                        >>> tag = {"GVL.myvalue": pyads.PLCTYPE_INT}
+                        >>>
+                        >>> # Create callback function that prints the value
+                        >>> def mycallback(notification: SAdsNotificationHeader, data: str) -> None:
+                        >>>     data_type = tag[data]
+                        >>>     handle, timestamp, value = plc.parse_notification(notification, data_type)
+                        >>>     print(value)
+                        >>>
+                        >>> with plc:
+                        >>>     # Add notification with default settings
+                        >>>     attr = pyads.NotificationAttrib(sizeof(pyads.PLCTYPE_INT))
+                        >>>
+                        >>>     handles = plc.add_device_notification("GVL.myvalue", attr, mycallback)
+                        >>>
+                        >>>     # Remove notification
+                        >>>     plc.del_device_notification(handles)
+                        """
         contents = notification.contents
         data_size = contents.cbSampleSize
         # Get dynamically sized data array
