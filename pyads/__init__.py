@@ -75,6 +75,9 @@ from .constants import (
     PORT_TC2PLC3,
     PORT_TC2PLC4,
     PORT_TC3PLC1,
+    PORT_TC3PLC2,
+    PORT_TC3PLC3,
+    PORT_TC3PLC4,
 )
 
 from .constants import (

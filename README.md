@@ -53,7 +53,8 @@ python setup.py install
 import pyads
 
 # connect to plc and open connection
-plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
+target_netid = '5.12.82.20.1.1' # The Ams Net Id of the target device. In TwinCAT3 created from device MAC address by default
+plc = pyads.Connection(target_netid, pyads.PORT_TC3PLC1)
 plc.open()
 
 # read int value by name

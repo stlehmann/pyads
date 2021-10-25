@@ -21,7 +21,7 @@ from collections import OrderedDict
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
 TEST_SERVER_IP_ADDRESS = "127.0.0.1"
-TEST_SERVER_AMS_PORT = pyads.PORT_SPS1
+TEST_SERVER_AMS_PORT = pyads.PORT_TC3PLC1
 
 
 def create_notification_struct(payload: bytes) -> \

@@ -13,12 +13,13 @@ Quickstart
     >>> import pyads
 
     >>> # create some constants for connection
-    >>> CLIENT_NETID = "192.168.1.10.1.1"
-    >>> CLIENT_IP = "192.168.1.10"
-    >>> TARGET_IP = "192.168.1.11"
-    >>> TARGET_USERNAME = "Administrator"
-    >>> TARGET_PASSWORD = "1"
-    >>> ROUTE_NAME = "route-to-my-plc"
+    >>> CLIENT_NETID = "192.168.1.10.1.1"  # The desired Ams Net Id of this device, choose freely
+    >>> CLIENT_IP = "192.168.1.10"  # The IP address of this device
+    >>> TARGET_IP = "192.168.1.11"  # The IP address of the target (most likely a PLC)
+    >>> TARGET_USERNAME = "Administrator"  # Standard Beckhoff user name
+    >>> TARGET_PASSWORD = "1"  # Standard Beckhoff password
+    >>> ROUTE_NAME = "route-to-my-plc"  # A suitable description of the route
+    >>> TARGET_NETID = "5.83.131.116.1.1" # The Ams Net Id of the target device. In TwinCAT3 created from device MAC address by default
 
     >>> # add a new route to the target plc
     >>> pyads.add_route_to_plc(
@@ -28,7 +29,7 @@ Quickstart
 
     >>> # connect to plc and open connection
     >>> # route is added automatically to client on Linux, on Windows use the TwinCAT router
-    >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_SPS1)
+    >>> plc = pyads.Connection(TARGET_NETID, pyads.PORT_TC3PLC1)
     >>> plc.open()
 
     >>> # check the connection state
