@@ -295,6 +295,25 @@ class AdsSymbolTestCase(unittest.TestCase):
         with self.assertRaises(TypeError) as cm:
             symbol.read()  # Catch error inside pyads_ex
         self.assertIn("integer is required", str(cm.exception))
+        
+        symbol.index_group = None
+
+        with self.assertRaises(TypeError) as cm:
+            symbol.read()  # Catch error inside pyads_ex
+        self.assertIn("integer is required", str(cm.exception))
+        
+        symbol.index_offset = 'A'
+
+        with self.assertRaises(TypeError) as cm:
+            symbol.read()  # Catch error inside pyads_ex
+        self.assertIn("integer is required", str(cm.exception))
+        
+        symbol.index_group = 'B'
+
+        with self.assertRaises(TypeError) as cm:
+            symbol.read()  # Catch error inside pyads_ex
+        self.assertIn("integer is required", str(cm.exception))        
+        
 
     def test_read(self):
         """Test symbol value reading"""

@@ -356,6 +356,10 @@ class Connection(object):
         :return: value
 
         """
+        if index_group is None or not isinstance(index_group, int):
+            raise TypeError('index_group: integer is required')
+        if index_offset is None or not isinstance(index_offset, int):
+            raise TypeError('index_offset: integer is required')
         if self._port is not None:
             return adsSyncReadReqEx2(
                 self._port,
