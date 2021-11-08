@@ -247,19 +247,35 @@ Read and write multiple variables with one command
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Reading and writing of multiple values can be performed in a single
-transaction. After the first operation, the symbol info is cached for
-future use.
+transaction. When using variable names, the symbol info is cached for
+future use after the first operation.
+
+.. code:: python
+
+   >>> import pyads
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
+   >>> var_list = [symbol_1, symbol_2, symbol_3]
+   >>> plc.read_list(var_list)
+   {<pyads.ads.AdsSymbol, name 'MAIN.b_Execute'>: True, <pyads.ads.AdsSymbol, name 'MAIN.str_TestString'>: <pyads.ads.AdsSymbol>,
+            <pyads.ads.AdsSymbol, name 'r32_TestReal'>: 123.45}
+   >>> write_dict = {symbol_1: False, symbol_2: 'Goodbye World', symbol_3: 54.321}
+   >>> plc.write_list(write_dict)
+   {'MAIN.b_Execute': 'no error', 'MAIN.str_TestString': 'no error', 'MAIN.r32_TestReal': 'no error'}
+
+
+Or, when using variable names:
 
 .. code:: python
 
    >>> import pyads
    >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1)
    >>> var_list = ['MAIN.b_Execute', 'MAIN.str_TestString', 'MAIN.r32_TestReal']
-   >>> plc.read_list_by_name(var_list)
+   >>> plc.read_list(var_list)
    {'MAIN.b_Execute': True, 'MAIN.str_TestString': 'Hello World', 'MAIN.r32_TestReal': 123.45}
    >>> write_dict = {'MAIN.b_Execute': False, 'MAIN.str_TestString': 'Goodbye World', 'MAIN.r32_TestReal': 54.321}
-   >>> plc.write_list_by_name(write_dict)
+   >>> plc.write_list(write_dict)
    {'MAIN.b_Execute': 'no error', 'MAIN.str_TestString': 'no error', 'MAIN.r32_TestReal': 'no error'}
+
 
 Device Notifications
 ^^^^^^^^^^^^^^^^^^^^

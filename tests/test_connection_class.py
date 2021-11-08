@@ -1039,7 +1039,10 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         # Read twice to show caching
         with self.plc:
-            read_values = self.plc.read_list_by_name(variables)
+            # New, combined method:
+            read_values = self.plc.read_list(variables)
+
+            # Old, direct method:
             read_values2 = self.plc.read_list_by_name(variables)
 
         # Retrieve list of received requests from server
@@ -1141,8 +1144,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         }
 
         with self.plc:
+            # Use old, direct method:
             errors = self.plc.write_list_by_name(variables, cache_symbol_info=False)
-            errors2 = self.plc.write_list_by_name(variables)
+
+            # Use new, combined method:
+            errors2 = self.plc.write_list(variables)
 
         # Retrieve list of received requests from server
         requests = self.test_server.request_history
@@ -1507,7 +1513,7 @@ class ConnectionSymbolListTestCase(unittest.TestCase):
         with self.plc:
             symbols = [AdsSymbol(self.plc, name=var.name) for var in self.vars]
 
-            result = self.plc.read_list_of_symbols(symbols)
+            result = self.plc.read_list(symbols)
 
         expected = {"Double1": 3.14, "Double2": 1.54, "Int1": 420}
         self.assertEqual(expected, result)
@@ -1525,7 +1531,7 @@ class ConnectionSymbolListTestCase(unittest.TestCase):
             values = [16.16, 25.55, 53]
             symbols_with_data = dict(zip(symbols, values))
 
-            result = self.plc.write_list_of_symbols(symbols_with_data)
+            result = self.plc.write_list(symbols_with_data)
 
             expected = {"Double1": "no error", "Double2": "no error", "Int1": "no error"}
             self.assertEqual(expected, result)
