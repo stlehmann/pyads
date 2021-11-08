@@ -47,15 +47,29 @@ Connection class.
    >>> TARGET_IP = "192.168.1.11"  # The IP address of the target (most likely a PLC)
    >>> TARGET_USERNAME = "Administrator"  # Standard Beckhoff user name
    >>> TARGET_PASSWORD = "1"  # Standard Beckhoff password
-   >>> ROUTE_NAME = "route-to-my-plc"  # A suitable description of the route
+   >>> ROUTE_NAME = "route-from-target-to-client"  # A suitable description of the route
    >>> # Add a route from the target to the client
    >>> pyads.add_route_to_plc(
    >>>     CLIENT_NETID, CLIENT_IP, TARGET_IP, TARGET_USERNAME, TARGET_PASSWORD,
    >>>     route_name=ROUTE_NAME
    >>> )
    >>> # If the target ams net id is unknown this is an easy way to obtain it
-   >>> TARGET_NET_ID = pyads.ads.adsGetNetIdForPLC('192.168.3.9')
+   >>> TARGET_NET_ID = pyads.ads.adsGetNetIdForPLC(TARGET_IP)
    >>> # When creating the Connection the client to target route is created by the Connection class
-   >>> with pyads.Connection(TARGET_NET_ID, pyads.PORT_TC3PLC1) as plc:
+   >>> with pyads.Connection(TARGET_NET_ID, pyads.PORT_TC3PLC1, TARGET_IP) as plc:
    >>>     plc.read_by_name('.TAG_NAME', pyads.PLCTYPE_INT)
 
+.. note::
+
+  On Linux machines at least one route must be added before the
+  call to :py:func:`.get_local_address` will function properly.
+
+  Optionally a local AmsNetId can be manually set, which is also how the local
+  AmsNetId can be changed before a Connection is created.
+
+  .. code:: python
+
+   >>> import pyads
+   >>> CLIENT_NETID = "192.168.1.10.1.1"
+   >>> pyads.open_port()
+   >>> pyads.set_local_address(CLIENT_NETID)

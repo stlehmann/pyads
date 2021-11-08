@@ -12,7 +12,8 @@ Connect to a remote device
 .. code:: python
 
    >>> import pyads
-   >>> plc = pyads.Connection('5.12.82.20.1.1', pyads.PORT_TC3PLC1)
+   >>> TARGET_NET_ID = '5.12.82.20.1.1'  # OR pyads.ads.adsGetNetIdForPLC('192.168.3.9') if unknown
+   >>> plc = pyads.Connection(TARGET_NET_ID, pyads.PORT_TC3PLC1)
    >>> plc.open()
    >>> plc.close()
 
@@ -24,7 +25,8 @@ A context notation (using ``with:``) can be used to open a connection:
 .. code:: python
 
    >>> import pyads
-   >>> with pyads.Connection('5.12.82.20.1.1', pyads.PORT_TC3PLC1) as plc:
+   >>> TARGET_NET_ID = '5.12.82.20.1.1'  # OR pyads.ads.adsGetNetIdForPLC('192.168.3.9') if unknown
+   >>> with pyads.Connection(TARGET_NET_ID, pyads.PORT_TC3PLC1) as plc:
    >>>     # ...
 
 The context manager will make sure the connection is closed, either when
