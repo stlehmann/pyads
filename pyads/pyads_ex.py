@@ -698,7 +698,7 @@ def adsSyncReadWriteReqEx2(
         for _ in value:
             response_size += _.size
         read_data_buf = bytearray(response_size)
-        read_data = (ctypes.c_byte * len(read_data_buf)).from_buffer(read_data_buf)
+        read_data = (ctypes.c_ubyte * len(read_data_buf)).from_buffer(read_data_buf)
         read_data_pointer = ctypes.pointer(read_data)
         read_length = response_size
 
@@ -707,7 +707,7 @@ def adsSyncReadWriteReqEx2(
             index_offset * 4
         )  # expect 4 bytes back for every value written (error data)
         read_data_buf = bytearray(response_size)
-        read_data = (ctypes.c_byte * len(read_data_buf)).from_buffer(read_data_buf)
+        read_data = (ctypes.c_ubyte * len(read_data_buf)).from_buffer(read_data_buf)
         read_data_pointer = ctypes.pointer(read_data)
         read_length = response_size
 
