@@ -999,22 +999,27 @@ def adsSumRead(
             if data_name in structured_data_names:
                 value = sum_response[
                     offset: offset + data_symbols[data_name].size]
-            elif (
-                data_symbols[data_name].dataType != ADST_STRING
-                and data_symbols[data_name].dataType != ADST_WSTRING
-            ):
+            elif data_symbols[data_name].dataType == ADST_STRING:
+                # find null-terminator 1 Byte
+                null_idx = sum_response[offset: offset + data_symbols[data_name].size].index(0)
+                value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-8")
+            elif data_symbols[data_name].dataType == ADST_WSTRING:
+                # find null-terminator 2 Bytes
+                a = sum_response[offset: offset + data_symbols[data_name].size]
+                for ix in range(1, len(a)):
+                    if (a[ix-1], a[ix]) == (0, 0):
+                        null_idx = ix
+                        break
+                else:
+                    raise ValueError("No null-terminator found in buffer")
+                value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16")
+            else:
                 value = struct.unpack_from(
                     DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
                     sum_response,
                     offset=offset,
                 )[0]
-            else:
-                null_idx = sum_response[
-                    offset: offset + data_symbols[data_name].size
-                ].index(0)
-                value = bytearray(
-                    sum_response[offset: offset + null_idx]
-                ).decode("utf-8")
+
             result[data_name] = value
         offset += data_symbols[data_name].size
 
