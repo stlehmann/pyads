@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#260](https://github.com/stlehmann/pyads/pull/260) Fix decoding of symbol comments
 
 ### Removed
+* [#282](https://github.com/stlehmann/pyads/pull/282]) Removed sample project in adslib to fix install error on Windows
 
 ## 3.3.8
 
