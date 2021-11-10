@@ -184,6 +184,37 @@ class Connection(object):
             info = adsGetSymbolInfo(self._port, self._adr, data_name)
         return AdsSymbol.get_type_from_str(info.symbol_type)
 
+    def _get_info_dict_for_names_list(
+        self,
+        data_names: List[str],
+        cache_symbol_info: bool,
+    ) -> Dict[str, SAdsSymbolEntry]:
+        """Get `name: SAdsSymbolEntry` dict for a list of symbol names.
+
+        Use cache if opted. If so, update cache too afterwards.
+
+        :param data_names: List of symbol names
+        :param cache_symbol_info: If true, use and update cache
+        """
+        if cache_symbol_info:
+            new_names = [
+                name for name in data_names if name not in self._symbol_info_cache
+            ]
+        else:
+            new_names = data_names  # Retrieve all
+
+        new_infos = {
+            name: adsGetSymbolInfo(self._port, self._adr, name) for name in new_names
+        }
+
+        if cache_symbol_info:
+            self._symbol_info_cache.update(new_infos)  # Add to cache
+            data_symbols = {name: self._symbol_info_cache[name] for name in data_names}
+        else:
+            data_symbols = new_infos  # Use all
+
+        return data_symbols
+
     def open(self) -> None:
         """Connect to the TwinCAT message router."""
         if self._open:
@@ -547,65 +578,185 @@ class Connection(object):
             check_length=check_length,
         )
 
-    def read_list_by_name(
-            self,
-            data_names: List[str],
-            cache_symbol_info: bool = True,
-            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
-            structure_defs: Optional[Dict[str, StructureDef]] = None,
+    def read_list(
+        self,
+        symbols: Union[List[str], List[AdsSymbol]],
+        cache_symbol_info: bool = True,
+        ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+        structure_defs: Optional[Dict[str, StructureDef]] = None,
     ) -> Dict[str, Any]:
-        """Read a list of variables.
+        """Read a list of variables in a combined request.
+
+        Either a list of symbol objects or a list of symbol names can be passed.
+
+        A dictionary with the new values will be returned. When using a list of
+        symbols, the internal cache of those symbols will be updated too.
 
         Will split the read into multiple ADS calls in chunks of ads_sub_commands by default.
-
         MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
         https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
 
-        :param List[str] data_names: list of variable names to be read
-        :param bool cache_symbol_info: when True, symbol info will be cached for future reading
-        :param int ads_sub_commands: Max number of ADS-Sub commands used to read the variables in a single ADS call.
+        :param symbols: list of variable names to be read
+        :param cache_symbol_info: when True, symbol info will be cached for future
+            reading (only relevant when using variable names instead of symbol instances)
+        :param ads_sub_commands: Max number of ADS-Sub commands used to read the variables in a single ADS call.
             A larger number can be used but may jitter the PLC execution!
-        :param Optional[Dict[str, StructureDef]] structure_defs: for structured variables, optional mapping of
+        :param structure_defs: for structured variables, optional mapping of
             data name to special tuple defining the structure and types contained within it according to PLCTYPE constants
-        :return adsSumRead: A dictionary containing variable names from data_names as keys and values read from PLC for each variable
-        :rtype: Dict[str, Any]
+        :return A dictionary containing variable names from data_names as keys and values read from PLC for each variable
+        """
 
+        # Check type the first element only
+        if symbols and isinstance(symbols[0], str):
+            return self.read_list_by_name(symbols, cache_symbol_info,
+                                          ads_sub_commands, structure_defs)
+
+        return self._read_list_of_symbols(symbols, ads_sub_commands)
+
+    def read_list_by_name(
+        self,
+        data_names: List[str],
+        cache_symbol_info: bool = True,
+        ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+        structure_defs: Optional[Dict[str, StructureDef]] = None,
+    ) -> Dict[str, Any]:
+        """Read a list of variables by string name.
+
+        This method will be deprecated, it is recommended to use :meth:`read_list()`
+        instead.
+
+        :param data_names: list of variable names to be read
+        :param cache_symbol_info: when True, symbol info will be cached for future reading
+        :param ads_sub_commands: Max number of ADS-Sub commands used to read the variables in a single ADS call.
+            A larger number can be used but may jitter the PLC execution!
+        :param structure_defs: for structured variables, optional mapping of
+            data name to special tuple defining the structure and types contained within it according to PLCTYPE constants
+        :return A dictionary containing variable names from data_names as keys and values read from PLC for each variable
         """
         if structure_defs is None:
             structure_defs = {}
 
-        if cache_symbol_info:
-            new_items = [i for i in data_names if i not in self._symbol_info_cache]
-            new_cache = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
-            }
-            self._symbol_info_cache.update(new_cache)
-            data_symbols = {i: self._symbol_info_cache[i] for i in data_names}
-        else:
-            data_symbols = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in data_names
-            }
+        data_symbols = self._get_info_dict_for_names_list(data_names, cache_symbol_info)
 
-        def sum_read(port: int, adr: AmsAddr, data_names: List[str],
-                     data_symbols: Dict) -> Dict[str, str]:
-            result = adsSumRead(port, adr, data_names, data_symbols,
-                                list(structure_defs.keys()))  # type: ignore
+        return self._read_list_by_info(data_symbols, ads_sub_commands, structure_defs)
 
-            for data_name, structure_def in structure_defs.items():  # type: ignore
-                result[data_name] = dict_from_bytes(result[data_name],
-                                                    structure_def)  # type: ignore
+    def _read_list_of_symbols(
+        self,
+        symbols: List[AdsSymbol],
+        ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+    ):
+        """Read new values for a list of AdsSymbols using a single ADS call.
 
-            return result
+        The outputs will be returned as a dictionary, but the cache of each symbol will
+        be updated too.
 
+        It is recommended to use :meth:`read_list` instead for outside applications.
+        See also :class:`pyads.AdsSymbol`.
+
+        :param symbols: List if symbol instances
+        :param ads_sub_commands: Max. number of symbols per call (see
+                                 `read_list_by_name`)
+        """
+
+        for symbol in symbols:
+            if symbol.is_structure:
+                raise ValueError("Method not available for structured variables")
+
+        # Relying on `adsSumRead()` is tricky, because we do not have the `dataType`
+        # (integer) for each symbol, we only have the ctypes-type.
+
+        data_symbols = {
+            symbol.name: (symbol.index_group, symbol.index_offset, symbol.plc_type)
+            for symbol in symbols
+        }
+
+        result = self._read_list_by_info(data_symbols, ads_sub_commands, {})
+
+        # Add result to symbols cache
+        for symbol in symbols:
+            symbol._value = result[symbol.name]
+
+        return result
+
+    def _read_list_by_info(
+        self,
+        data_symbols: Dict[str, Union[SAdsSymbolEntry, Tuple]],
+        ads_sub_commands: int,
+        structure_defs: Dict[str, StructureDef],
+    ) -> Dict[str, Any]:
+        """Perform read for a list of variables where all info is already known.
+
+        `data_symbols` can be a dict with SymbolEntry structs or with tuples like
+        `(idx_group, idx_offset, plc_type)`.
+
+        See :meth:`read_list` for usage.
+        """
+
+        data_names = list(data_symbols.keys())
+
+        # Limit request side, split into multiple if needed
         if len(data_names) <= ads_sub_commands:
-            return sum_read(self._port, self._adr, data_names, data_symbols)
+            data_names_list = [data_names]  # Turn into list of a single element
+        else:
+            data_names_list = _list_slice_generator(data_names, ads_sub_commands)
 
         return_data: Dict[str, Any] = {}
-        for data_names_slice in _list_slice_generator(data_names, ads_sub_commands):
-            return_data.update(
-                sum_read(self._port, self._adr, data_names_slice, data_symbols)
+
+        for data_names_slice in data_names_list:
+
+            result = adsSumRead(
+                self._port,
+                self._adr,
+                data_names_slice,
+                data_symbols,
+                list(structure_defs.keys()),
             )
+
+            for data_name, structure_def in structure_defs.items():
+                result[data_name] = dict_from_bytes(
+                    result[data_name], structure_def
+                )
+
+            return_data.update(result)
+
         return return_data
+
+    def write_list(
+            self,
+            data_names_and_values: Dict[Union[str, AdsSymbol], Any],
+            cache_symbol_info: bool = True,
+            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+            structure_defs: Optional[Dict[str, StructureDef]] = None,
+    ) -> Dict[str, str]:
+        """Write a list of variables in a combined request.
+
+        The dictionary can either be indexed by `AdsSymbol` instances or by the
+        variable names.
+
+        A dictionary with error messages will be returned.
+        When `AdsSymbol` instances are used, the new values will also be written in
+        the internal object cache.
+
+        See `meth`:read_list` for the meaning of `ads_sub_commands`.
+
+        :param data_names_and_values: dictionary of variable names and their values to be written
+        :param cache_symbol_info: when True, symbol info will be cached for future
+            reading (only relevant when using variable names instead of symbol instances)
+        :param ads_sub_commands: Max number of ADS-Sub commands used to write the variables in a single ADS call.
+            A larger number can be used but may jitter the PLC execution!
+        :param structure_defs: for structured variables, optional mapping of
+            data name to special tuple defining the structure and
+            types contained within it according to PLCTYPE constants
+        :return A dictionary containing variable names from data_names as keys and values return codes for
+            each write operation from the PLC
+        """
+
+        # Check type the first element only
+        if data_names_and_values and isinstance(list(data_names_and_values)[0], str):
+            return self.write_list_by_name(data_names_and_values, cache_symbol_info,
+                                          ads_sub_commands, structure_defs)
+
+        return self._write_list_of_symbols(data_names_and_values, ads_sub_commands)
 
     def write_list_by_name(
             self,
@@ -622,61 +773,120 @@ class Connection(object):
         https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
 
         :param data_names_and_values: dictionary of variable names and their values to be written
-        :type data_names_and_values: dict[str, Any]
-        :param bool cache_symbol_info: when True, symbol info will be cached for future reading
-        :param int ads_sub_commands: Max number of ADS-Sub commands used to write the variables in a single ADS call.
+        :param cache_symbol_info: when True, symbol info will be cached for future reading
+        :param ads_sub_commands: Max number of ADS-Sub commands used to write the variables in a single ADS call.
             A larger number can be used but may jitter the PLC execution!
-        :param dict structure_defs: for structured variables, optional mapping of
+        :param structure_defs: for structured variables, optional mapping of
             data name to special tuple defining the structure and
             types contained within it according to PLCTYPE constants
-        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for
+        :return A dictionary containing variable names from data_names as keys and values return codes for
             each write operation from the PLC
-        :rtype: dict(str, str)
-
         """
-        if cache_symbol_info:
-            new_items = [
-                i
-                for i in data_names_and_values.keys()
-                if i not in self._symbol_info_cache
-            ]
-            new_cache = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
-            }
-            self._symbol_info_cache.update(new_cache)
-            data_symbols = {
-                i: self._symbol_info_cache[i] for i in data_names_and_values
-            }
-        else:
-            data_symbols = {
-                i: adsGetSymbolInfo(self._port, self._adr, i)
-                for i in data_names_and_values.keys()
-            }
-
         if structure_defs is None:
             structure_defs = {}
-        else:
-            data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
+
+        data_symbols = self._get_info_dict_for_names_list(
+            list(data_names_and_values.keys()), cache_symbol_info
+        )
+
+        return self._write_list_by_info(
+            data_symbols, data_names_and_values, ads_sub_commands, structure_defs
+        )
+
+    def _write_list_of_symbols(
+        self,
+        symbols_and_values: Dict[AdsSymbol, Any],
+        ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+    ):
+        """Write new values to a list of symbols.
+
+        Either specify a dict of symbols, or first set the `_value` property of
+        each symbol and then pass them as a list.
+
+        For example:
+
+        .. code:: python
+
+            # Using dict
+            new_data = {symbol1: 3.14, symbol2: False}
+            plc._write_list_of_symbols(new_data)
+
+            # Using cache
+            symbol1._value = 3.14
+            symbol2._value = False
+            plc._write_list_of_symbols([symbol1, symbol2])
+
+        It is recommended to use :meth:`write_list` instead for outside applications.
+        See also :class:`pyads.AdsSymbol`.
+
+        :param symbols_and_values: Symbols to write to
+        :param ads_sub_commands: Max. number of symbols per call (see
+                                 `write_list_by_name`)
+        """
+
+        for symbol in symbols_and_values.keys():
+            if symbol.is_structure:
+                raise ValueError("Method not available for structured variables")
+
+        data_symbols = {
+            symbol.name: (symbol.index_group, symbol.index_offset, symbol.plc_type)
+            for symbol in symbols_and_values.keys()
+        }
+
+        data_names_and_values = {
+            symbol.name: new_value for symbol, new_value in symbols_and_values.items()
+        }
+
+        for symbol, new_value in symbols_and_values.items():
+            symbol._value = new_value  # Update cache
+
+        return self._write_list_by_info(
+            data_symbols, data_names_and_values, ads_sub_commands, {}
+        )
+
+    def _write_list_by_info(
+        self,
+        data_symbols: Dict[str, Union[SAdsSymbolEntry, Tuple]],
+        data_names_and_values: Dict[str, Any],
+        ads_sub_commands: int,
+        structure_defs: Dict[str, StructureDef],
+    ) -> Dict[str, str]:
+        """Write a list of variables where the info is already known.
+
+        See :meth:`write_list` for usage.
+        """
+
+        # Copy so the original does not get modified
+        if structure_defs:
+            data_names_and_values = data_names_and_values.copy()
 
         for name, structure_def in structure_defs.items():
-            data_names_and_values[name] = bytes_from_dict(data_names_and_values[name],
-                                                          structure_def)
+            data_names_and_values[name] = bytes_from_dict(
+                data_names_and_values[name], structure_def
+            )
 
         structured_data_names = list(structure_defs.keys())
 
         if len(data_names_and_values) <= ads_sub_commands:
-            return adsSumWrite(
-                self._port, self._adr, data_names_and_values, data_symbols,
-                structured_data_names
+            # Turn into array of single element
+            data_names_and_values_list = [data_names_and_values]
+        else:
+            data_names_and_values_list = _dict_slice_generator(
+                data_names_and_values, ads_sub_commands
             )
 
         return_data: Dict[str, str] = {}
-        for data_names_slice in _dict_slice_generator(data_names_and_values,
-                                                      ads_sub_commands):
-            return_data.update(
-                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols,
-                            structured_data_names)
+        for data_names_and_values_slice in data_names_and_values_list:
+
+            result = adsSumWrite(
+                self._port,
+                self._adr,
+                data_names_and_values_slice,
+                data_symbols,
+                structured_data_names,
             )
+            return_data.update(result)
+
         return return_data
 
     def read_structure_by_name(

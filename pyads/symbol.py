@@ -22,8 +22,9 @@ from .structs import NotificationAttrib
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
-if TYPE_CHECKING:
-    from .ads import Connection, StructureDef  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
+    from .connection import Connection
+    from .ads import StructureDef
 
 
 class AdsSymbol:
