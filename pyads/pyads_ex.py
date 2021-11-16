@@ -238,11 +238,6 @@ def type_is_wstring(plc_type: Type) -> bool:
     if plc_type == PLCTYPE_WSTRING:
         return True
 
-    # If char array
-    if type(plc_type).__name__ == "PyCArrayType":
-        if plc_type._type_ == PLCTYPE_WSTRING:
-            return True
-
     return False
 
 
