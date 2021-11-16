@@ -20,6 +20,7 @@ from ctypes import (
     c_float,
     c_double,
     c_char,
+    c_wchar,
     c_int64,
     c_uint64,
 )
@@ -28,6 +29,11 @@ STRING_BUFFER: int = 1024
 PLC_DEFAULT_STRING_SIZE: int = 80
 
 MAX_ADS_SUB_COMMANDS: int = 500
+
+
+class PLCTYPE_WSTRING:
+    """Special dummy class for handling WSTRING."""
+
 
 # plc data types:
 PLCTYPE_BOOL = c_bool
@@ -64,6 +70,7 @@ PLCSimpleDataType = Union[
     PLCTYPE_REAL,
     PLCTYPE_SINT,
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     PLCTYPE_TOD,
     PLCTYPE_UBYTE,
     PLCTYPE_UDINT,
@@ -132,7 +139,7 @@ ads_type_to_ctype = {
     ADST_REAL64: PLCTYPE_LREAL,
     # ADST_BIGTYPE
     ADST_STRING: PLCTYPE_STRING,
-    # ADST_WSTRING
+    ADST_WSTRING: PLCTYPE_WSTRING,
     # ADST_REAL80
     ADST_BIT: PLCTYPE_BOOL,
 }

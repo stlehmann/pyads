@@ -39,6 +39,7 @@ from .constants import (
     PLCTYPE_REAL,
     PLCTYPE_SINT,
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     PLCTYPE_TIME,
     PLCTYPE_TOD,
     PLCTYPE_ULINT,
