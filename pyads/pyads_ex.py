@@ -267,7 +267,13 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return read_data.value.decode("utf-8")
 
     if type_is_wstring(plc_type):
-        return read_data.value
+        for ix in range(1, len(read_data), 2):
+            if (read_data[ix - 1], read_data[ix]) == (0, 0):
+                null_idx = ix - 1
+                break
+        else:
+            raise ValueError("No null-terminator found in buffer")
+        return bytearray(read_data[:null_idx]).decode("utf-16-le")
 
     if type(plc_type).__name__ == "PyCArrayType":
         return [i for i in read_data]
