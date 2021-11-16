@@ -1006,13 +1006,13 @@ def adsSumRead(
             elif data_symbols[data_name].dataType == ADST_WSTRING:
                 # find null-terminator 2 Bytes
                 a = sum_response[offset: offset + data_symbols[data_name].size]
-                for ix in range(1, len(a)):
+                for ix in range(1, len(a), 2):
                     if (a[ix-1], a[ix]) == (0, 0):
-                        null_idx = ix
+                        null_idx = ix - 1
                         break
                 else:
                     raise ValueError("No null-terminator found in buffer")
-                value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16")
+                value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16-le")
             else:
                 value = struct.unpack_from(
                     DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
