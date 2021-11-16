@@ -1445,18 +1445,25 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def test_read_wstring(self):
         """Test for proper WSTRING handling"""
         # add WSTRING variable containing 'Überraschung'
-        expected = "Überraschung"
+        expected1 = "Überraschung"
+        expected2 = "hello world"
         self.handler.add_variable(
             PLCVariable(
                 "wstr",
-                expected.encode("utf-16-le") + b"\x00\x00",
+                expected1.encode("utf-16-le") + b"\x00\x00",
                 constants.ADST_WSTRING, "WSTRING")
         )
         with self.plc:
             # simple read by name
-            self.assertEqual(self.plc.read_by_name("wstr"), expected)
+            self.assertEqual(self.plc.read_by_name("wstr"), expected1)
             # read list by name
-            self.assertEqual(self.plc.read_list_by_name(["wstr"])["wstr"], expected)
+            self.assertEqual(self.plc.read_list_by_name(["wstr"])["wstr"], expected1)
+            # write by name
+            self.plc.write_by_name("wstr", expected2)
+            self.assertEqual(self.plc.read_by_name("wstr"), expected2)
+            # write list by name
+            self.plc.write_list_by_name({"wstr": expected1})
+            self.assertEqual(self.plc.read_by_name("wstr"), expected1)
 
 
 if __name__ == "__main__":
