@@ -267,6 +267,7 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return read_data.value.decode("utf-8")
 
     if type_is_wstring(plc_type):
+        breakpoint()
         for ix in range(1, len(read_data), 2):
             if (read_data[ix - 1], read_data[ix]) == (0, 0):
                 null_idx = ix - 1
@@ -844,7 +845,7 @@ def adsSyncReadReqEx2(
     if type_is_string(data_type):
         data = (STRING_BUFFER * PLCTYPE_STRING)()
     elif type_is_wstring(data_type):
-        data = (STRING_BUFFER * PLCTYPE_WSTRING)()
+        data = (STRING_BUFFER * ctypes.c_uint8)()
     else:
         data = data_type()
 
