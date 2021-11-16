@@ -1447,12 +1447,14 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         # add WSTRING variable containing 'Überraschung'
         expected1 = "Überraschung"
         expected2 = "hello world"
-        self.handler.add_variable(
-            PLCVariable(
-                "wstr",
-                expected1.encode("utf-16-le") + b"\x00\x00",
-                constants.ADST_WSTRING, "WSTRING")
+
+        var = PLCVariable(
+            "wstr",
+            expected1.encode("utf-16-le") + b"\x00\x00",
+            constants.ADST_WSTRING, "WSTRING"
         )
+        self.handler.add_variable(var)
+
         with self.plc:
             # simple read by name
             self.assertEqual(self.plc.read_by_name("wstr"), expected1)
@@ -1464,6 +1466,14 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             # write list by name
             self.plc.write_list_by_name({"wstr": expected1})
             self.assertEqual(self.plc.read_by_name("wstr"), expected1)
+
+            # read/write
+            self.assertEqual(
+                self.plc.read_write(
+                    var.index_group, var.index_offset, pyads.PLCTYPE_WSTRING, expected2, pyads.PLCTYPE_WSTRING
+                ), expected1
+            )
+            self.assertEqual(self.plc.read_by_name("wstr"), expected2)
 
 
 if __name__ == "__main__":

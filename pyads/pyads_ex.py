@@ -721,7 +721,7 @@ def adsSyncReadWriteReqEx2(
         if type_is_string(read_data_type):
             read_data = (STRING_BUFFER * PLCTYPE_STRING)()
         elif type_is_wstring(read_data_type):
-            read_data = (STRING_BUFFER * PLCTYPE_WSTRING)()
+            read_data = (STRING_BUFFER * ctypes.c_uint8)()
         else:
             read_data = read_data_type()
 
@@ -748,9 +748,10 @@ def adsSyncReadWriteReqEx2(
         # Add an extra byte to the data length for the null terminator
         write_length = len(value) + 1
     elif type_is_wstring(write_data_type):
-        # get pointer to string
-        write_data_pointer = ctypes.c_wchar_p(value)
-        write_length = 2 * (len(value) + 1)  # 2 bytes for wchar
+        value_bytes = [byte for byte in value.encode("utf-16-le")]
+        write_length = len(value_bytes)  # type: ignore
+        write_data = (write_length * ctypes.c_uint8)(*value_bytes)
+        write_data_pointer = ctypes.pointer(write_data)
     else:
         if type(write_data_type).__name__ == "PyCArrayType":
             write_data = write_data_type(*value)
