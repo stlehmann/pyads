@@ -631,9 +631,10 @@ def adsSyncWriteReqEx(
         data_length = len(data_pointer.value) + 1  # type: ignore
 
     elif type_is_wstring(plc_data_type):
-        data = ctypes.c_wchar_p(value)
-        data_pointer = data
-        data_length = 2 * (len(data_pointer.value) + 1)  # type: ignore
+        value_bytes = [byte for byte in value.encode("utf-16-le")]
+        data_length = len(value_bytes)  # type: ignore
+        data = (data_length * ctypes.c_uint8)(*value_bytes)
+        data_pointer = ctypes.pointer(data)
 
     else:
         if type(plc_data_type).__name__ == "PyCArrayType":
