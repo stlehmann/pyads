@@ -572,10 +572,6 @@ def adsSyncWriteControlReqEx(
         data = ctypes.c_char_p(data.encode("utf-8"))
         data_pointer = data
         data_length = len(data_pointer.value) + 1  # add 1 byte for null terminator
-    elif type_is_wstring(plc_data_type):
-        data = ctypes.c_wchar_p(data)
-        data_pointer = data
-        data_length = 2 * (len(data_pointer.value) + 1)  # add 2 bytes for wchar null terminator
     else:
         data = plc_data_type(data)
         data_pointer = ctypes.pointer(data)
