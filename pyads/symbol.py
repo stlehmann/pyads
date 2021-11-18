@@ -295,6 +295,11 @@ class AdsSymbol:
 
         # If simple scalar
         plc_name = "PLCTYPE_" + type_str
+
+        # if type is WSTRING just return the PLCTYPE constant
+        if plc_name.startswith("PLCTYPE_WSTRING"):
+            return constants.PLCTYPE_WSTRING
+
         if hasattr(constants, plc_name):
             # Map e.g. 'LREAL' to 'PLCTYPE_LREAL' directly based on the name
             return getattr(constants, plc_name)
