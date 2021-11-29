@@ -271,7 +271,7 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return bytearray(read_data[:null_idx]).decode("utf-16-le")
 
     if type(plc_type).__name__ == "PyCArrayType":
-        return [i for i in read_data]
+        return list(read_data)
 
     if hasattr(read_data, "value"):
         return read_data.value
