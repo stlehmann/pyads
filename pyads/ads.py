@@ -31,6 +31,7 @@ from .constants import (
     PLCTYPE_REAL,
     PLCTYPE_SINT,
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     PLCTYPE_TIME,
     PLCTYPE_TOD,
     PLCTYPE_UDINT,
@@ -317,6 +318,15 @@ def dict_from_bytes(
                         bytearray(byte_list[index: (index + (str_len + 1))])
                         .partition(b"\0")[0]
                         .decode("utf-8")
+                    )
+                    index += str_len + 1
+                elif plc_datatype == PLCTYPE_WSTRING:
+                    if str_len is None:
+                        str_len = 2 * PLC_DEFAULT_STRING_SIZE
+                    var_array.append(
+                        bytearray(byte_list[index: (index + (str_len + 2))])
+                        .partition(b"\0\0")[0]
+                        .decode("utf-16-le")
                     )
                     index += str_len + 1
                 elif plc_datatype not in DATATYPE_MAP:
