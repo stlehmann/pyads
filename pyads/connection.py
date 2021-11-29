@@ -607,78 +607,6 @@ class Connection(object):
             )
         return return_data
 
-    def write_list_by_name(
-            self,
-            data_names_and_values: Dict[str, Any],
-            cache_symbol_info: bool = True,
-            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
-            structure_defs: Optional[Dict[str, StructureDef]] = None,
-    ) -> Dict[str, str]:
-        """Write a list of variables.
-
-        Will split the write into multiple ADS calls in chunks of ads_sub_commands by default.
-
-        MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
-        https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
-
-        :param data_names_and_values: dictionary of variable names and their values to be written
-        :type data_names_and_values: dict[str, Any]
-        :param bool cache_symbol_info: when True, symbol info will be cached for future reading
-        :param int ads_sub_commands: Max number of ADS-Sub commands used to write the variables in a single ADS call.
-            A larger number can be used but may jitter the PLC execution!
-        :param dict structure_defs: for structured variables, optional mapping of
-            data name to special tuple defining the structure and
-            types contained within it according to PLCTYPE constants
-        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for
-            each write operation from the PLC
-        :rtype: dict(str, str)
-
-        """
-        if cache_symbol_info:
-            new_items = [
-                i
-                for i in data_names_and_values.keys()
-                if i not in self._symbol_info_cache
-            ]
-            new_cache = {
-                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
-            }
-            self._symbol_info_cache.update(new_cache)
-            data_symbols = {
-                i: self._symbol_info_cache[i] for i in data_names_and_values
-            }
-        else:
-            data_symbols = {
-                i: adsGetSymbolInfo(self._port, self._adr, i)
-                for i in data_names_and_values.keys()
-            }
-
-        if structure_defs is None:
-            structure_defs = {}
-        else:
-            data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
-
-        for name, structure_def in structure_defs.items():
-            data_names_and_values[name] = bytes_from_dict(data_names_and_values[name],
-                                                          structure_def)
-
-        structured_data_names = list(structure_defs.keys())
-
-        if len(data_names_and_values) <= ads_sub_commands:
-            return adsSumWrite(
-                self._port, self._adr, data_names_and_values, data_symbols,
-                structured_data_names
-            )
-
-        return_data: Dict[str, str] = {}
-        for data_names_slice in _dict_slice_generator(data_names_and_values,
-                                                      ads_sub_commands):
-            return_data.update(
-                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols,
-                            structured_data_names)
-            )
-        return return_data
-
     def read_structure_by_name(
             self,
             data_name: str,
@@ -757,6 +685,78 @@ class Connection(object):
         return adsSyncWriteByNameEx(
             self._port, self._adr, data_name, value, plc_datatype, handle=handle
         )
+    
+    def write_list_by_name(
+            self,
+            data_names_and_values: Dict[str, Any],
+            cache_symbol_info: bool = True,
+            ads_sub_commands: int = MAX_ADS_SUB_COMMANDS,
+            structure_defs: Optional[Dict[str, StructureDef]] = None,
+    ) -> Dict[str, str]:
+        """Write a list of variables.
+
+        Will split the write into multiple ADS calls in chunks of ads_sub_commands by default.
+
+        MAX_ADS_SUB_COMMANDS comes from Beckhoff recommendation:
+        https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_adsdll2/9007199379576075.html&id=9180083787138954512
+
+        :param data_names_and_values: dictionary of variable names and their values to be written
+        :type data_names_and_values: dict[str, Any]
+        :param bool cache_symbol_info: when True, symbol info will be cached for future reading
+        :param int ads_sub_commands: Max number of ADS-Sub commands used to write the variables in a single ADS call.
+            A larger number can be used but may jitter the PLC execution!
+        :param dict structure_defs: for structured variables, optional mapping of
+            data name to special tuple defining the structure and
+            types contained within it according to PLCTYPE constants
+        :return adsSumWrite: A dictionary containing variable names from data_names as keys and values return codes for
+            each write operation from the PLC
+        :rtype: dict(str, str)
+
+        """
+        if cache_symbol_info:
+            new_items = [
+                i
+                for i in data_names_and_values.keys()
+                if i not in self._symbol_info_cache
+            ]
+            new_cache = {
+                i: adsGetSymbolInfo(self._port, self._adr, i) for i in new_items
+            }
+            self._symbol_info_cache.update(new_cache)
+            data_symbols = {
+                i: self._symbol_info_cache[i] for i in data_names_and_values
+            }
+        else:
+            data_symbols = {
+                i: adsGetSymbolInfo(self._port, self._adr, i)
+                for i in data_names_and_values.keys()
+            }
+
+        if structure_defs is None:
+            structure_defs = {}
+        else:
+            data_names_and_values = data_names_and_values.copy()  # copy so the original does not get modified
+
+        for name, structure_def in structure_defs.items():
+            data_names_and_values[name] = bytes_from_dict(data_names_and_values[name],
+                                                          structure_def)
+
+        structured_data_names = list(structure_defs.keys())
+
+        if len(data_names_and_values) <= ads_sub_commands:
+            return adsSumWrite(
+                self._port, self._adr, data_names_and_values, data_symbols,
+                structured_data_names
+            )
+
+        return_data: Dict[str, str] = {}
+        for data_names_slice in _dict_slice_generator(data_names_and_values,
+                                                      ads_sub_commands):
+            return_data.update(
+                adsSumWrite(self._port, self._adr, data_names_slice, data_symbols,
+                            structured_data_names)
+            )
+        return return_data
 
     def write_structure_by_name(
             self,
