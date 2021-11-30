@@ -149,7 +149,7 @@ TwinCAT declaration:
 
 ::
 
-   {attribute 'pack mode' := '1'}
+   {attribute 'pack_mode' := '1'}
    TYPE sample_structure :
    STRUCT
        rVar : LREAL;
