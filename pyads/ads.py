@@ -263,7 +263,7 @@ def size_of_structure(structure_def: StructureDef) -> int:
                 num_of_bytes += (str_len + 1) * size
             else:
                 num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * size
-        if plc_datatype == PLCTYPE_WSTRING:
+        elif plc_datatype == PLCTYPE_WSTRING:
             if str_len is not None:
                 num_of_bytes += (str_len + 1) * 2
             else:
