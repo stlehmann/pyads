@@ -415,11 +415,13 @@ def bytes_from_dict(
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE * 2
                     if size > 1:
-                        byte_list += list(var[i].encode("utf-16-le"))
-                        remaining_bytes = (str_len + 2) - 2 * len(var[i])
+                        encoded = list(var[i].encode("utf-16-le"))
+                        byte_list += encoded
+                        remaining_bytes = (str_len + 2) - len(encoded)
                     else:
-                        byte_list += list(var.encode("utf-16-le"))
-                        remaining_bytes = (str_len + 2) - 2 * len(var)
+                        encoded = list(var.encode("utf-16-le"))
+                        byte_list += encoded
+                        remaining_bytes = (str_len + 2) - len(encoded)
                     for byte in range(remaining_bytes):
                         byte_list.append(0)
                 elif plc_datatype not in DATATYPE_MAP:
