@@ -265,9 +265,9 @@ def size_of_structure(structure_def: StructureDef) -> int:
                 num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * size
         elif plc_datatype == PLCTYPE_WSTRING:
             if str_len is not None:
-                num_of_bytes += (str_len + 1) * 2
+                num_of_bytes += (str_len + 1) * size
             else:
-                num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * 2
+                num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * 2 * size
         elif plc_datatype not in DATATYPE_MAP:
             raise RuntimeError("Datatype not found")
         else:
@@ -327,7 +327,7 @@ def dict_from_bytes(
                     index += str_len + 1
                 elif plc_datatype == PLCTYPE_WSTRING:
                     if str_len is None:
-                        str_len = 2 * PLC_DEFAULT_STRING_SIZE # use double default string size for WSTRING
+                        str_len = 2 * PLC_DEFAULT_STRING_SIZE + 1  # use double default string size for WSTRING plus 1
                     a = bytearray(byte_list[index: (index + (str_len + 2))])
                     null_idx = find_wstring_null_terminator(a)
                     var_array.append(a[:null_idx].decode("utf-16-le"))
