@@ -1476,13 +1476,23 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             self.assertEqual(self.plc.read_by_name("wstr"), expected2)
 
     def test_wstring_struct(self):
-        structure_def = (
+        wstring_structure_def = (
             ("name", pyads.PLCTYPE_WSTRING, 1),
             ("value", pyads.PLCTYPE_INT, 1),
         )
 
-        values = OrderedDict([
+        wstring_array_structure_def = (
+            ("name", pyads.PLCTYPE_WSTRING, 2),
+            ("value", pyads.PLCTYPE_INT, 1),
+        )
+
+        wstring_values = OrderedDict([
             ("name", "foo bar"),
+            ("value", 24),
+        ])
+
+        wstring_array_values = OrderedDict([
+            ("name", ["foo bar", "Klaus Günter"]),
             ("value", 24),
         ])
 
@@ -1490,22 +1500,45 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         data = "hällo world".encode("utf-16-le") + 2 * b"\x00"
         byte_list = list(data) + (2 * (PLC_DEFAULT_STRING_SIZE + 1) - len(data)) * [0]
         byte_list += [10, 0]
-
-        var = PLCVariable(
-            "var",
+        wstring_var = PLCVariable(
+            "wstring_struct",
             value=bytes(byte_list),
             ads_type=None,
             symbol_type="S_WSTRING"
         )
-        self.handler.add_variable(var)
+        self.handler.add_variable(wstring_var)
+
+        data = "hällo world".encode("utf-16-le") + 2 * b"\x00"
+        byte_list = list(data) + (2 * (PLC_DEFAULT_STRING_SIZE + 1) - len(data)) * [0]
+        data = "foo bar".encode("utf-16-le") + 2 * b"\x00"
+        byte_list += list(data) + (2 * (PLC_DEFAULT_STRING_SIZE + 1) - len(data)) * [0]
+        byte_list += [10, 0]
+        wstring_array_var = PLCVariable(
+            "wstring_array_struct",
+            value=bytes(byte_list),
+            ads_type=None,
+            symbol_type="S_WSTRING_ARRAY"
+        )
+        self.handler.add_variable(wstring_array_var)
 
         with self.plc:
-            val = self.plc.read_structure_by_name("var", structure_def)
+            # read WSTRING struct
+            val = self.plc.read_structure_by_name("wstring_struct", wstring_structure_def)
             self.assertEqual({"name": "hällo world", "value": 10}, val)
 
-            self.plc.write_structure_by_name("var", values, structure_def)
-            val = self.plc.read_structure_by_name("var", structure_def)
-            self.assertEqual(values, val)
+            # write WSTRING struct
+            self.plc.write_structure_by_name("wstring_struct", wstring_values, wstring_structure_def)
+            val = self.plc.read_structure_by_name("wstring_struct", wstring_structure_def)
+            self.assertEqual(wstring_values, val)
+
+            # read struct with WSTRING array
+            val = self.plc.read_structure_by_name("wstring_array_struct", wstring_array_structure_def)
+            self.assertEqual({"name": ["hällo world", "foo bar"], "value": 10}, val)
+
+            # write struct with WSTRING array
+            self.plc.write_structure_by_name("wstring_array_struct", wstring_array_values, wstring_array_structure_def)
+            val = self.plc.read_structure_by_name("wstring_array_struct", wstring_array_structure_def)
+            self.assertEqual(wstring_array_values, val)
 
 
 if __name__ == "__main__":
