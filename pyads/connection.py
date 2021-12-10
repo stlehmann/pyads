@@ -50,6 +50,7 @@ from .constants import (
     ads_type_to_ctype,
     PLCSimpleDataType,
     PLCDataType,
+    PORT_TC3PLC1,
 )
 from .filetimes import filetime_to_dt
 from .pyads_ex import (
@@ -100,7 +101,7 @@ class Connection(object):
     """Class for managing the connection to an ADS device.
 
     :ivar str ams_net_id: AMS net id of the remote device
-    :ivar int ams_net_port: port of the remote device
+    :ivar int ams_net_port: port of the remote device, default: 851
     :ivar str ip_address: the ip address of the device
 
     :note: If no IP address is given the ip address is automatically set
@@ -109,8 +110,8 @@ class Connection(object):
     """
 
     def __init__(
-            self, ams_net_id: str = None, ams_net_port: int = None,
-            ip_address: str = None
+            self, ams_net_id: Optional[str] = None, ams_net_port: int = PORT_TC3PLC1,
+            ip_address: Optional[str] = None
     ) -> None:
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
