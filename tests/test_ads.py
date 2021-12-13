@@ -152,6 +152,34 @@ class AdsTest(unittest.TestCase):
         )
         self.assertEqual(pyads.size_of_structure(structure_def * 5), 1185)
 
+        # test structure with WSTRING
+        structure_def = (
+            ("wstrVar", pyads.PLCTYPE_WSTRING, 1),
+            ("iVar", pyads.PLCTYPE_INT, 1),
+        )
+        self.assertEqual(pyads.size_of_structure(structure_def), 164)
+
+        # test structure with WSTRING with fixed length
+        structure_def = (
+            ("wstrVar", pyads.PLCTYPE_WSTRING, 1, 10),
+            ("iVar", pyads.PLCTYPE_INT, 1),
+        )
+        self.assertEqual(pyads.size_of_structure(structure_def), 24)
+
+        # test structure with WSTRING array
+        structure_def = (
+            ("wstrVar", pyads.PLCTYPE_WSTRING, 2),
+            ("iVar", pyads.PLCTYPE_INT, 1),
+        )
+        self.assertEqual(pyads.size_of_structure(structure_def), 326)
+
+        # test structure with WSTRING array with fixed length
+        structure_def = (
+            ("wstrVar", pyads.PLCTYPE_WSTRING, 2, 10),
+            ("iVar", pyads.PLCTYPE_INT, 1),
+        )
+        self.assertEqual(pyads.size_of_structure(structure_def), 46)
+
     def test_dict_from_bytes(self):
         # type: () -> None
         """Test dict_from_bytes function"""
