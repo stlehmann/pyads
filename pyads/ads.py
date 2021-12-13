@@ -414,15 +414,15 @@ def bytes_from_dict(
                     byte_list.extend(remaining_bytes * [0])
                 elif plc_datatype == PLCTYPE_WSTRING:
                     if str_len is None:
-                        str_len = PLC_DEFAULT_STRING_SIZE * 2
+                        str_len = PLC_DEFAULT_STRING_SIZE
                     if size > 1:
                         encoded = list(var[i].encode("utf-16-le"))
                         byte_list += encoded
-                        remaining_bytes = (str_len + 2) - len(encoded)
+                        remaining_bytes = 2 * (str_len + 1) - len(encoded)
                     else:
                         encoded = list(var.encode("utf-16-le"))
                         byte_list += encoded
-                        remaining_bytes = (str_len + 2) - len(encoded)
+                        remaining_bytes = 2 * (str_len + 1) - len(encoded)
                     byte_list.extend(remaining_bytes * [0])
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
