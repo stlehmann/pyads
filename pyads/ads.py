@@ -318,7 +318,7 @@ def dict_from_bytes(
             var_array = []
             for i in range(size):
                 if plc_datatype == PLCTYPE_STRING:
-                    if str_len is None:  # if no str_len is given use default size
+                    if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
                     var_array.append(
                         bytearray(byte_list[index: (index + (str_len + 1))])
