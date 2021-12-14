@@ -59,3 +59,16 @@ def decode_ads(message: bytes) -> str:
     ISO/IEC 8859-1 is supported.'
     """
     return message.decode("windows-1252").strip(" \t\n\r\0")
+
+
+def find_wstring_null_terminator(data: bytearray) -> Optional[int]:
+    """Find null-terminator in WSTRING (UTF-16) data.
+
+    :return: None if no null-terminator was found, else the index of the null-terminator
+
+    """
+    for ix in range(1, len(data), 2):
+        if (data[ix - 1], data[ix]) == (0, 0):
+            return ix - 1
+    else:
+        return None

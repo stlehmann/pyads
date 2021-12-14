@@ -31,6 +31,7 @@ from .constants import (
     PLCTYPE_REAL,
     PLCTYPE_SINT,
     PLCTYPE_STRING,
+    PLCTYPE_WSTRING,
     PLCTYPE_TIME,
     PLCTYPE_TOD,
     PLCTYPE_UDINT,
@@ -62,7 +63,7 @@ from .structs import (
     AmsAddr,
     SAmsNetId,
 )
-from .utils import platform_is_linux
+from .utils import platform_is_linux, find_wstring_null_terminator
 
 # custom types
 StructureDef = Tuple[
@@ -259,9 +260,14 @@ def size_of_structure(structure_def: StructureDef) -> int:
 
         if plc_datatype == PLCTYPE_STRING:
             if str_len is not None:
-                num_of_bytes += (str_len + 1) * size
+                num_of_bytes += (str_len + 1) * size  # STRING uses 1 byte per character + null-terminator
             else:
                 num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * size
+        elif plc_datatype == PLCTYPE_WSTRING:
+            if str_len is not None:
+                num_of_bytes += 2 * (str_len + 1) * size  # WSTRING uses 2 bytes per character + null-terminator
+            else:
+                num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * 2 * size
         elif plc_datatype not in DATATYPE_MAP:
             raise RuntimeError("Datatype not found")
         else:
@@ -306,6 +312,7 @@ def dict_from_bytes(
                 var, plc_datatype, size = item  # type: ignore
                 str_len = None
             except ValueError:
+                # str_len is the numbers of characters without null-terminator
                 var, plc_datatype, size, str_len = item  # type: ignore
 
             var_array = []
@@ -319,6 +326,14 @@ def dict_from_bytes(
                         .decode("utf-8")
                     )
                     index += str_len + 1
+                elif plc_datatype == PLCTYPE_WSTRING:
+                    if str_len is None:  # if no str_len is given use default size
+                        str_len = PLC_DEFAULT_STRING_SIZE
+                    n_bytes = 2 * (str_len + 1)  # WSTRING uses 2 bytes per character + null-terminator
+                    a = bytearray(byte_list[index: (index + n_bytes)])
+                    null_idx = find_wstring_null_terminator(a)
+                    var_array.append(a[:null_idx].decode("utf-16-le"))
+                    index += n_bytes
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
                 else:
@@ -392,12 +407,23 @@ def bytes_from_dict(
                         str_len = PLC_DEFAULT_STRING_SIZE
                     if size > 1:
                         byte_list += list(var[i].encode("utf-8"))
-                        remaining_bytes = str_len + 1 - len(var[i])
+                        remaining_bytes = str_len + 1 - len(var[i])  # 1 byte a character plus null-terminator
                     else:
                         byte_list += list(var.encode("utf-8"))
-                        remaining_bytes = str_len + 1 - len(var)
-                    for byte in range(remaining_bytes):
-                        byte_list.append(0)
+                        remaining_bytes = str_len + 1 - len(var)  # 1 byte a character plus null-terminator
+                    byte_list.extend(remaining_bytes * [0])
+                elif plc_datatype == PLCTYPE_WSTRING:
+                    if str_len is None:
+                        str_len = PLC_DEFAULT_STRING_SIZE
+                    if size > 1:
+                        encoded = list(var[i].encode("utf-16-le"))
+                        byte_list += encoded
+                        remaining_bytes = 2 * (str_len + 1) - len(encoded)  # 2 bytes a character plus null-terminator
+                    else:
+                        encoded = list(var.encode("utf-16-le"))
+                        byte_list += encoded
+                        remaining_bytes = 2 * (str_len + 1) - len(encoded)  # 2 bytes a character plus null-terminator
+                    byte_list.extend(remaining_bytes * [0])
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
                 else:

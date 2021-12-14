@@ -15,7 +15,7 @@ import sys
 from contextlib import closing
 from functools import wraps
 
-from .utils import platform_is_linux, platform_is_windows, platform_is_freebsd
+from .utils import platform_is_linux, platform_is_windows, platform_is_freebsd, find_wstring_null_terminator
 from .structs import (
     AmsAddr,
     SAmsAddr,
@@ -1005,11 +1005,8 @@ def adsSumRead(
             elif data_symbols[data_name].dataType == ADST_WSTRING:
                 # find null-terminator 2 Bytes
                 a = sum_response[offset: offset + data_symbols[data_name].size]
-                for ix in range(1, len(a), 2):
-                    if (a[ix-1], a[ix]) == (0, 0):
-                        null_idx = ix - 1
-                        break
-                else:
+                null_idx = find_wstring_null_terminator(a)
+                if null_idx is None:
                     raise ValueError("No null-terminator found in buffer")
                 value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16-le")
             else:
