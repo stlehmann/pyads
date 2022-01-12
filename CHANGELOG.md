@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * [#293](https://github.com/stlehmann/pyads/pull/2939) Support WSTRINGS in structures
 
 ### Changed
+* [#304](https://github.com/stlehmann/pyads/pull/304) Implemented try-catch when closing ADS notifications in AdsSymbol destructor
 * [#292](https://github.com/stlehmann/pyads/pull/292) Improve performance of get_value_from_ctype_data for arrays
 
 ### Removed
