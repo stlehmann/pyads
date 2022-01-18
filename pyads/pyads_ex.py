@@ -53,29 +53,54 @@ NOTEFUNC: Optional[Callable] = None
 # _adslib can be WinDLL or CDLL depending on OS
 _adsDLL: Union["ctypes.WinDLL", "ctypes.CDLL"]
 
+# True if libads/adslib is loaded, False if TcAdsDll
+using_adslib: bool = True
+
 # load dynamic ADS library
 if platform_is_windows():  # pragma: no cover, skip Windows test
-    dlldir_handle = None
-    if sys.version_info >= (3, 8) and "TWINCAT3DIR" in os.environ:
-        # Starting with version 3.8, CPython does not consider the PATH environment
-        # variable any more when resolving DLL paths. The following works with the default
-        # installation of the Beckhoff TwinCAT ADS DLL.
-        dll_path = os.environ["TWINCAT3DIR"] + "\\..\\AdsApi\\TcAdsDll"
-        if platform.architecture()[0] == "64bit":
-            dll_path += "\\x64"
-        dlldir_handle = os.add_dll_directory(dll_path)
+    # First try standalone ADS library [https://github.com/Beckhoff/ADS]
+    # try to load local adslib.dll in favor to global one
+    local_adslib = os.path.join(os.path.dirname(__file__), "libads.dll")
+    if os.path.isfile(local_adslib):
+        adslib = local_adslib
+    else:
+        adslib = "libads.dll"
+
     try:
-        _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
-    finally:
-        if dlldir_handle:
-            # Do not clobber the load path for other modules
-            dlldir_handle.close()
-    NOTEFUNC = ctypes.WINFUNCTYPE(  # type: ignore
-        ctypes.c_void_p,
-        ctypes.POINTER(SAmsAddr),
-        ctypes.POINTER(SAdsNotificationHeader),
-        ctypes.c_ulong,
-    )
+        _adsDLL = ctypes.CDLL(local_adslib)
+    except FileNotFoundError:
+        _adsDLL = None  # type: ignore
+    else:
+        NOTEFUNC = ctypes.CFUNCTYPE(
+            None,
+            ctypes.POINTER(SAmsAddr),
+            ctypes.POINTER(SAdsNotificationHeader),
+            ctypes.c_ulong,
+        )
+
+    if _adsDLL is None:
+        dlldir_handle = None
+        if sys.version_info >= (3, 8) and "TWINCAT3DIR" in os.environ:
+            # Starting with version 3.8, CPython does not consider the PATH environment
+            # variable any more when resolving DLL paths. The following works with the default
+            # installation of the Beckhoff TwinCAT ADS DLL.
+            dll_path = os.environ["TWINCAT3DIR"] + "\\..\\AdsApi\\TcAdsDll"
+            if platform.architecture()[0] == "64bit":
+                dll_path += "\\x64"
+            dlldir_handle = os.add_dll_directory(dll_path)
+        try:
+            _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
+            using_adslib = False
+        finally:
+            if dlldir_handle:
+                # Do not clobber the load path for other modules
+                dlldir_handle.close()
+        NOTEFUNC = ctypes.WINFUNCTYPE(  # type: ignore
+            ctypes.c_void_p,
+            ctypes.POINTER(SAmsAddr),
+            ctypes.POINTER(SAdsNotificationHeader),
+            ctypes.c_ulong,
+        )
 
 elif platform_is_linux():
     # try to load local adslib.so in favor to global one
@@ -124,25 +149,25 @@ class ADSError(Exception):
 
 
 def router_function(fn: Callable) -> Callable:
-    """Raise a runtime error if on Win32 systems.
+    """Raise a runtime error if on Win32 systems using TcAdsDll.
 
     Decorator.
 
-    Decorator for functions that interact with the router for the Linux
+    Decorator for functions that interact with the router for the Beckhoff opensource
     implementation of the ADS library.
 
-    Unlike the Windows implementation which uses a separate router daemon,
-    the Linux library manages AMS routing in-process. As such, routing must be
+    Unlike the TcAdsDll windows implementation which uses a separate router daemon,
+    the opensource ADS library manages AMS routing in-process. As such, routing must be
     configured programmatically via. the provided API. These endpoints are
-    invalid on Win32 systems, so an exception will be raised.
+    invalid if using TcAdsDll, so an exception will be raised.
 
     """
 
     @wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> Callable:
-        if platform_is_windows():  # pragma: no cover, skip Windows test
+        if not using_adslib:  # pragma: no cover, skip TcAdsDll test
             raise RuntimeError(
-                "Router interface is not available on Win32 systems.\n"
+                "Router interface is not available on when using TcAdsDll.dll.\n"
                 "Configure AMS routes using the TwinCAT router service."
             )
         return fn(*args, **kwargs)
@@ -251,7 +276,7 @@ def adsAddRouteToPLC(
         ">6B", *map(int, sending_net_id.split("."))
     )  # Sending net ID
     data_header += struct.pack("<H", PORT_SYSTEMSERVICE)  # Internal communication port
-    data_header += struct.pack(">2s", b"\x05\x00")  # Write command
+    data_header += struct.pack(">2s", b"\x05\x00")  # Write control command
     data_header += struct.pack(">4s", b"\x00\x00\x0c\x00")  # Block of unknown
     data_header += struct.pack("<H", len(route_name))  # Length of sender host name
     data_header += route_name.encode("utf-8")  # Sender host name

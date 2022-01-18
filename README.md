@@ -12,7 +12,13 @@ pyads - Python package
 [![Downloads](https://pepy.tech/badge/pyads/week)](https://pepy.tech/project/pyads)
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
-for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
+for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* or *libads.dll* on Windows *adslib.so* on Linux.
+*TcAdsDll.dll* is freely distributed in binary form for Windows as a part of [Beckhoff TC1000](https://www.beckhoff.com/en-en/products/automation/twincat/tc1xxx-twincat-3-base/tc1000.html)
+which installs a driver and an ADS router daemon.
+*libads.dll* / *adslib.so* are build from MIT-licensed [Beckhoff ADS library](https://github.com/Beckhoff/ADS)
+and are self-contained, meaning that they do not require any demon or driver.
+
+The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
 
 Documentation: http://pyads.readthedocs.io/en/latest/index.html
 
@@ -76,5 +82,5 @@ patience when creating issues or PRs. Here are some main guidelines which I ask 
 * Create PRs based on the [master](https://github.com/stlehmann/pyads) branch.
 * Add an entry to the [Changelog](https://github.com/stlehmann/pyads/blob/master/CHANGELOG.md).
 * Keep PRs small (if possible), this makes reviews easier and your PR can be merged faster.
-* Address only one issue per PR. If you want to make additional fixes e.g. on import statements, style or documentation 
+* Address only one issue per PR. If you want to make additional fixes e.g. on import statements, style or documentation
 which are not directly related to your issue please create an additional PR that adresses these small fixes.
