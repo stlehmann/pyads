@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 * [#293](https://github.com/stlehmann/pyads/pull/2939) Support WSTRINGS in structures
+* [#313](https://github.com/stlehmann/pyads/pull/325) Add Error Code 29 and 30
 
 ### Changed
 * [#292](https://github.com/stlehmann/pyads/pull/292) Improve performance of get_value_from_ctype_data for arrays
