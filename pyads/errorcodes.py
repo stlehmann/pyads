@@ -35,6 +35,8 @@ ERROR_CODES = {
     26: "TCP send error",
     27: "Host unreachable",
     28: "Invalid AMS fragm",
+    29: "TLS send error, secure ADS connection failed",
+    30: "Access denied, secure ADS access denied",
     1280: "ROUTERERR_NOLOCKEDMEMORY",
     1281: "ROUTERERR_RESIZEMEMORY",
     1282: "ROUTERERR_MAILBOXFULL",
