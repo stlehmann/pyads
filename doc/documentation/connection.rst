@@ -294,7 +294,7 @@ for an integer variable can be seen here:
    >>> handles = plc.add_device_notification('GVL.integer_value', attr, mycallback)
    >>>
    >>> # To remove the device notification use the del_device_notification function.
-   >>> plc.del_device_notification(handles)
+   >>> plc.del_device_notification(*handles)
    >>> plc.close()
 
 This examples uses the default values for :py:class:`.NotificationAttrib`. The
