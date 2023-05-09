@@ -105,7 +105,20 @@ read/write.
    >>> plc.write_by_name('GVL.sample_array[0]', 5, pyads.PLCTYPE_INT)
    >>> plc.read_by_name('GVL.sample_array[0]', pyads.PLCTYPE_INT)
    5
+   
+For multidimensional arrays or arrays of arrays:
 
+.. code:: python
+
+  >>> plc.write_by_name('GVL.sample_array[0, 0]', 5, pyads.PLCTYPE_INT)
+  >>> plc.read_by_name('GVL.sample_array[0, 0]', pyads.PLCTYPE_INT)
+  5
+  
+.. code:: python
+
+  >>> plc.write_by_name('GVL.sample_array[0][0]', 5, pyads.PLCTYPE_INT)
+  >>> plc.read_by_name('GVL.sample_array[0][0]', pyads.PLCTYPE_INT)
+  5
 
 Structures of the same datatype
 """""""""""""""""""""""""""""""
