@@ -320,11 +320,18 @@ def dict_from_bytes(
                 if plc_datatype == PLCTYPE_STRING:
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
-                    var_array.append(
-                        bytearray(byte_list[index: (index + (str_len + 1))])
-                        .partition(b"\0")[0]
-                        .decode("utf-8")
-                    )
+                    try:
+                        var_array.append(
+                            bytearray(byte_list[index: (index + (str_len + 1))])
+                            .partition(b"\0")[0]
+                            .decode("utf-8")
+                        )
+                    except:
+                        var_array.append(
+                            bytearray(byte_list[index: (index + (str_len + 1))])
+                            .partition(b"\0")[0]
+                            .decode("cp-1252")
+                        )
                     index += str_len + 1
                 elif plc_datatype == PLCTYPE_WSTRING:
                     if str_len is None:  # if no str_len is given use default size
