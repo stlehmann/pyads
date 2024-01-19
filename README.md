@@ -16,6 +16,8 @@ for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAd
 
 Documentation: http://pyads.readthedocs.io/en/latest/index.html
 
+Issues: In order to assist with issue management, please keep the issue tracker reserved for bugs and feature requests. For any questions, particularly around usage, route creation and ads error messages when reading or writing variables, please either use [Stack Overflow](https://stackoverflow.com/) tagging the question with `twincat-ads` and state you are using the pyads library.
+
 # Installation
 
 From PyPi:
