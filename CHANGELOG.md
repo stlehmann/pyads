@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 * [#292](https://github.com/stlehmann/pyads/pull/292) Improve performance of get_value_from_ctype_data for arrays
+* [#363](https://github.com/stlehmann/pyads/pull/363) Allow for platform independent builds
 
 ### Removed
 
