@@ -1451,7 +1451,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         var = PLCVariable(
             "wstr",
             expected1.encode("utf-16-le") + b"\x00\x00",
-            constants.ADST_WSTRING, "WSTRING"
+            constants.ADST_WSTRING, f"WSTRING({len(expected1)})"
         )
         self.handler.add_variable(var)
 
@@ -1474,6 +1474,203 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
                 ), expected1
             )
             self.assertEqual(self.plc.read_by_name("wstr"), expected2)
+
+    def test_read_write_list_wstr_array(self):
+
+        expected_string_array = ["hello", "world", "", ""]
+
+        # Set up the WString array
+        w_string_char_size = 20
+        w_string_element_size = (w_string_char_size * 2) + 2
+        w_string_bytes = len(expected_string_array)*(w_string_element_size*[0])
+        for i, element in enumerate(expected_string_array):
+            current_offset = w_string_element_size * i
+            w_string_bytes[current_offset: ((2*len(element)) + 2)] = element.encode("utf-16-le") + b"\x00\x00"
+
+        # Add to test plc
+        self.handler.add_variable(PLCVariable(
+            name = "wstr_test_array", 
+            value = bytes(w_string_bytes), 
+            ads_type = constants.ADST_WSTRING, 
+            symbol_type = f"WSTRING({w_string_char_size})"))
+
+
+        # Read variable
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["wstr_test_array"])
+
+        # Expected result
+        expected_result = {
+            "wstr_test_array": expected_string_array
+        }
+
+        self.assertEqual(read_values, expected_result)
+
+        # Modify the value
+        expected_string_array[0] = "howdy"
+
+        # Write variable
+        with self.plc:
+            self.plc.write_list_by_name({"wstr_test_array": expected_string_array})
+
+        # Read variable again
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["wstr_test_array"])
+
+        # Expected result
+        expected_result = {
+            "wstr_test_array": expected_string_array
+        }
+
+        self.assertEqual(read_values, expected_result)
+
+
+    def test_read_write_list_str_array(self):
+
+        expected_string_array = ["hello", "world", "", ""]
+
+        # Set up the WString array
+        string_char_size = 20
+        string_element_size = string_char_size + 1
+        string_bytes = len(expected_string_array)*(string_element_size*[0])
+        for i, element in enumerate(expected_string_array):
+            current_offset = string_element_size * i
+            string_bytes[current_offset: ((len(element)) + 1)] = element.encode("utf-8") + b"\x00"
+
+        # Add to test plc
+        self.handler.add_variable(PLCVariable(
+            name = "str_test_array", 
+            value = bytes(string_bytes), 
+            ads_type = constants.ADST_STRING, 
+            symbol_type = f"STRING({string_char_size})"))
+
+
+        # Read variable
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["str_test_array"])
+
+        # Expected result
+        expected_result = {
+            "str_test_array": expected_string_array
+        }
+
+        self.assertEqual(read_values, expected_result)
+
+        # Modify the value
+        expected_string_array[0] = "howdy"
+
+        # Write variable
+        with self.plc:
+            self.plc.write_list_by_name({"str_test_array": expected_string_array})
+
+        # Read variable again
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["str_test_array"])
+
+        # Expected result
+        expected_result = {
+            "str_test_array": expected_string_array
+        }
+
+        self.assertEqual(read_values, expected_result)
+
+
+    def test_read_write_list_int_array(self):
+        expected_int_array = [123, 456, 789]
+
+        int_array_bytes = bytearray(ctypes.sizeof(constants.PLCTYPE_INT) * len(expected_int_array))
+
+        struct.pack_into(
+            "<" + "h" * len(expected_int_array),
+            int_array_bytes,
+            0,
+            *expected_int_array,
+        )
+
+
+        # Add to test plc
+        self.handler.add_variable(PLCVariable(
+            name = "int_test_array", 
+            value = bytes(int_array_bytes), 
+            ads_type = constants.ADST_INT16, 
+            symbol_type = f"INT"))
+
+
+        # Read variable
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["int_test_array"])
+
+        # Expected result
+        expected_result = {
+            "int_test_array": expected_int_array
+        }
+
+        self.assertEqual(expected_result, read_values)
+
+        # Modify the value
+        expected_int_array[0] = 321
+
+        # Write variable
+        with self.plc:
+            self.plc.write_list_by_name({"int_test_array": expected_int_array})
+
+        # Read variable again
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["int_test_array"])
+
+        # Expected result
+        expected_result = {
+            "int_test_array": expected_int_array
+        }
+
+        self.assertEqual(read_values, expected_result)
+
+
+    def test_read_write_list_real_array(self):
+        expected_real_array = [123.4, 456.7, 789.1]
+
+        real_array_bytes = bytearray(ctypes.sizeof(constants.PLCTYPE_REAL) * len(expected_real_array))
+
+        print(ctypes.sizeof(constants.PLCTYPE_REAL))
+
+        struct.pack_into(
+            "<" + "f" * len(expected_real_array),
+            real_array_bytes,
+            0,
+            *expected_real_array,
+        )
+
+        # Add to test plc
+        self.handler.add_variable(PLCVariable(
+            name = "real_test_array", 
+            value = bytes(real_array_bytes), 
+            ads_type = constants.ADST_REAL32, 
+            symbol_type = f"REAL"))
+
+
+        # Read variable
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["real_test_array"])
+
+        # Verify result to 1dp 
+        for i, value in enumerate(read_values["real_test_array"]):
+            self.assertEqual(expected_real_array[i], round(value, 1))
+
+
+        # Modify the value
+        expected_real_array[0] = 432.1
+
+        # Write variable
+        with self.plc:
+            self.plc.write_list_by_name({"real_test_array": expected_real_array})
+
+        # Read variable again
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["real_test_array"])
+
+        # Verify result to 1dp 
+        for i, value in enumerate(read_values["real_test_array"]):
+            self.assertEqual(expected_real_array[i], round(value, 1))
 
     def test_wstring_struct(self):
         wstring_structure_def = (
@@ -1500,6 +1697,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         data = "hällo world".encode("utf-16-le") + 2 * b"\x00"
         byte_list = list(data) + (2 * (PLC_DEFAULT_STRING_SIZE + 1) - len(data)) * [0]
         byte_list += [10, 0]
+
         wstring_var = PLCVariable(
             "wstring_struct",
             value=bytes(byte_list),
