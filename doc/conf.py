@@ -58,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pyads'
-copyright = '2015, Stefan Lehmann'
+copyright = '2024, Stefan Lehmann'
 author = 'Stefan Lehmann'
 
 # The version info for the project you're documenting, acts as replacement for
