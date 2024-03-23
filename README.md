@@ -42,12 +42,12 @@ python setup.py install
 
 ## Features
 
-* connect to a remote TwinCAT device like a plc or a PC with TwinCAT
-* create routes on Linux devices and on remote plcs
-* supports TwinCAT 2 and TwinCAT 3
-* read and write values by name or address
-* read and write DUTs (structures) from the plc
-* notification callbacks
+- connect to a remote TwinCAT device like a plc or a PC with TwinCAT
+- create routes on Linux devices and on remote plcs
+- supports TwinCAT 2 and TwinCAT 3
+- read and write values by name or address
+- read and write DUTs (structures) from the plc
+- notification callbacks
 
 ## Basic usage
 
@@ -68,15 +68,6 @@ plc.write_by_name("GVL.int_val", i)
 plc.close()
 ```
 
-[0]: https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=
-
 ## Contributing guidelines
 
-Contributions are very much welcome. pyads is under active development. However it is a side-project of mine so please have some
-patience when creating issues or PRs. Here are some main guidelines which I ask you to follow along:
-
-* Create PRs based on the [master](https://github.com/stlehmann/pyads) branch.
-* Add an entry to the [Changelog](https://github.com/stlehmann/pyads/blob/master/CHANGELOG.md).
-* Keep PRs small (if possible), this makes reviews easier and your PR can be merged faster.
-* Address only one issue per PR. If you want to make additional fixes e.g. on import statements, style or documentation 
-which are not directly related to your issue please create an additional PR that adresses these small fixes.
+Contributions are very much welcome. pyads is under development. However it is a side-project so please have some patience when creating issues or PRs. Please also follow the [Contributing Guidelines](https://github.com/stlehmann/pyads/blob/master/CONTRIBUTING.md).
