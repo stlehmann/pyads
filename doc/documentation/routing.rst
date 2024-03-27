@@ -16,7 +16,7 @@ Creating routes on Windows
 On Windows you don’t need to manually add the routes with pyads but
 instead you use the TwinCAT Router UI ( TcSystemManager) which comes
 with the TwinCAT installation. Have a look at the TwinCAT documentation
-on `infosys.beckhoff.com <https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=>`__
+on `infosys.beckhoff.com <https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_system/5211773067.html&id=2762137833336592415>`__
 for further details.
 
 Creating routes on Linux
