@@ -6,21 +6,26 @@ Please follow these guidelines for contributing. Pull requests are welcome.
 
 - Create a new [github issue](https://github.com/stlehmann/pyads/issues) for bugs
   or features. Search the ticket system first, to avoid filing a duplicate.
-- Ensure code follows the [syntax and conventions](#Syntax-and-conventions).
+- Ensure code follows the [Syntax and conventions](#Syntax-and-conventions).
 - Code must pass tests. See [Testing](#Testing) for information on how to run and
  write unit tests.
 - Commit messages should be informative.
+- Use the [Pull request process](#Pull-request-process).
+- Address only one issue per PR. If you want to make additional fixes e.g. on import statements, style or documentation 
+which are not directly related to your issue please create an additional PR that addresses these small fixes.
 
-## Pull request process:
+## Pull request process
 
 - Fork us on [github](https://github.com/stlehmann/pyads).
 - Clone your repository.
 - Create a feature branch for your issue.
+- Keep PRs small (if possible), this makes reviews easier and your PR can be merged faster.
 - Apply your changes:
   - Add them, and then commit them to your branch.
   - Run the tests until they pass.
   - When you feel you are finished, rebase your commits to ensure a simple
     and informative commit log.
+  - Add an entry to the [Changelog](https://github.com/stlehmann/pyads/blob/master/CHANGELOG.md).
 - Create a pull request on github from your forked repository.
 
 ## Syntax and conventions
@@ -64,13 +69,12 @@ for available environments.
 Tests are written using [unittest](https://docs.python.org/3/library/unittest.html)
 and can be individually run for each environment with the python built in library.
 
-### Travis-CI
+### CI
 
-When creating a pull request (PR) on [Github], [Travis] will automatically run
+When creating a pull request (PR) on [Github], Github CI will automatically run
 the unit tests with the code in the PR and report back.
 
 [Github]: https://github.com/stlehmann/pyads/pulls
-[Travis]: https://travis-ci.org/stlehmann/pyads
 
 ### Testing issues on Windows
 
@@ -107,7 +111,7 @@ With the subsystem installed, open a Linux shell in your clone directory and run
 1. `sudo apt install python3 python3-pip`
 1. `cd adslib && make && sudo make install && cd ..`
 1. `python3 -m pip install tox`
-1. `python3 -m tox -e py36` (Ubuntu 18.04 comes with Python 3.6, 20.04 with Python 3.8)
+1. `python3 -m tox -e py38` (Ubuntu 20.04 with Python 3.8)
 
 ## Documentation contributions
 
