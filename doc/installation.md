@@ -20,7 +20,7 @@ cd pyads
 python setup.py install
 ```
 
-Note: pyads only supports python 3.6 and above.
+Note: pyads only supports python 3.7 and above.
 
 ## Installation on Linux
 
