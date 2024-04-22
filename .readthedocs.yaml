@@ -19,4 +19,5 @@ sphinx:
 python:
   install:
     - requirements: requirements.txt
-    - package: pyads
+    - method: pip
+      path: .
