@@ -268,6 +268,8 @@ def size_of_structure(structure_def: StructureDef) -> int:
                 num_of_bytes += 2 * (str_len + 1) * size  # WSTRING uses 2 bytes per character + null-terminator
             else:
                 num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * 2 * size
+        elif type(plc_datatype) is tuple:
+            num_of_bytes += size_of_structure(plc_datatype) * size
         elif plc_datatype not in DATATYPE_MAP:
             raise RuntimeError("Datatype not found")
         else:
