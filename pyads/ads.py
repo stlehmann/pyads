@@ -336,6 +336,15 @@ def dict_from_bytes(
                     null_idx = find_wstring_null_terminator(a)
                     var_array.append(a[:null_idx].decode("utf-16-le"))
                     index += n_bytes
+                elif type(plc_datatype) is tuple:
+                    n_bytes = size_of_structure(plc_datatype)
+                    var_array.append(
+                        dict_from_bytes(
+                            byte_list[index : (index + n_bytes)],
+                            structure_def=plc_datatype,
+                        )
+                    )
+                    index += n_bytes
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
                 else:
