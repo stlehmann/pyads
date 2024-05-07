@@ -249,7 +249,10 @@ class AdsSymbol:
         """
 
         if attr is None:
-            attr = NotificationAttrib(length=sizeof(self.plc_type))
+            if self.plc_type is not None:
+                attr = NotificationAttrib(length=sizeof(self.plc_type))
+            elif self.structure_def is not None:
+                attr = NotificationAttrib(length=self._structure_size)
 
         handles = self._plc.add_device_notification(
             (self.index_group, self.index_offset), attr, callback, user_handle
