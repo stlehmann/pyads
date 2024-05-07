@@ -180,6 +180,30 @@ class AdsTest(unittest.TestCase):
         )
         self.assertEqual(pyads.size_of_structure(structure_def), 46)
 
+        # known structure size with defined string
+        substructure_def = (
+            ("rVar", pyads.PLCTYPE_LREAL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 2, 35),
+            ("rVar1", pyads.PLCTYPE_REAL, 4),
+            ("iVar", pyads.PLCTYPE_DINT, 5),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("ivar2", pyads.PLCTYPE_UDINT, 6),
+            ("iVar3", pyads.PLCTYPE_UINT, 7),
+            ("iVar4", pyads.PLCTYPE_BYTE, 1),
+            ("iVar5", pyads.PLCTYPE_SINT, 1),
+            ("iVar6", pyads.PLCTYPE_USINT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 4),
+            ("iVar7", pyads.PLCTYPE_WORD, 1),
+            ("iVar8", pyads.PLCTYPE_DWORD, 1),
+        )
+
+        # test structure with array of nested structure
+        structure_def = (
+            ('iVar9', pyads.PLCTYPE_USINT, 1),
+            ('structVar', substructure_def, 100),
+        )        
+        self.assertEqual(pyads.size_of_structure(structure_def), 17301)
+
     def test_dict_from_bytes(self):
         # type: () -> None
         """Test dict_from_bytes function"""
