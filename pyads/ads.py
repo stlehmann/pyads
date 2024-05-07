@@ -435,6 +435,11 @@ def bytes_from_dict(
                         byte_list += encoded
                         remaining_bytes = 2 * (str_len + 1) - len(encoded)  # 2 bytes a character plus null-terminator
                     byte_list.extend(remaining_bytes * [0])
+                elif type(plc_datatype) is tuple:
+                    bytecount = bytes_from_dict(
+                        values=var[i], structure_def=plc_datatype
+                    )
+                    byte_list += bytecount
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
                 else:
