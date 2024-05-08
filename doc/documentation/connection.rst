@@ -227,6 +227,7 @@ the order as declared in the PLC.
 Declare the tuples either as
 
 .. code:: python
+
    >>> substructure_def = (
    ...    ('rVar', pyads.PLCTYPE_LREAL, 1),
    ...    ('rVar2', pyads.PLCTYPE_REAL, 1),
@@ -243,6 +244,7 @@ Declare the tuples either as
 or as
 
 .. code:: python
+
    >>> structure_def = (
    ...    ('rVar', pyads.PLCTYPE_LREAL, 1),
    ...    ('structVar', (
@@ -257,6 +259,7 @@ or as
 Information is passed and returned using the OrderedDict type.
 
 .. code:: python
+   
    >>> from collections import OrderedDict
 
    >>> vars_to_write = collections.OrderedDict([
