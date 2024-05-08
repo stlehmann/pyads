@@ -188,6 +188,103 @@ using the OrderedDict type.
    >>> plc.read_structure_by_name('global.sample_structure', structure_def)
    OrderedDict([('rVar', 11.1), ('rVar2', 22.2), ('iVar', 3), ('iVar2', [4, 44, 444]), ('sVar', 'abc')])
 
+Nested Structures
+^^^^^^^^^^^^^^^^^
+
+**The structures in the PLC must be defined with \`{attribute ‘pack_mode’
+:= ‘1’}.**
+
+TwinCAT declaration of the sub structure:
+
+::
+
+   {attribute 'pack_mode' := '1'}
+   TYPE sub_sample_structure :
+   STRUCT
+       rVar : LREAL;
+       rVar2 : REAL;
+       iVar : INT;
+       iVar2 : ARRAY [1..3] OF DINT;
+       sVar : STRING;
+   END_STRUCT
+   END_TYPE
+
+TwinCAT declaration of the nested structure:
+
+::
+
+   {attribute 'pack_mode' := '1'}
+   TYPE sample_structure :
+   STRUCT
+      rVar : LREAL;
+      structVar: ARRAY [0..1] OF sub_sample_structure; 
+   END_STRUCT
+   END_TYPE
+
+First declare a tuple which defines the PLC structure. This should match
+the order as declared in the PLC.
+
+Declare the tuples either as
+
+.. code:: python
+   >>> substructure_def = (
+   ...    ('rVar', pyads.PLCTYPE_LREAL, 1),
+   ...    ('rVar2', pyads.PLCTYPE_REAL, 1),
+   ...    ('iVar', pyads.PLCTYPE_INT, 1),
+   ...    ('iVar2', pyads.PLCTYPE_DINT, 3),
+   ...    ('sVar', pyads.PLCTYPE_STRING, 1)
+   ... )
+
+   >>> structure_def = (
+   ...    ('rVar', pyads.PLCTYPE_LREAL, 1),
+   ...    ('structVar', substructure_def, 2)
+   ... )
+
+or as
+
+.. code:: python
+   >>> structure_def = (
+   ...    ('rVar', pyads.PLCTYPE_LREAL, 1),
+   ...    ('structVar', (
+   ...         ('rVar', pyads.PLCTYPE_LREAL, 1),
+   ...         ('rVar2', pyads.PLCTYPE_REAL, 1),
+   ...         ('iVar', pyads.PLCTYPE_INT, 1),
+   ...         ('iVar2', pyads.PLCTYPE_DINT, 3),
+   ...         ('sVar', pyads.PLCTYPE_STRING, 1)
+   ...    ), 2)
+   ... )
+
+Information is passed and returned using the OrderedDict type.
+
+.. code:: python
+   >>> from collections import OrderedDict
+
+   >>> vars_to_write = collections.OrderedDict([
+   ...     ('rVar',0.1),
+   ...     ('structVar', (
+   ...         OrderedDict([
+   ...             ('rVar', 11.1),
+   ...             ('rVar2', 22.2),
+   ...             ('iVar', 3),
+   ...             ('iVar2', [4, 44, 444]),
+   ...             ('sVar', 'abc')
+   ...         ]),
+   ...         OrderedDict([
+   ...             ('rVar', 55.5),
+   ...             ('rVar2', 66.6),
+   ...             ('iVar', 7),
+   ...             ('iVar2', [8, 88, 888]),
+   ...             ('sVar', 'xyz')
+   ...         ]))
+   ...     )
+   ... ])
+
+   >>> plc.write_structure_by_name('GVL.sample_structure', vars_to_write, structure_def)
+   >>> plc.read_structure_by_name('GVL.sample_structure', structure_def)
+   ... OrderedDict({'rVar': 0.1, 'structVar': [OrderedDict({'rVar': 11.1, 'rVar2': 22.200000762939453, 'iVar': 3, 'iVar2':
+   ... [4, 44, 444], 'sVar': 'abc'}), OrderedDict({'rVar': 55.5, 'rVar2': 66.5999984741211, 'iVar': 7, 'iVar2': [8, 88, 888],
+   ... 'sVar': 'xyz'})]})
+
 Read and write by handle
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
