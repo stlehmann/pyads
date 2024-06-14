@@ -1089,7 +1089,7 @@ def adsSumWrite(
         if data_name in structured_data_names:
             buf[offset: offset + data_symbols[data_name].size] = value
         elif data_symbols[data_name].dataType == ADST_STRING:
-            buf[offset: offset + len(value)] = value.encode("utf-8")
+            buf[offset: offset + len(value.encode("utf-8"))] = value.encode("utf-8")
         elif data_symbols[data_name].dataType == ADST_WSTRING:
             buf[offset: offset + 2 * len(value)] = value.encode("utf-16-le")
         else:
