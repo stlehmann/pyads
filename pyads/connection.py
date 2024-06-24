@@ -75,6 +75,7 @@ from .pyads_ex import (
     adsSyncAddDeviceNotificationReqEx,
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
+    ADSError,
 )
 from .structs import (
     AmsAddr,
@@ -195,7 +196,12 @@ class Connection(object):
         self._port = adsPortOpenEx()
 
         if linux:
-            adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+            try:
+                adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+            except ADSError:
+                adsPortCloseEx(self._port)
+                self._port = None
+                raise
 
         self._open = True
 
