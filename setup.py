@@ -178,4 +178,5 @@ setup(
     cmdclass=cmdclass,
     data_files=data_files,
     tests_require=['pytest', 'pytest-cov'],
+    has_ext_modules=lambda: True,
 )
