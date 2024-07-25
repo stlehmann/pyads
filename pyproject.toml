@@ -29,11 +29,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pyads", "pyads.testserver"]
+package-dir = { ""= "src" }
 
 [tool.setuptools.package-data]
 pyads = [
     "adslib.so",
-    "adslib/"
+    "adslib/**",
 ]
 
 [tool.setuptools.dynamic]
