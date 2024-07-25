@@ -1,97 +1,24 @@
-#! /usr/bin/env python
-# -*-coding: utf-8 -*-
-import glob
-import os
-import sys
-import shutil
-import subprocess
-import functools
-import operator
 from setuptools import setup
-from setuptools.command.install import install as _install
-from distutils.command.build import build as _build
-from distutils.command.clean import clean as _clean
-from distutils.command.sdist import sdist as _sdist
+from setuptools.command.build import build
+
+import sys
+import subprocess
 
 
 def platform_is_linux():
-    return sys.platform.startswith('linux') or \
-        sys.platform.startswith('darwin')
+    return sys.platform.startswith("linux") or sys.platform.startswith("darwin")
 
 
-def create_binaries():
-    subprocess.call(['make', '-C', 'adslib'])
-
-
-def remove_binaries():
-    """Remove all binary files in the adslib directory."""
-    patterns = (
-        "adslib/*.a",
-        "adslib/*.o",
-        "adslib/obj/*.o",
-        "adslib/*.bin",
-        "adslib/*.so",
-    )
-
-    for f in functools.reduce(operator.iconcat, [glob.glob(p) for p in patterns]):
-        os.remove(f)
-
-
-def copy_sharedlib():
-    try:
-        shutil.copy('adslib/adslib.so', 'pyads/adslib.so')
-    except OSError:
-        pass
-
-
-def remove_sharedlib():
-    try:
-        os.remove('pyads/adslib.so')
-    except OSError:
-        pass
-
-
-class build(_build):
+class PyadsBuild(build):
     def run(self):
         if platform_is_linux():
-            remove_binaries()
-            create_binaries()
-            copy_sharedlib()
-            remove_binaries()
-        _build.run(self)
+            subprocess.call(["make", "-C", "adslib"])
 
-
-class clean(_clean):
-    def run(self):
-        if platform_is_linux():
-            remove_binaries()
-            remove_sharedlib()
-        _clean.run(self)
-
-
-class sdist(_sdist):
-    def run(self):
-        if platform_is_linux():
-            remove_binaries()
-        _sdist.run(self)
-
-
-class install(_install):
-    def run(self):
-        if platform_is_linux():
-            create_binaries()
-            copy_sharedlib()
-        _install.run(self)
-
-
-cmdclass = {
-    'build': build,
-    'clean': clean,
-    'sdist': sdist,
-    'install': install,
-}
+        build.run(self)  # Avoid `super()` here for legacy
 
 
 setup(
-    cmdclass=cmdclass,
+    cmdclass={
+        "build": PyadsBuild,
+    }
 )
