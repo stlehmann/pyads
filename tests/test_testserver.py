@@ -71,23 +71,18 @@ class TestServerTestCase(unittest.TestCase):
 
         raised_error: str = ""
 
-        try:
-            # 4. stop the test server
-            test_server.stop()
-            time.sleep(0.1)  # Give server a moment
+        # 4. stop the test server
+        test_server.stop()
+        time.sleep(0.1)  # Give server a moment
 
+        try:
             # some code, where test_int is cleared by the Garbage collector after the server was stopped
             # (e.g. the machine with ADS Server disconnected)
             # this raised an ADSError up to commit [a7af674](https://github.com/stlehmann/pyads/tree/a7af674b49b1c91966f2bac1f00f86273cbd9af8)
             #  `clear_device_notifications()` failed, if not wrapped in try-catch as the server is no longer present.
             test_int.__del__()
         except pyads.ADSError as e:
-            raised_error = str(e)
-
-        # check no error was raised:
-        self.assertTrue(
-            not raised_error, f"Closing server connection raised: {raised_error}"
-        )
+            self.fail(f"Closing server connection raised: {e}")
 
 
 if __name__ == "__main__":
