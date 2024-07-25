@@ -16,9 +16,9 @@ from ctypes import sizeof
 from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type
 
 from . import constants  # To access all constants, use package notation
-from .constants import PLCDataType
+from .constants import PLCDataType, ads_type_to_ctype
 from .pyads_ex import adsGetSymbolInfo, ADSError
-from .structs import NotificationAttrib
+from .structs import NotificationAttrib, SAdsSymbolEntry
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
@@ -125,7 +125,7 @@ class AdsSymbol:
         self.name = name
         self.index_offset = index_offset
         self.index_group = index_group
-        self.symbol_type = symbol_type
+        self.symbol_type = None  # Apply `symbol_type` later
         self.comment = comment
         self._value: Any = None
 
@@ -137,15 +137,14 @@ class AdsSymbol:
             from .ads import size_of_structure
             self._structure_size = size_of_structure(self.structure_def * self.array_size)
 
+        self.plc_type: Optional[Type[PLCDataType]] = None
+
         if missing_info:
             self._create_symbol_from_info()  # Perform remote lookup
 
-        # Now `self.symbol_type` should have a value, find the actual PLCTYPE
-        # from it.
-        # This is relevant for both lookup and full user definition.
-
-        self.plc_type: Optional[Type[PLCDataType]] = None
-        if self.symbol_type is not None:
+        # Apply user-provided type (overriding auto detect if any):
+        if symbol_type is not None:
+            self.symbol_type = symbol_type
             if isinstance(self.symbol_type, str):  # Perform lookup if string
                 self.plc_type = AdsSymbol.get_type_from_str(self.symbol_type)
             else:  # Otherwise `symbol_type` is probably a pyads.PLCTYPE_* constant
@@ -166,12 +165,8 @@ class AdsSymbol:
         if info.comment:
             self.comment = info.comment
 
-        # info.dataType is an integer mapping to a type in
-        # constants.ads_type_to_ctype.
-        # However, this type ignores whether the variable is really an array!
-        # So are not going to be using this and instead rely on the textual
-        # type
-        self.symbol_type = info.symbol_type  # Save the type as string
+        self.plc_type = self.get_type_from_info(info)
+        self.symbol_type = info.symbol_type  # Also save the type as string
 
     def _check_for_open_connection(self) -> None:
         """Assert the current object is ready to read from/write to.
@@ -195,6 +190,12 @@ class AdsSymbol:
                                                            structure_size=self._structure_size,
                                                            array_size=self.array_size)
         else:
+            if self.plc_type is None:
+                raise ADSError(
+                    None,
+                    f"Cannot read data with unknown datatype for symbol "
+                    f"{self.name} ({self.symbol_type})"
+                )
             self._value = self._plc.read(self.index_group, self.index_offset, self.plc_type)
 
         return self._value
@@ -218,6 +219,12 @@ class AdsSymbol:
             self._plc.write_structure_by_name(self.name, new_value, self.structure_def,
                                               structure_size=self._structure_size, array_size=self.array_size)
         else:
+            if self.plc_type is None:
+                raise ADSError(
+                    None,
+                    f"Cannot write data with unknown datatype for symbol "
+                    f"{self.name} ({self.symbol_type})"
+                )
             self._plc.write(self.index_group, self.index_offset, new_value, self.plc_type)
 
     def __repr__(self) -> str:
@@ -285,6 +292,30 @@ class AdsSymbol:
             notification, self.plc_type
         )
         self._value = value
+
+    @classmethod
+    def get_type_from_info(cls, info: SAdsSymbolEntry) -> Optional[Type[PLCDataType]]:
+        """Get PLCTYPE_* from symbol info struct
+
+        Also see :meth:`~get_type_from_str`.
+        """
+        plc_type = cls.get_type_from_str(info.symbol_type)
+        if plc_type is not None:
+            return plc_type
+
+        # Failed to detect by name (e.g. type is enum)
+
+        # Use `ADST_*` integer to detect type instead
+        plc_type = ads_type_to_ctype.get(info.dataType, None)
+        if plc_type is not None:
+            array_size = int(info.size / sizeof(plc_type))
+            # However, `dataType` is always a scalar, even if the object is an array:
+            if array_size > 1:
+                plc_type = plc_type * array_size
+
+            return plc_type
+
+        return None
 
     @staticmethod
     def get_type_from_str(type_str: str) -> Optional[Type[PLCDataType]]:
