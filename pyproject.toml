@@ -18,6 +18,22 @@ classifiers = [
 ]
 license = { text = "MIT" }
 dynamic = ["version"]
+dependencies = []
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "recommonmark",
+]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "tox",
+]
+dev = [
+    "build",
+]
 
 [project.urls]
 Repository = "https://github.com/MrLeeh/pyads"
@@ -30,6 +46,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["pyads", "pyads.testserver"]
 package-dir = { ""= "src" }
+include-package-data = false
 
 [tool.setuptools.package-data]
 pyads = [
