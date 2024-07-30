@@ -7,9 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 3.4.1 [unreleased]
 
 ### Changed
-* [#389](https://github.com/stlehmann/pyads/pull/389) / [#393](https://github.com/stlehmann/pyads/pull/393) - Fix for DLL path in TwinCT 4026
+* [#389](https://github.com/stlehmann/pyads/pull/389) / [#393](https://github.com/stlehmann/pyads/pull/393) Fix for DLL path in TwinCT 4026
 * [#369](https://github.com/stlehmann/pyads/pull/304) Add test for [#304](https://github.com/stlehmann/pyads/pull/304) in `tests/test_testserver.py`
 * [#304](https://github.com/stlehmann/pyads/pull/304) Implemented try-catch when closing ADS notifications in AdsSymbol destructor
+* [#325](https://github.com/stlehmann/pyads/pull/325) Added missing ADS return codes
 
 ## 3.4.0
 
