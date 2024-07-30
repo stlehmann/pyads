@@ -20,6 +20,8 @@ cd pyads
 python setup.py install
 ```
 
+Note: pyads only supports python 3.7 and above.
+
 ## Installation on Linux
 
 For Linux *pyads* uses the ADS library *adslib.so* which needs to be compiled

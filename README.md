@@ -12,9 +12,11 @@ pyads - Python package
 [![Downloads](https://pepy.tech/badge/pyads/week)](https://pepy.tech/project/pyads)
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
-for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](http://infosys.beckhoff.com/english.php?content=../content/1033/tcadsdll2/html/tcadsdll_api_overview.htm&id=20557).
+for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](https://infosys.beckhoff.com/content/1033/tc3_adsdll2/index.html?id=4279787267115190858).
 
 Documentation: http://pyads.readthedocs.io/en/latest/index.html
+
+Issues: In order to assist with issue management, please keep the issue tracker reserved for bugs and feature requests. For any questions, particularly around usage, route creation and ads error messages when reading or writing variables, please use [Stack Overflow](https://stackoverflow.com/) tagging the question with `twincat-ads` and state you are using the pyads library.
 
 # Installation
 
@@ -40,12 +42,12 @@ python setup.py install
 
 ## Features
 
-* connect to a remote TwinCAT device like a plc or a PC with TwinCAT
-* create routes on Linux devices and on remote plcs
-* supports TwinCAT 2 and TwinCAT 3
-* read and write values by name or address
-* read and write DUTs (structures) from the plc
-* notification callbacks
+- connect to a remote TwinCAT device like a plc or a PC with TwinCAT
+- create routes on Linux devices and on remote plcs
+- supports TwinCAT 2 and TwinCAT 3
+- read and write values by name or address
+- read and write DUTs (structures) from the plc
+- notification callbacks
 
 ## Basic usage
 
@@ -66,15 +68,6 @@ plc.write_by_name("GVL.int_val", i)
 plc.close()
 ```
 
-[0]: https://infosys.beckhoff.de/english.php?content=../content/1033/TcSystemManager/Basics/TcSysMgr_AddRouteDialog.htm&id=
-
 ## Contributing guidelines
 
-Contributions are very much welcome. pyads is under active development. However it is a side-project of mine so please have some
-patience when creating issues or PRs. Here are some main guidelines which I ask you to follow along:
-
-* Create PRs based on the [master](https://github.com/stlehmann/pyads) branch.
-* Add an entry to the [Changelog](https://github.com/stlehmann/pyads/blob/master/CHANGELOG.md).
-* Keep PRs small (if possible), this makes reviews easier and your PR can be merged faster.
-* Address only one issue per PR. If you want to make additional fixes e.g. on import statements, style or documentation 
-which are not directly related to your issue please create an additional PR that adresses these small fixes.
+Contributions are very much welcome. pyads is under development. However it is a side-project so please have some patience when creating issues or PRs. Please also follow the [Contributing Guidelines](https://github.com/stlehmann/pyads/blob/master/CONTRIBUTING.md).

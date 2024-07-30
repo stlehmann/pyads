@@ -57,14 +57,22 @@ _adsDLL: Union["ctypes.WinDLL", "ctypes.CDLL"]
 # load dynamic ADS library
 if platform_is_windows():  # pragma: no cover, skip Windows test
     dlldir_handle = None
-    if sys.version_info >= (3, 8) and "TWINCAT3DIR" in os.environ:
+    if sys.version_info >= (3, 8):
         # Starting with version 3.8, CPython does not consider the PATH environment
         # variable any more when resolving DLL paths. The following works with the default
         # installation of the Beckhoff TwinCAT ADS DLL.
-        dll_path = os.environ["TWINCAT3DIR"] + "\\..\\AdsApi\\TcAdsDll"
-        if platform.architecture()[0] == "64bit":
-            dll_path += "\\x64"
-        dlldir_handle = os.add_dll_directory(dll_path)
+        if "TWINCATSDK" in os.environ:
+            dll_path = os.environ["TWINCATSDK"] + "\\..\\.."
+            if platform.architecture()[0] == "64bit":
+                dll_path += "\\Common64"
+            else:
+                dll_path += "\\Common32"
+            dlldir_handle = os.add_dll_directory(dll_path)
+        elif "TWINCAT3DIR" in os.environ:
+            dll_path = os.environ["TWINCAT3DIR"] + "\\..\\AdsApi\\TcAdsDll"
+            if platform.architecture()[0] == "64bit":
+                dll_path += "\\x64"
+            dlldir_handle = os.add_dll_directory(dll_path)
     try:
         _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
     finally:
