@@ -4,14 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 3.4.1 [unreleased]
+
+### Changed
+* [#389](https://github.com/stlehmann/pyads/pull/389) / [#393](https://github.com/stlehmann/pyads/pull/393) - Fix for DLL path in TwinCT 4026
+* [#369](https://github.com/stlehmann/pyads/pull/304) Add test for [#304](https://github.com/stlehmann/pyads/pull/304) in `tests/test_testserver.py`
+* [#304](https://github.com/stlehmann/pyads/pull/304) Implemented try-catch when closing ADS notifications in AdsSymbol destructor
+
 ## 3.4.0
 
 ### Added
 * [#293](https://github.com/stlehmann/pyads/pull/2939) Support WSTRINGS in structures
 
 ### Changed
-* [#369](https://github.com/stlehmann/pyads/pull/304) Add test for [#304](https://github.com/stlehmann/pyads/pull/304) in `tests/test_testserver.py`
-* [#304](https://github.com/stlehmann/pyads/pull/304) Implemented try-catch when closing ADS notifications in AdsSymbol destructor
 * [#292](https://github.com/stlehmann/pyads/pull/292) Improve performance of get_value_from_ctype_data for arrays
 * [#363](https://github.com/stlehmann/pyads/pull/363) Allow for platform independent builds
 
