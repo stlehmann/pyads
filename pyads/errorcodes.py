@@ -6,7 +6,7 @@
 
 """
 ERROR_CODES = {
-    0: "No error",
+    0: "no error",
     1: "Internal error",
     2: "No real time",
     3: "Allocation locked - memory error",
