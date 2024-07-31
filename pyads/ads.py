@@ -268,6 +268,8 @@ def size_of_structure(structure_def: StructureDef) -> int:
                 num_of_bytes += 2 * (str_len + 1) * size  # WSTRING uses 2 bytes per character + null-terminator
             else:
                 num_of_bytes += (PLC_DEFAULT_STRING_SIZE + 1) * 2 * size
+        elif type(plc_datatype) is tuple:
+            num_of_bytes += size_of_structure(plc_datatype) * size
         elif plc_datatype not in DATATYPE_MAP:
             raise RuntimeError("Datatype not found")
         else:
@@ -333,6 +335,15 @@ def dict_from_bytes(
                     a = bytearray(byte_list[index: (index + n_bytes)])
                     null_idx = find_wstring_null_terminator(a)
                     var_array.append(a[:null_idx].decode("utf-16-le"))
+                    index += n_bytes
+                elif type(plc_datatype) is tuple:
+                    n_bytes = size_of_structure(plc_datatype)
+                    var_array.append(
+                        dict_from_bytes(
+                            byte_list[index : (index + n_bytes)],
+                            structure_def=plc_datatype,
+                        )
+                    )
                     index += n_bytes
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
@@ -424,6 +435,11 @@ def bytes_from_dict(
                         byte_list += encoded
                         remaining_bytes = 2 * (str_len + 1) - len(encoded)  # 2 bytes a character plus null-terminator
                     byte_list.extend(remaining_bytes * [0])
+                elif type(plc_datatype) is tuple:
+                    bytecount = bytes_from_dict(
+                        values=var[i], structure_def=plc_datatype
+                    )
+                    byte_list += bytecount
                 elif plc_datatype not in DATATYPE_MAP:
                     raise RuntimeError("Datatype not found. Check structure definition")
                 else:
