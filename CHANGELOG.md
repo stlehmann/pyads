@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 3.4.2
+
+### Changed
+
+* [#402](https://github.com/stlehmann/pyads/pull/402) Universal DLL path for TwinCat 4026 and 4024 
+
 ## 3.4.1
 
 ### Changed
@@ -111,7 +117,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 * fixed error with source distribution not containing adslib directory
- 
+
 ### Removed
 
 ## 3.3.1
