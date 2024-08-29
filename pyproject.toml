@@ -33,10 +33,14 @@ tests = [
 ]
 dev = [
     "build",
+    "flake8",
+    "pytest==7.4.4",
+    "coverage",
+    "coveralls",
 ]
 
 [project.urls]
-Repository = "https://github.com/MrLeeh/pyads"
+Repository = "https://github.com/stlehmann/pyads"
 Documentation = "https://pyads.readthedocs.io"
 
 [build-system]
@@ -45,7 +49,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pyads", "pyads.testserver"]
-package-dir = { ""= "src" }
+package-dir = { "" = "src" }
 include-package-data = false
 
 [tool.setuptools.package-data]
