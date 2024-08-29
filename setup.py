@@ -10,7 +10,6 @@ import subprocess
 import functools
 import operator
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
 from setuptools.command.install import install as _install
 from distutils.command.build import build as _build
 from distutils.command.clean import clean as _clean
@@ -118,27 +117,7 @@ class install(_install):
         _install.run(self)
 
 
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = ['--cov-report', 'html', '--cov-report', 'term',
-                            '--cov=pyads']
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
-
-
 cmdclass = {
-    'test': PyTest,
     'build': build,
     'clean': clean,
     'sdist': sdist,
@@ -177,6 +156,5 @@ setup(
     ],
     cmdclass=cmdclass,
     data_files=data_files,
-    tests_require=['pytest', 'pytest-cov'],
     has_ext_modules=lambda: True,
 )
