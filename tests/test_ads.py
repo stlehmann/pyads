@@ -180,6 +180,30 @@ class AdsTest(unittest.TestCase):
         )
         self.assertEqual(pyads.size_of_structure(structure_def), 46)
 
+        # known structure size with defined string
+        substructure_def = (
+            ("rVar", pyads.PLCTYPE_LREAL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 2, 35),
+            ("rVar1", pyads.PLCTYPE_REAL, 4),
+            ("iVar", pyads.PLCTYPE_DINT, 5),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("ivar2", pyads.PLCTYPE_UDINT, 6),
+            ("iVar3", pyads.PLCTYPE_UINT, 7),
+            ("iVar4", pyads.PLCTYPE_BYTE, 1),
+            ("iVar5", pyads.PLCTYPE_SINT, 1),
+            ("iVar6", pyads.PLCTYPE_USINT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 4),
+            ("iVar7", pyads.PLCTYPE_WORD, 1),
+            ("iVar8", pyads.PLCTYPE_DWORD, 1),
+        )
+
+        # test structure with array of nested structure
+        structure_def = (
+            ('iVar9', pyads.PLCTYPE_USINT, 1),
+            ('structVar', substructure_def, 100),
+        )        
+        self.assertEqual(pyads.size_of_structure(structure_def), 17301)
+
     def test_dict_from_bytes(self):
         # type: () -> None
         """Test dict_from_bytes function"""
@@ -438,6 +462,72 @@ class AdsTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             pyads.dict_from_bytes([], structure_def)
 
+        # tests for known values
+        substructure_def = (
+            ("rVar", pyads.PLCTYPE_LREAL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 2, 35),
+            ("wsVar", pyads.PLCTYPE_WSTRING, 2, 10),
+            ("rVar1", pyads.PLCTYPE_REAL, 4),
+            ("iVar", pyads.PLCTYPE_DINT, 5),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("ivar2", pyads.PLCTYPE_UDINT, 6),
+            ("iVar3", pyads.PLCTYPE_UINT, 7),
+            ("iVar4", pyads.PLCTYPE_BYTE, 1),
+            ("iVar5", pyads.PLCTYPE_SINT, 1),
+            ("iVar6", pyads.PLCTYPE_USINT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 4),
+            ("iVar7", pyads.PLCTYPE_WORD, 1),
+            ("iVar8", pyads.PLCTYPE_DWORD, 1),
+        )
+        subvalues = OrderedDict(
+            [
+                ("rVar", 1.11),
+                ("sVar", ["Hello", "World"]),
+                ("wsVar", ["foo", "bar"]),
+                ("rVar1", [2.25, 2.25, 2.5, 2.75]),
+                ("iVar", [3, 4, 5, 6, 7]),
+                ("iVar1", [8, 9, 10]),
+                ("ivar2", [11, 12, 13, 14, 15, 16]),
+                ("iVar3", [17, 18, 19, 20, 21, 22, 23]),
+                ("iVar4", 24),
+                ("iVar5", 25),
+                ("iVar6", 26),
+                ("bVar", [True, False, True, False]),
+                ("iVar7", 27),
+                ("iVar8", 28),
+            ]
+        )
+        # fmt: off
+        subbytes_list = [195, 245, 40, 92, 143, 194, 241, 63, 72, 101, 108, 108, 111,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 111, 114, 108, 100, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 0, 111, 0, 111, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 98, 0, 97, 0, 114,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+                      64, 0, 0, 16, 64, 0, 0, 32, 64, 0, 0, 48, 64, 3, 0, 0, 0, 4,
+                      0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 7, 0, 0, 0, 8, 0, 9, 0, 10,
+                      0, 11, 0, 0, 0, 12, 0, 0, 0, 13, 0, 0, 0, 14, 0, 0, 0, 15, 0,
+                      0, 0, 16, 0, 0, 0, 17, 0, 18, 0, 19, 0, 20, 0, 21, 0, 22, 0,
+                      23, 0, 24, 25, 26, 1, 0, 1, 0, 27, 0, 28, 0, 0, 0]
+        
+        # test structure with array of nested structure
+        structure_def = (
+            ('iVar9', pyads.PLCTYPE_USINT, 1),
+            ('structVar', substructure_def, 2),
+        )
+        values = OrderedDict(
+            [
+                ("iVar9", 29),
+                ("structVar", [subvalues, subvalues,]),
+            ]
+        )
+        # fmt: off
+        bytes_list = [29] + subbytes_list + subbytes_list
+        
+        # fmt: on
+        self.assertEqual(values, pyads.dict_from_bytes(bytes_list, structure_def))
+
     def test_bytes_from_dict(self) -> None:
         """Test bytes_from_dict function"""
         # tests for known values
@@ -690,6 +780,72 @@ class AdsTest(unittest.TestCase):
         # test for incorrect dict
         with self.assertRaises(KeyError):
             pyads.bytes_from_dict(OrderedDict(), structure_def)
+
+                # tests for known values
+        substructure_def = (
+            ("rVar", pyads.PLCTYPE_LREAL, 1),
+            ("sVar", pyads.PLCTYPE_STRING, 2, 35),
+            ("wsVar", pyads.PLCTYPE_WSTRING, 2, 10),
+            ("rVar1", pyads.PLCTYPE_REAL, 4),
+            ("iVar", pyads.PLCTYPE_DINT, 5),
+            ("iVar1", pyads.PLCTYPE_INT, 3),
+            ("ivar2", pyads.PLCTYPE_UDINT, 6),
+            ("iVar3", pyads.PLCTYPE_UINT, 7),
+            ("iVar4", pyads.PLCTYPE_BYTE, 1),
+            ("iVar5", pyads.PLCTYPE_SINT, 1),
+            ("iVar6", pyads.PLCTYPE_USINT, 1),
+            ("bVar", pyads.PLCTYPE_BOOL, 4),
+            ("iVar7", pyads.PLCTYPE_WORD, 1),
+            ("iVar8", pyads.PLCTYPE_DWORD, 1),
+        )
+        subvalues = OrderedDict(
+            [
+                ("rVar", 1.11),
+                ("sVar", ["Hello", "World"]),
+                ("wsVar", ["foo", "bar"]),
+                ("rVar1", [2.25, 2.25, 2.5, 2.75]),
+                ("iVar", [3, 4, 5, 6, 7]),
+                ("iVar1", [8, 9, 10]),
+                ("ivar2", [11, 12, 13, 14, 15, 16]),
+                ("iVar3", [17, 18, 19, 20, 21, 22, 23]),
+                ("iVar4", 24),
+                ("iVar5", 25),
+                ("iVar6", 26),
+                ("bVar", [True, False, True, False]),
+                ("iVar7", 27),
+                ("iVar8", 28),
+            ]
+        )
+        # fmt: off
+        subbytes_list = [195, 245, 40, 92, 143, 194, 241, 63, 72, 101, 108, 108, 111,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 111, 114, 108, 100, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 0, 111, 0, 111, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 98, 0, 97, 0, 114,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+                      64, 0, 0, 16, 64, 0, 0, 32, 64, 0, 0, 48, 64, 3, 0, 0, 0, 4,
+                      0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 7, 0, 0, 0, 8, 0, 9, 0, 10,
+                      0, 11, 0, 0, 0, 12, 0, 0, 0, 13, 0, 0, 0, 14, 0, 0, 0, 15, 0,
+                      0, 0, 16, 0, 0, 0, 17, 0, 18, 0, 19, 0, 20, 0, 21, 0, 22, 0,
+                      23, 0, 24, 25, 26, 1, 0, 1, 0, 27, 0, 28, 0, 0, 0]
+        
+        # test structure with array of nested structure
+        structure_def = (
+            ('iVar9', pyads.PLCTYPE_USINT, 1),
+            ('structVar', substructure_def, 2),
+        )
+        values = OrderedDict(
+            [
+                ("iVar9", 29),
+                ("structVar", [subvalues, subvalues,]),
+            ]
+        )
+        # fmt: off
+        bytes_list = [29] + subbytes_list + subbytes_list
+    
+        # fmt: on
+        self.assertEqual(bytes_list, pyads.bytes_from_dict(values, structure_def))
 
     def test_dict_slice_generator(self):
         """test _dict_slice_generator function."""
