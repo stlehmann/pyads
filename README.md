@@ -35,7 +35,7 @@ conda install pyads
 From source:
 
 ```bash
-git clone https://github.com/MrLeeh/pyads.git --recursive
+git clone https://github.com/stlehmann/pyads.git --recursive
 cd pyads
 python setup.py install
 ```
