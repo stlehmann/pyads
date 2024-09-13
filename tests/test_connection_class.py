@@ -231,9 +231,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         # Assert that the server received the correct command
         self.assert_command_id(requests[0], constants.ADSCOMMAND_READ)
 
-        # We are reading only a single character, which the test-server defaults at 0
-        expected_result = "\x00"
-        self.assertEqual(expected_result, result)
+        # The string buffer is 1024 bytes long, this will be filled with \x0F
+        # and null terminated with \x00 by our test server. The \x00 will get
+        # chopped off during parsing to python string type
+        expected_result = "\x0F" * 1023
+        self.assertEqual(result, expected_result)
 
     def test_write_uint(self):
         value = 100

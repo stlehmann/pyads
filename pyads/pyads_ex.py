@@ -840,7 +840,11 @@ def adsSyncReadReqEx2(
     index_offset_c = ctypes.c_ulong(index_offset)
 
     # Strings were handled specifically before, but their sizes are contained and we
-    # can proceed as normal:
+    # can proceed as normal
+    if data_type == PLCTYPE_STRING or data_type == PLCTYPE_WSTRING:
+        # This implies a string of size 1, which is so are we instead use a large fixed
+        # size buffer:
+        data_type = data_type * STRING_BUFFER
     data = data_type()
 
     data_pointer = ctypes.pointer(data)

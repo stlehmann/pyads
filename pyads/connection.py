@@ -50,7 +50,6 @@ from .constants import (
     ads_type_to_ctype,
     PLCSimpleDataType,
     PLCDataType,
-    STRING_BUFFER,
 )
 from .filetimes import filetime_to_dt
 from .pyads_ex import (
@@ -449,7 +448,7 @@ class Connection(object):
             symbol_size_msg = self.read(
                 ADSIGRP_SYM_UPLOADINFO2,
                 ADSIOFFS_DEVDATA_ADSSTATE,
-                PLCTYPE_STRING * STRING_BUFFER,
+                PLCTYPE_STRING,
                 return_ctypes=True,
             )
             sym_count = struct.unpack("I", symbol_size_msg[0:4])[0]
