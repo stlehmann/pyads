@@ -299,9 +299,7 @@ class AdsSymbol:
         # If simple scalar
         plc_name = "PLCTYPE_" + type_str
 
-        # if type is WSTRING just return the PLCTYPE constant
-        if plc_name.startswith("PLCTYPE_WSTRING"):
-            return constants.PLCTYPE_WSTRING
+        # WSTRING used to be captured specifically but is now handled as normal
 
         if hasattr(constants, plc_name):
             # Map e.g. 'LREAL' to 'PLCTYPE_LREAL' directly based on the name
@@ -345,7 +343,7 @@ class AdsSymbol:
             scalar_type = AdsSymbol.get_type_from_str(scalar_type_str)
 
             if scalar_type:
-                if scalar_type == constants.PLCTYPE_STRING:
+                if scalar_type in [constants.PLCTYPE_STRING, constants.PLCTYPE_WSTRING]:
                     # E.g. `STRING(80)` actually has a size of 81 including the string
                     # terminator, so add one to the size
                     size = size + 1

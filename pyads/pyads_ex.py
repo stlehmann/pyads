@@ -240,6 +240,11 @@ def type_is_wstring(plc_type: Type) -> bool:
     if plc_type == PLCTYPE_WSTRING:
         return True
 
+    # If char array
+    if type(plc_type).__name__ == "PyCArrayType":
+        if plc_type._type_ == PLCTYPE_WSTRING:
+            return True
+
     return False
 
 
@@ -264,13 +269,7 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return read_data.value.decode("utf-8")
 
     if type_is_wstring(plc_type):
-        for ix in range(1, len(read_data), 2):
-            if (read_data[ix - 1], read_data[ix]) == (0, 0):
-                null_idx = ix - 1
-                break
-        else:
-            raise ValueError("No null-terminator found in buffer")
-        return bytearray(read_data[:null_idx]).decode("utf-16-le")
+        return read_data.value  # ctypes automatically decoded the string for us
 
     if type(plc_type).__name__ == "PyCArrayType":
         return list(read_data)
@@ -835,11 +834,9 @@ def adsSyncReadReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if type_is_wstring(data_type):
-        data = (STRING_BUFFER * ctypes.c_uint8)()
-    else:
-        # Regular string types already contain size too, rely on this type:
-        data = data_type()
+    # Strings were handled specifically before, but their sizes are contained and we
+    # can proceed as normal:
+    data = data_type()
 
     data_pointer = ctypes.pointer(data)
     data_length = ctypes.c_ulong(ctypes.sizeof(data))
@@ -862,11 +859,7 @@ def adsSyncReadReqEx2(
 
     # If we're reading a value of predetermined size (anything but wstring, regular
     # strings also contain size), validate that the correct number of bytes were read
-    if (
-        check_length
-        and not type_is_wstring(data_type)
-        and bytes_read.value != data_length.value
-    ):
+    if check_length and bytes_read.value != data_length.value:
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 data_length.value, bytes_read.value
