@@ -266,7 +266,11 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return None
 
     if type_is_string(plc_type):
-        return read_data.value.decode("utf-8")
+        if hasattr(read_data, "value"):
+            return read_data.value.decode("utf-8")
+        return bytes(read_data).decode("utf-8").rstrip("\x00")
+        # `read_data.value` does not always exist, and without it all the null
+        # terminators needs to be removed after decoding
 
     if type_is_wstring(plc_type):
         # `read_data.value` also exists, but could be wrong - explicitly decode instead:
