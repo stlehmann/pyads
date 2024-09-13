@@ -835,11 +835,10 @@ def adsSyncReadReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if type_is_string(data_type):
-        data = (STRING_BUFFER * PLCTYPE_STRING)()
-    elif type_is_wstring(data_type):
+    if type_is_wstring(data_type):
         data = (STRING_BUFFER * ctypes.c_uint8)()
     else:
+        # Regular string types already contain size too, rely on this type:
         data = data_type()
 
     data_pointer = ctypes.pointer(data)
@@ -861,11 +860,11 @@ def adsSyncReadReqEx2(
     if error_code:
         raise ADSError(error_code)
 
-    # If we're reading a value of predetermined size (anything but a string or wstring),
-    # validate that the correct number of bytes were read
+    # If we're reading a value of predetermined size (anything but wstring, regular
+    # strings also contain size), validate that the correct number of bytes were read
     if (
         check_length
-        and not(type_is_string(data_type) or type_is_wstring(data_type))
+        and not type_is_wstring(data_type)
         and bytes_read.value != data_length.value
     ):
         raise RuntimeError(

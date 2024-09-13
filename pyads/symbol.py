@@ -345,6 +345,10 @@ class AdsSymbol:
             scalar_type = AdsSymbol.get_type_from_str(scalar_type_str)
 
             if scalar_type:
+                if scalar_type == constants.PLCTYPE_STRING:
+                    # E.g. `STRING(80)` actually has a size of 81 including the string
+                    # terminator, so add one to the size
+                    size = size + 1
                 return scalar_type * size
 
         # We allow unmapped types at this point - Instead we will throw  an
