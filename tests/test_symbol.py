@@ -617,7 +617,7 @@ class TypesTestCase(unittest.TestCase):
     def test_string(self):
         type_str = 'STRING(80)'  # This is how a string might appear
         plc_type = AdsSymbol.get_type_from_str(type_str)
-        self.assertSizeOf(plc_type, 1 * 80)
+        self.assertSizeOf(plc_type, 1 * 81)
 
 
 if __name__ == "__main__":

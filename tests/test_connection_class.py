@@ -1451,7 +1451,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         var = PLCVariable(
             "wstr",
             expected1.encode("utf-16-le") + b"\x00\x00",
-            constants.ADST_WSTRING, "WSTRING"
+            constants.ADST_WSTRING, "WSTRING(80)"
         )
         self.handler.add_variable(var)
 
