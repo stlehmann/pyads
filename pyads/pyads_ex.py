@@ -269,7 +269,8 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return read_data.value.decode("utf-8")
 
     if type_is_wstring(plc_type):
-        return read_data.value  # ctypes automatically decoded the string for us
+        # `read_data.value` also exists, but could be wrong - explicitly decode instead:
+        return bytes(read_data).decode("utf-16-le").rstrip("\x00")
 
     if type(plc_type).__name__ == "PyCArrayType":
         return list(read_data)
@@ -857,9 +858,13 @@ def adsSyncReadReqEx2(
     if error_code:
         raise ADSError(error_code)
 
-    # If we're reading a value of predetermined size (anything but wstring, regular
-    # strings also contain size), validate that the correct number of bytes were read
-    if check_length and bytes_read.value != data_length.value:
+    # If we're reading a value of predetermined size (anything but strings, which can be shorted
+    # because of null-termination), validate that the correct number of bytes were read
+    if (
+        check_length 
+        and not (type_is_string(data_type) or type_is_wstring(data_type))
+        and bytes_read.value != data_length.value
+    ):
         raise RuntimeError(
             "Insufficient data (expected {0} bytes, {1} were read).".format(
                 data_length.value, bytes_read.value
