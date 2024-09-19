@@ -57,7 +57,9 @@ pyads = ["adslib/**"]
 # ^ Always include the adslib source, necessary for an sdist (source) package build
 
 [tool.setuptools.exclude-package-data]
-pyads = ["*.a", "*.o", "obj/*", "*.bin", "*.so"]
+pyads = [
+    "*.a", "*.o", "obj/*", "*.bin", "*.so"
+]
 # ^ But exclude build files from adslib source
 
 [tool.setuptools.dynamic]
