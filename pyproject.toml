@@ -44,23 +44,23 @@ Repository = "https://github.com/stlehmann/pyads"
 Documentation = "https://pyads.readthedocs.io"
 
 [build-system]
-requires = ["setuptools >= 61.0", "setuptools-scm"]
+requires = ["setuptools >= 61.0", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pyads", "pyads.testserver"]
 package-dir = { "" = "src" }
-include-package-data = false
+include-package-data = true
 
 [tool.setuptools.package-data]
 pyads = ["adslib/**"]
-# ^ Always include the adslib source, necessary for an sdist (source) package build
+# The adslib source is not always needed, it is handled in `setup.py` instead
 
 [tool.setuptools.exclude-package-data]
 pyads = [
-    "*.a", "*.o", "obj/*", "*.bin", "*.so"
+    "*.a", "*.o", "obj/*", "*.bin", "*.so",
 ]
-# ^ But exclude build files from adslib source
+# ^ But always exclude build files from adslib source
 
 [tool.setuptools.dynamic]
 version = {attr = "pyads.__version__"}

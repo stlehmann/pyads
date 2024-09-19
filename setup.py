@@ -1,10 +1,12 @@
 from pathlib import Path
 from setuptools import setup
-from distutils.command.build import build
-from distutils.command.install import install
+from setuptools.command.install import install
+from setuptools.command.build_py import build_py
+from setuptools.command.build import build
 from wheel.bdist_wheel import bdist_wheel
 import sys
 import sysconfig
+import shutil
 import os
 import subprocess
 
@@ -43,7 +45,7 @@ class CustomBuild(build):
             remove_binaries()
             create_binaries()
 
-        build.run(self)  # Don't use `super()` for compatibility
+        super().run()
 
 
 class CustomInstall(install):
@@ -58,7 +60,7 @@ class CustomInstall(install):
                 str(adslib_lib),
                 str(adslib_dest),
             )
-        install.run(self)
+        super().run()
 
 
 class CustomBDistWheel(bdist_wheel):
@@ -86,10 +88,24 @@ class CustomBDistWheel(bdist_wheel):
         return impl_tag, abi_tag, plat_tag
 
 
+class CustomBuildPy(build_py):
+    """Skip adslib during source selection for wheel build."""
+
+    def run(self):
+        super().run()
+
+        # If this is run as part of a wheel build, simply remove "adslib/" from
+        # the build folder
+        if isinstance(self.distribution.get_command_obj('bdist_wheel'), bdist_wheel):
+            adslib_dir = Path(self.build_lib) / "pyads" / "adslib"
+            shutil.rmtree(adslib_dir)
+
+
 # noinspection PyTypeChecker
 setup(
     cmdclass={
         "build": CustomBuild,
+        "build_py": CustomBuildPy,
         "install": CustomInstall,
         "bdist_wheel": CustomBDistWheel,
     },
