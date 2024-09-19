@@ -1,104 +1,96 @@
+from pathlib import Path
 from setuptools import setup
 from distutils.command.build import build
+from distutils.command.install import install
+from wheel.bdist_wheel import bdist_wheel
 import sys
+import sysconfig
+import os
+import subprocess
 
-# import glob
-# import os
-# import shutil
-# import subprocess
-# import functools
-# import operator
-# from setuptools.command.install import install as _install
-# from distutils.command.clean import clean as _clean
-# from distutils.command.sdist import sdist as _sdist
+
+adslib_relative = "src/pyads/adslib"
+adslib_root = Path(__file__).parent.absolute() / adslib_relative
 
 
 def platform_is_linux():
     return sys.platform.startswith("linux") or sys.platform.startswith("darwin")
 
 
-# def get_files_rec(directory):
-#     res = []
-#     for path, directory, filenames in os.walk(directory):
-#         files = [os.path.join(path, fn) for fn in filenames]
-#         res.append((path, files))
-#     return res
-#
-#
-# def create_binaries():
-#     subprocess.call(["make", "-C", "adslib"])
-#
-#
-# def remove_binaries():
-#     """Remove all binary files in the adslib directory."""
-#     patterns = (
-#         "adslib/*.a",
-#         "adslib/*.o",
-#         "adslib/obj/*.o",
-#         "adslib/*.bin",
-#         "adslib/*.so",
-#     )
-#
-#     for f in functools.reduce(operator.iconcat, [glob.glob(p) for p in patterns]):
-#         os.remove(f)
-#
-#
-# def copy_sharedlib():
-#     try:
-#         shutil.copy("adslib/adslib.so", "src/pyads/adslib.so")
-#     except OSError:
-#         pass
-#
-#
-# def remove_sharedlib():
-#     try:
-#         os.remove("adslib.so")
-#     except OSError:
-#         pass
-#
-#
-# class build(_build):
-#     def run(self):
-#         if platform_is_linux():
-#             remove_binaries()
-#             create_binaries()
-#             copy_sharedlib()
-#             remove_binaries()
-#         _build.run(self)
-#
-#
-# class clean(_clean):
-#     def run(self):
-#         if platform_is_linux():
-#             remove_binaries()
-#             remove_sharedlib()
-#         _clean.run(self)
-#
-#
-# class sdist(_sdist):
-#     def run(self):
-#         if platform_is_linux():
-#             remove_binaries()
-#         _sdist.run(self)
-#
-#
-# class install(_install):
-#     def run(self):
-#         if platform_is_linux():
-#             create_binaries()
-#             copy_sharedlib()
-#         _install.run(self)
+def create_binaries():
+    # Use `make` to build adslib
+    # Build is done in-place, afterward e.g. `src/pyads/adslib/adslib.so` will exist
+    subprocess.call(["make", "-C", adslib_relative])
+
+
+def remove_binaries():
+    """Remove all binary files in the adslib directory."""
+    patterns = (
+        "*.a",
+        "**/*.o",
+        "*.bin",
+        "*.so",
+    )
+    for pattern in patterns:
+        for file in adslib_root.glob(pattern):
+            os.remove(file)
 
 
 class CustomBuild(build):
     """Compile adslib (but only for Linux)."""
     def run(self):
-        pass
-        # if platform_is_linux():
+        if platform_is_linux():
+            remove_binaries()
+            create_binaries()
 
+        build.run(self)  # Don't use `super()` for compatibility
+
+
+class CustomInstall(install):
+    """Install compiled adslib (but only for Linux)."""
+    def run(self):
+        if platform_is_linux():
+            adslib_lib = adslib_root / "adslib.so"
+            adslib_dest = Path(self.install_lib)
+            if not adslib_dest.exists():
+                adslib_dest.mkdir(parents=True)
+            self.copy_file(
+                str(adslib_lib),
+                str(adslib_dest),
+            )
+        install.run(self)
+
+
+class CustomBDistWheel(bdist_wheel):
+    """Manually mark our wheel for a specific platform."""
+
+    def get_tag(self):
+        """
+
+        See https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/
+        """
+        impl_tag = "py2.py3"  # Same wheel across Python versions
+        abi_tag = "none"  # Same wheeel across ABI versions (not a C-extension)
+        # But we need to differentiate on the platform for the compiled adslib:
+        plat_tag = sysconfig.get_platform().replace("-", "_").replace(".", "_")
+
+        if plat_tag.startswith("linux_"):
+            # But the basic Linux prefix is deprecated, use new scheme instead:
+            plat_tag = "manylinux_2_24" + plat_tag[5:]
+
+        # MacOS platform tags area already okay
+
+        # We also keep Windows tags in place, instead of using `any`, to prevent an
+        # obscure Linux platform to getting a wheel without adslib source
+
+        return impl_tag, abi_tag, plat_tag
 
 
 # noinspection PyTypeChecker
 setup(
-    cmdclass={},
+    cmdclass={
+        "build": CustomBuild,
+        "install": CustomInstall,
+        "bdist_wheel": CustomBDistWheel,
+    },
 )
