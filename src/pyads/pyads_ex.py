@@ -81,14 +81,19 @@ if platform_is_windows():  # pragma: no cover, skip Windows test
     )
 
 elif platform_is_linux():
-    # try to load local adslib.so in favor to global one
-    local_adslib = os.path.join(os.path.dirname(__file__), "adslib.so")
-    if os.path.isfile(local_adslib):
-        adslib = local_adslib
-    else:
-        adslib = "adslib.so"
+    adslib_path = None
 
-    _adsDLL = ctypes.CDLL(adslib)
+    for p in sys.path:
+        adslib_path = os.path.join(p, "adslib.so")
+        if os.path.exists(adslib_path):
+            break
+
+    if adslib_path is None:
+        raise OSError(f"Failed to locate `adslib.so` library in {sys.path}")
+
+    # For some reason loading on just "adslib.so" always fails, even if it is under
+    # sys.path, so manually search for it first
+    _adsDLL = ctypes.CDLL(adslib_path)
 
     NOTEFUNC = ctypes.CFUNCTYPE(
         None,
