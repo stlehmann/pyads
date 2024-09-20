@@ -44,23 +44,21 @@ Repository = "https://github.com/stlehmann/pyads"
 Documentation = "https://pyads.readthedocs.io"
 
 [build-system]
-requires = ["setuptools >= 61.0", "setuptools-scm", "wheel"]
+requires = ["setuptools >= 61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pyads", "pyads.testserver"]
 package-dir = { "" = "src" }
 include-package-data = true
+# ^ needed for MANIFEST.in
 
-[tool.setuptools.package-data]
-pyads = ["adslib/**"]
-# The adslib source is not always needed, it is handled in `setup.py` instead
+#[tool.setuptools.package-data]
+# Package data (adslib/) is handled by MANIFEST.in instead
 
 [tool.setuptools.exclude-package-data]
-pyads = [
-    "*.a", "*.o", "obj/*", "*.bin", "*.so",
-]
-# ^ But always exclude build files from adslib source
+pyads = ["adslib/**"]
+# ^ Odd trick, put this excludes the adslib source again from a wheel build and from a pip install
 
 [tool.setuptools.dynamic]
 version = {attr = "pyads.__version__"}
