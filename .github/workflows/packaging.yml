@@ -52,3 +52,44 @@ jobs:
       with:
         name: package-all
         path: dist
+
+  test_artifacts:
+    name: Test distributions
+    needs: make_artifact
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        # Can't really test with Windows because 'TcAdsDll.dll' will be missing
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: package-all
+          path: dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Now install the package from the local wheels and try to use it:
+      - run: |
+          pip install pyads --no-index --find-links ./dist
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)" 
+
+  test_editable:
+    name: Test editable install
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: |
+          pip install -e . -vv
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)"
