@@ -1,7 +1,7 @@
 from pathlib import Path
 from setuptools import setup
 from setuptools.command.install import install
-from setuptools.command.build import build
+from setuptools.command.build_py import build_py
 from wheel.bdist_wheel import bdist_wheel
 import sys
 import sysconfig
@@ -9,39 +9,61 @@ import os
 import subprocess
 
 
-adslib_relative = "adslib"
-adslib_root = Path(__file__).parent.absolute() / adslib_relative
+src_folder = Path(__file__).parent.absolute() / "src"
+# ^ This will be on PATH for editable install
+adslib_folder = Path(__file__).parent.absolute() / "adslib"
+adslib_file = src_folder / "adslib.so"
 
 
-def platform_is_linux():
-    return sys.platform.startswith("linux") or sys.platform.startswith("darwin")
+class CustomBuildPy(build_py):
+    """Custom command for `build_py`.
 
+    This command class is used because it is always run, also for an editable install.
+    """
 
-def create_binaries():
-    # Use `make` to build adslib
-    # Build is done in-place, afterward e.g. `src/pyads/adslib/adslib.so` will exist
-    subprocess.call(["make", "-C", adslib_relative])
+    @classmethod
+    def compile_adslib(cls) -> bool:
+        """Return `True` if adslib was actually compiled."""
+        if cls.platform_is_unix():
+            cls._clean_library()
+            cls._compile_library()
+            return True
 
+        return False
 
-def remove_binaries():
-    """Remove all binary files in the adslib directory."""
-    patterns = (
-        "*.a",
-        "**/*.o",
-        "*.bin",
-        "*.so",
-    )
-    for pattern in patterns:
-        for file in adslib_root.glob(pattern):
-            os.remove(file)
+    @staticmethod
+    def _compile_library():
+        """Use `make` to build adslib - build is done in-place."""
+        # Produce `adslib.so`:
+        subprocess.call(["make", "-C", "adslib"])
 
+    @staticmethod
+    def _clean_library():
+        """Remove all compilation artifacts."""
+        patterns = (
+            "*.a",
+            "**/*.o",
+            "*.bin",
+            "*.so",
+        )
+        for pattern in patterns:
+            for file in adslib_folder.glob(pattern):
+                os.remove(file)
 
-class CustomBuild(build):
-    """Compile adslib (but only for Linux)."""
+        if adslib_file.is_file():
+            os.remove(adslib_file)
+
+    @staticmethod
+    def platform_is_unix():
+        return sys.platform.startswith("linux") or sys.platform.startswith("darwin")
+
     def run(self):
-        if platform_is_linux():
-            remove_binaries()
-            create_binaries()
+        if self.compile_adslib():
+            # Move .so file from Git submodule into src/ to have it on PATH:
+            self.move_file(
+                str(adslib_folder / "adslib.so"),
+                str(adslib_file),
+            )
 
         super().run()
 
@@ -49,13 +71,12 @@ class CustomBuild(build):
 class CustomInstall(install):
     """Install compiled adslib (but only for Linux)."""
     def run(self):
-        if platform_is_linux():
-            adslib_lib = adslib_root / "adslib.so"
+        if CustomBuildPy.platform_is_unix():
             adslib_dest = Path(self.install_lib)
             if not adslib_dest.exists():
                 adslib_dest.mkdir(parents=True)
             self.copy_file(
-                str(adslib_lib),
+                str(adslib_file),
                 str(adslib_dest),
             )
         super().run()
@@ -89,10 +110,11 @@ class CustomBDistWheel(bdist_wheel):
 # noinspection PyTypeChecker
 setup(
     cmdclass={
-        "build": CustomBuild,
+        "build_py": CustomBuildPy,
         "install": CustomInstall,
         "bdist_wheel": CustomBDistWheel,
     },
 )
+# See `pyproject.toml` for all package information
 
 # Also see `MANIFEST.in`
