@@ -3,7 +3,7 @@
 # MANIFEST.in is a little outdated but the best solution to differentiate files between sdist and wheel builds.
 #
 
-graft adslib/
+graft adslib
 global-exclude *.a *.o *.obj *.bin *.so
-prune obj/
-prune tests/
+prune obj
+prune tests
