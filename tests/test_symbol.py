@@ -491,6 +491,32 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
 
+    def test_add_notification_structure(self):
+        """Test notification registering for structures"""
+        structure_def = (
+            ("a", pyads.PLCTYPE_INT, 1),
+            ("b", pyads.PLCTYPE_INT, 1),
+            ("s", pyads.PLCTYPE_STRING, 1)
+        )
+        values = [{"a": 1, "b": 2, "s": "foo"}, {"a": 3, "b": 4, "s": "bar"}]
+        data = bytes(bytes_from_dict(values, structure_def))
+
+        self.handler.add_variable(
+            PLCVariable("TestStructure", data, constants.ADST_VOID, symbol_type="TestStructure"))
+        
+        def my_callback(*_):
+            return
+
+        with self.plc:
+
+            symbol = self.plc.get_symbol("TestStructure", structure_def=structure_def, array_size=2)
+            
+            handles = symbol.add_device_notification(my_callback)
+
+            symbol.del_device_notification(handles)
+
+        self.assertAdsRequestsCount(3)  # READWRITE, ADDNOTE and DELNOTE
+
     def test_add_notification_delete(self):
         """Test notification registering"""
 
