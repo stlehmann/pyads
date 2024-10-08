@@ -252,7 +252,7 @@ class AdsSymbol:
         """
 
         if attr is None:
-            if self.structure_def is not None:
+            if self.is_structure:
                 attr = NotificationAttrib(length=self._structure_size)
             else:
                 attr = NotificationAttrib(length=sizeof(self.plc_type))
