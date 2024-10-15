@@ -8,7 +8,7 @@ operating systems in the sections below.
 
 To identify each side of a route we will use the terms *client* and
 *target*. The *client* is your computer where pyads runs on. The
-*target* is you plc or remote computer which you want to connect to.
+*target* is your plc or remote computer which you want to connect to.
 
 Creating routes on Windows
 --------------------------
