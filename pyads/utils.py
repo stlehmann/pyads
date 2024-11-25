@@ -9,6 +9,9 @@ import functools
 import sys
 import warnings
 
+from .structs import SAdsSymbolEntry
+from .constants import PLC_STRING_TYPE_NAME, PLC_DEFAULT_STRING_SIZE
+
 from typing import Callable, Any, Optional
 
 
@@ -72,3 +75,31 @@ def find_wstring_null_terminator(data: bytearray) -> Optional[int]:
             return ix - 1
     else:
         return None
+
+def get_num_of_chars(symbol_type_str: SAdsSymbolEntry.symbol_type) -> int:
+    """Gets the number of characters in a Beckhoff string using the symbol type str.
+
+    TODO: Find this information some other way without string manipulation of the symbol type?
+
+    Args:
+        symbol_type_str (SAdsSymbolEntry.symbol_type): Symbol type of a string, wstring, or a string array
+
+    Returns:
+        num_characters (int): The number of characters im the string
+    """
+
+    # Find "STRING" in type 
+    pos_of_string_in_name = symbol_type_str.upper().find(PLC_STRING_TYPE_NAME)
+
+    # If not string return -1
+    if pos_of_string_in_name == -1:
+        return(-1)
+
+    # Generate start index based on the position of PLC_STRING_TYPE_NAME in the array
+    start_index = pos_of_string_in_name + len(PLC_STRING_TYPE_NAME) + 1
+
+    # Return the value cast as int
+    try:
+        return(int(symbol_type_str[start_index:-1]))
+    except ValueError:
+        return(PLC_DEFAULT_STRING_SIZE)
