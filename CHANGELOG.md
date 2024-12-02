@@ -9,11 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 * [#384](https://github.com/stlehmann/pyads/pull/384) Enable processing of nested structures
 
+### Changed
+
+* [#437](https://github.com/stlehmann/pyads/pull/437) Solve issue of too little buffer space allocated to receive for automatic AMS NetID query
+
 ## 3.4.2
 
 ### Changed
 
-* [#402](https://github.com/stlehmann/pyads/pull/402) Universal DLL path for TwinCat 4026 and 4024 
+* [#402](https://github.com/stlehmann/pyads/pull/402) Universal DLL path for TwinCat 4026 and 4024
 
 ## 3.4.1
 
