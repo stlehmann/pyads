@@ -394,8 +394,10 @@ def adsGetNetIdForPLC(ip_address: str) -> str:
     data_header += struct.pack(">4s", b"\x00\x00\x00\x00")  # Block of unknown
 
     data, addr = send_raw_udp_message(
-        ip_address, data_header, 395
-    )  # PLC response is 395 bytes long
+        ip_address, data_header, 398
+    )
+    # PLC response should be 395 bytes long, but some PLCs running build 4026+
+    # respond with more bytes, so this takes care of that
 
     rcvd_packet_header = data[
         0:12
