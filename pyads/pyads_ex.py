@@ -240,6 +240,11 @@ def type_is_wstring(plc_type: Type) -> bool:
     if plc_type == PLCTYPE_WSTRING:
         return True
 
+    # If char array
+    if type(plc_type).__name__ == "PyCArrayType":
+        if plc_type._type_ == PLCTYPE_WSTRING:
+            return True
+
     return False
 
 
@@ -261,16 +266,15 @@ def get_value_from_ctype_data(read_data: Optional[Any], plc_type: Type) -> Any:
         return None
 
     if type_is_string(plc_type):
-        return read_data.value.decode("utf-8")
+        if hasattr(read_data, "value"):
+            return read_data.value.decode("utf-8")
+        return bytes(read_data).decode("utf-8").rstrip("\x00")
+        # `read_data.value` does not always exist, and without it all the null
+        # terminators needs to be removed after decoding
 
     if type_is_wstring(plc_type):
-        for ix in range(1, len(read_data), 2):
-            if (read_data[ix - 1], read_data[ix]) == (0, 0):
-                null_idx = ix - 1
-                break
-        else:
-            raise ValueError("No null-terminator found in buffer")
-        return bytearray(read_data[:null_idx]).decode("utf-16-le")
+        # `read_data.value` also exists, but could be wrong - explicitly decode instead:
+        return bytes(read_data).decode("utf-16-le").rstrip("\x00")
 
     if type(plc_type).__name__ == "PyCArrayType":
         return list(read_data)
@@ -837,12 +841,13 @@ def adsSyncReadReqEx2(
     index_group_c = ctypes.c_ulong(index_group)
     index_offset_c = ctypes.c_ulong(index_offset)
 
-    if type_is_string(data_type):
-        data = (STRING_BUFFER * PLCTYPE_STRING)()
-    elif type_is_wstring(data_type):
-        data = (STRING_BUFFER * ctypes.c_uint8)()
-    else:
-        data = data_type()
+    # Strings were handled specifically before, but their sizes are contained and we
+    # can proceed as normal
+    if data_type == PLCTYPE_STRING or data_type == PLCTYPE_WSTRING:
+        # This implies a string of size 1, which is so are we instead use a large fixed
+        # size buffer:
+        data_type = data_type * STRING_BUFFER
+    data = data_type()
 
     data_pointer = ctypes.pointer(data)
     data_length = ctypes.c_ulong(ctypes.sizeof(data))
@@ -863,11 +868,11 @@ def adsSyncReadReqEx2(
     if error_code:
         raise ADSError(error_code)
 
-    # If we're reading a value of predetermined size (anything but a string or wstring),
-    # validate that the correct number of bytes were read
+    # If we're reading a value of predetermined size (anything but strings, which can be shorted
+    # because of null-termination), validate that the correct number of bytes were read
     if (
-        check_length
-        and not(type_is_string(data_type) or type_is_wstring(data_type))
+        check_length 
+        and not (type_is_string(data_type) or type_is_wstring(data_type))
         and bytes_read.value != data_length.value
     ):
         raise RuntimeError(
