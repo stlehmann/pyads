@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 * [#437](https://github.com/stlehmann/pyads/pull/437) Solve issue of too little buffer space allocated to receive for automatic AMS NetID query
+* [#438](https://github.com/stlehmann/pyads/pull/438) Fix issue with read list by name using structure defs if more than MAX_SUB_ADS_COMMANDS
 
 ## 3.4.2
 
