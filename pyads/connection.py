@@ -76,6 +76,9 @@ from .pyads_ex import (
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
     ADSError,
+    get_value_from_ctype_data,
+    type_is_wstring,
+    type_is_string,
 )
 from .structs import (
     AmsAddr,
@@ -1019,9 +1022,9 @@ class Connection(object):
             addressof(contents) + SAdsNotificationHeader.data.offset
         )
         value: Any
-        if plc_datatype == PLCTYPE_STRING:
-            # read only until null-termination character
-            value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
+        if type_is_string(plc_datatype) or type_is_wstring(plc_datatype):
+            # Re-use string parsing from pyads_ex: (but doesn't work for other types)
+            value = get_value_from_ctype_data(data, plc_datatype)
 
         elif plc_datatype is not None and issubclass(plc_datatype, Structure):
             value = plc_datatype()
