@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, T
 
 from . import constants  # To access all constants, use package notation
 from .constants import PLCDataType
-from .pyads_ex import adsGetSymbolInfo
+from .pyads_ex import adsGetSymbolInfo, ADSError
 from .structs import NotificationAttrib
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
@@ -229,7 +229,10 @@ class AdsSymbol:
 
     def __del__(self) -> None:
         """Destructor"""
-        self.clear_device_notifications()
+        try:
+            self.clear_device_notifications()
+        except ADSError:
+            pass  # Quietly continue, without a connection no cleanup could be done
 
     def add_device_notification(
             self,

@@ -61,9 +61,11 @@ if platform_is_windows():  # pragma: no cover, skip Windows test
         # Starting with version 3.8, CPython does not consider the PATH environment
         # variable any more when resolving DLL paths. The following works with the default
         # installation of the Beckhoff TwinCAT ADS DLL.
-        dll_path = os.environ["TWINCAT3DIR"] + "\\..\\AdsApi\\TcAdsDll"
+        dll_path = os.environ["TWINCAT3DIR"] + "\\.."
         if platform.architecture()[0] == "64bit":
-            dll_path += "\\x64"
+            dll_path += "\\Common64"
+        else:
+            dll_path += "\\Common32"
         dlldir_handle = os.add_dll_directory(dll_path)
     try:
         _adsDLL = ctypes.WinDLL("TcAdsDll.dll")  # type: ignore
@@ -392,8 +394,10 @@ def adsGetNetIdForPLC(ip_address: str) -> str:
     data_header += struct.pack(">4s", b"\x00\x00\x00\x00")  # Block of unknown
 
     data, addr = send_raw_udp_message(
-        ip_address, data_header, 395
-    )  # PLC response is 395 bytes long
+        ip_address, data_header, 398
+    )
+    # PLC response should be 395 bytes long, but some PLCs running build 4026+
+    # respond with more bytes, so this takes care of that
 
     rcvd_packet_header = data[
         0:12

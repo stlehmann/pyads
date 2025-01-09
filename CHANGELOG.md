@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 3.5.0 (Unreleased)
+
+### Added
+* [#384](https://github.com/stlehmann/pyads/pull/384) Enable processing of nested structures
+
+### Changed
+
+* [#437](https://github.com/stlehmann/pyads/pull/437) Solve issue of too little buffer space allocated to receive for automatic AMS NetID query
+* [#438](https://github.com/stlehmann/pyads/pull/438) Fix issue with read list by name using structure defs if more than MAX_SUB_ADS_COMMANDS
+
+## 3.4.2
+
+### Changed
+
+* [#402](https://github.com/stlehmann/pyads/pull/402) Universal DLL path for TwinCat 4026 and 4024
+
+## 3.4.1
+
+### Changed
+* [#392](https://github.com/stlehmann/pyads/pull/392) Fixed bug where port left open in Linux if exception during connecting
+* [#389](https://github.com/stlehmann/pyads/pull/389) / [#393](https://github.com/stlehmann/pyads/pull/393) Fix for DLL path in TwinCT 4026
+* [#369](https://github.com/stlehmann/pyads/pull/304) Add test for [#304](https://github.com/stlehmann/pyads/pull/304) in `tests/test_testserver.py`
+* [#304](https://github.com/stlehmann/pyads/pull/304) Implemented try-catch when closing ADS notifications in AdsSymbol destructor
+* [#325](https://github.com/stlehmann/pyads/pull/325) Added missing ADS return codes
+
 ## 3.4.0
 
 ### Added
@@ -102,7 +127,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 * fixed error with source distribution not containing adslib directory
- 
+
 ### Removed
 
 ## 3.3.1

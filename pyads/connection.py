@@ -75,6 +75,7 @@ from .pyads_ex import (
     adsSyncAddDeviceNotificationReqEx,
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
+    ADSError,
 )
 from .structs import (
     AmsAddr,
@@ -195,7 +196,12 @@ class Connection(object):
         self._port = adsPortOpenEx()
 
         if linux:
-            adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+            try:
+                adsAddRoute(self._adr.netIdStruct(), self.ip_address)
+            except ADSError:
+                adsPortCloseEx(self._port)
+                self._port = None
+                raise
 
         self._open = True
 
@@ -592,8 +598,9 @@ class Connection(object):
                                 list(structure_defs.keys()))  # type: ignore
 
             for data_name, structure_def in structure_defs.items():  # type: ignore
-                result[data_name] = dict_from_bytes(result[data_name],
-                                                    structure_def)  # type: ignore
+                if data_name in result:
+                    result[data_name] = dict_from_bytes(result[data_name],
+                        structure_def)
 
             return result
 
@@ -685,7 +692,7 @@ class Connection(object):
         return adsSyncWriteByNameEx(
             self._port, self._adr, data_name, value, plc_datatype, handle=handle
         )
-    
+
     def write_list_by_name(
             self,
             data_names_and_values: Dict[str, Any],
