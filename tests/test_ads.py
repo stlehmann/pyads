@@ -847,6 +847,23 @@ class AdsTest(unittest.TestCase):
         # fmt: on
         self.assertEqual(bytes_list, pyads.bytes_from_dict(values, structure_def))
 
+        # test single nested structure (issue #440)
+        structure_def = (
+            ('iVar9', pyads.PLCTYPE_USINT, 1),
+            ('structVar', substructure_def, 1),
+        )
+        values = OrderedDict(
+            [
+                ("iVar9", 29),
+                ("structVar", subvalues)
+            ]
+        )
+        # fmt: off
+        bytes_list = [29] + subbytes_list
+    
+        # fmt: on
+        self.assertEqual(bytes_list, pyads.bytes_from_dict(values, structure_def))
+
     def test_dict_slice_generator(self):
         """test _dict_slice_generator function."""
         test_dict = {
