@@ -92,6 +92,7 @@ from .ads import (
     _dict_slice_generator,
     bytes_from_dict,
     size_of_structure,
+    ADSError,
 )
 from .symbol import AdsSymbol
 from .utils import decode_ads
@@ -174,16 +175,16 @@ class Connection(object):
 
         If cache_symbol_info is True then the SymbolInfo will be cached and adsGetSymbolInfo
         will only used once.
-
         """
+        info = None
         if cache_symbol_info:
             info = self._symbol_info_cache.get(data_name)
-            if info is None:
-                info = adsGetSymbolInfo(self._port, self._adr, data_name)
-                self._symbol_info_cache[data_name] = info
-        else:
+        if info is None:
             info = adsGetSymbolInfo(self._port, self._adr, data_name)
-        return AdsSymbol.get_type_from_str(info.symbol_type)
+        if cache_symbol_info:
+            self._symbol_info_cache[data_name] = info
+
+        return AdsSymbol.get_type_from_info(info)
 
     def open(self) -> None:
         """Connect to the TwinCAT message router."""
@@ -543,6 +544,10 @@ class Connection(object):
             plc_datatype = self._query_plc_datatype_from_name(data_name,
                                                               cache_symbol_info)
 
+        if plc_datatype is None:
+            # `adsSyncReadReqEx2()` will fail for a None type
+            raise ADSError(None, f"Failed to detect datatype for `{data_name}`")
+
         return adsSyncReadByNameEx(
             self._port,
             self._adr,
@@ -688,6 +693,10 @@ class Connection(object):
         if plc_datatype is None:
             plc_datatype = self._query_plc_datatype_from_name(data_name,
                                                               cache_symbol_info)
+
+        if plc_datatype is None:
+            # `adsSyncWriteReqEx()` does not support `None` for a type
+            raise ADSError(None, f"Failed to detect datatype for `{data_name}`")
 
         return adsSyncWriteByNameEx(
             self._port, self._adr, data_name, value, plc_datatype, handle=handle
