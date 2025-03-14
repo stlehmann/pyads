@@ -15,12 +15,12 @@ conda install pyads
 From source:
 
 ```bash
-git clone https://github.com/MrLeeh/pyads.git --recursive
+git clone https://github.com/stlehmann/pyads.git --recursive
 cd pyads
 python setup.py install
 ```
 
-Note: pyads only supports python 3.7 and above.
+Note: pyads only supports python 3.8 and above.
 
 ## Installation on Linux
 
