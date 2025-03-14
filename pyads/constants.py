@@ -101,9 +101,11 @@ DATATYPE_MAP: Dict[Type, str] = {
     PLCTYPE_USINT: "<B",
     PLCTYPE_LINT: "<q",
     PLCTYPE_ULINT: "<Q",
-    PLCTYPE_WORD: "<H",
+    PLCTYPE_WORD: "<H"
 }
 
+# Used in get_string_size.get_string_size()
+PLC_STRING_TYPE_NAME = "STRING"
 
 # ADS data types
 ADST_VOID: int = 0

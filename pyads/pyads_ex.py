@@ -15,7 +15,7 @@ import sys
 from contextlib import closing
 from functools import wraps
 
-from .utils import platform_is_linux, platform_is_windows, platform_is_freebsd, find_wstring_null_terminator
+from .utils import platform_is_linux, platform_is_windows, platform_is_freebsd, find_wstring_null_terminator, get_num_of_chars
 from .structs import (
     AmsAddr,
     SAmsAddr,
@@ -1003,16 +1003,48 @@ def adsSumRead(
                 value = sum_response[
                     offset: offset + data_symbols[data_name].size]
             elif data_symbols[data_name].dataType == ADST_STRING:
-                # find null-terminator 1 Byte
-                null_idx = sum_response[offset: offset + data_symbols[data_name].size].index(0)
-                value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-8")
+                num_string_chars = get_num_of_chars(data_symbols[data_name].symbol_type)
+                # String size in PLC + null-terminator 1 Byte
+                element_size = num_string_chars + 1
+
+                if num_string_chars != -1 and data_symbols[data_name].size/element_size != 1:
+                    value = []
+                    # For each element - Process the the string and add to value array
+                    for j in range(0, int(data_symbols[data_name].size/element_size)):
+                        current_offset = offset + (element_size * j)
+                        null_idx = sum_response[current_offset: offset + data_symbols[data_name].size].index(0)
+                        value.append(bytearray(sum_response[current_offset: current_offset + null_idx]).decode("utf-8"))
+                else:
+                    # find null-terminator 1 Byte
+                    null_idx = sum_response[offset: offset + data_symbols[data_name].size].index(0)
+                    value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-8")
+
             elif data_symbols[data_name].dataType == ADST_WSTRING:
-                # find null-terminator 2 Bytes
-                a = sum_response[offset: offset + data_symbols[data_name].size]
-                null_idx = find_wstring_null_terminator(a)
-                if null_idx is None:
-                    raise ValueError("No null-terminator found in buffer")
-                value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16-le")
+                num_string_chars = get_num_of_chars(data_symbols[data_name].symbol_type)
+                # WString size in PLC (2 Bytes per char) + null-terminator 2 Byte
+                element_size = ((num_string_chars*2) + 2)
+                if num_string_chars != -1 and data_symbols[data_name].size/element_size != 1:
+                    value = []
+                    # For each element - Process the the string and add to value array
+                    for j in range(0, int(data_symbols[data_name].size/element_size)):
+                        current_offset = offset + (element_size * j)
+                        null_idx = find_wstring_null_terminator(sum_response[current_offset: offset + data_symbols[data_name].size])
+                        if null_idx is None:
+                            raise ValueError("No null-terminator found in buffer")
+                        value.append(bytearray(sum_response[current_offset: current_offset + null_idx]).decode("utf-16-le"))
+                else:
+                    # find null-terminator 2 Bytes
+                    a = sum_response[offset: offset + data_symbols[data_name].size]
+                    null_idx = find_wstring_null_terminator(a)
+                    if null_idx is None:
+                        raise ValueError("No null-terminator found in buffer")
+                    value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16-le")
+            elif data_symbols[data_name].size > ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType]):
+                value = list(struct.unpack_from(
+                    "<" + DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]][-1] * (data_symbols[data_name].size // ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType])),
+                    sum_response,
+                    offset=offset,
+                ))
             else:
                 value = struct.unpack_from(
                     DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
@@ -1093,9 +1125,33 @@ def adsSumWrite(
         if data_name in structured_data_names:
             buf[offset: offset + data_symbols[data_name].size] = value
         elif data_symbols[data_name].dataType == ADST_STRING:
-            buf[offset: offset + len(value)] = value.encode("utf-8")
+            num_string_chars = get_num_of_chars(data_symbols[data_name].symbol_type)
+            # String size in PLC + null-terminator 1 Byte
+            element_size = (num_string_chars + 1)
+
+            if num_string_chars != -1 and data_symbols[data_name].size/element_size != 1:
+                for i, element in enumerate(value):
+                    current_offset = offset + (element_size * i)
+                    buf[current_offset: current_offset + len(element)] = element.encode("utf-8")
+            else:
+                buf[offset: offset + len(value)] = value.encode("utf-8")
         elif data_symbols[data_name].dataType == ADST_WSTRING:
-            buf[offset: offset + 2 * len(value)] = value.encode("utf-16-le")
+            num_string_chars = get_num_of_chars(data_symbols[data_name].symbol_type)
+            # WString size in PLC (2 Bytes per char) + null-terminator 2 Byte
+            element_size = ((num_string_chars*2) + 2)
+            if num_string_chars != -1 and data_symbols[data_name].size/element_size != 1:
+                for i, element in enumerate(value):
+                    current_offset = offset + (element_size * i)
+                    buf[current_offset: current_offset + (2 * len(element))] = element.encode("utf-16-le")
+            else:
+                buf[offset: offset + 2 * len(value)] = value.encode("utf-16-le")
+        elif data_symbols[data_name].size > ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType]):
+            struct.pack_into(
+                "<" + DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]][-1] * (data_symbols[data_name].size // ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType])),
+                buf,
+                offset,
+                *value,
+            )
         else:
             struct.pack_into(
                 DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## 3.5.0 (Unreleased)
+## 3.5.0
 
 ### Added
 * [#384](https://github.com/stlehmann/pyads/pull/384) Enable processing of nested structures
@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 * [#437](https://github.com/stlehmann/pyads/pull/437) Solve issue of too little buffer space allocated to receive for automatic AMS NetID query
 * [#438](https://github.com/stlehmann/pyads/pull/438) Fix issue with read list by name using structure defs if more than MAX_SUB_ADS_COMMANDS
+
+### Fixed
+* [#342](https://github.com/stlehmann/pyads/pull/342) Array support in read by list
+* [#427](https://github.com/stlehmann/pyads/pull/427) Fixed issue with auto-update with structures
 
 ## 3.4.2
 
