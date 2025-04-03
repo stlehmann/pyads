@@ -33,12 +33,9 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest==7.4.4 coverage coveralls pytest-cov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Build adslib
-      run: |
-        python setup.py build
     - name: Install package
       run: |
-        python setup.py develop        
+        pip install .
     - name: Test with pytest
       run: |
         pytest -v --cov pyads
