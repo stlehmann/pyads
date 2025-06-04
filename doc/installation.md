@@ -31,6 +31,14 @@ if you should encounter any problems with the *adslib.so* please contact me.
 For the compilation to work you need to make sure `cmake` and `g++` are installed
 on your system.
 
+For Ubuntu-based systems or containers use the following commands for installing
+the build-dependencies:
+
+```bash
+apt udpate
+apt install -y cmake g++
+```
+
 For containers consider using a separate build stage to keep image size small.
 
 ## Installation on Windows
