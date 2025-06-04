@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 3.5.1 (Unreleased)
+
+### Added
+- [#462](https://github.com/stlehmann/pyads/issues/462) Short description on Linux build dependencies in docs
+
 ## 3.5.0
 
 ### Added
