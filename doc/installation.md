@@ -35,7 +35,7 @@ For Ubuntu-based systems or containers use the following commands for installing
 the build-dependencies:
 
 ```bash
-apt udpate
+apt update
 apt install -y cmake g++
 ```
 
