@@ -28,6 +28,11 @@ For Linux *pyads* uses the ADS library *adslib.so* which needs to be compiled
 from source if you use a source package. This should not be an issue, however
 if you should encounter any problems with the *adslib.so* please contact me.
 
+For the compilation to work you need to make sure `cmake` and `g++` are installed
+on your system.
+
+For containers consider using a separate build stage to keep image size small.
+
 ## Installation on Windows
 
 On Windows *pyads* uses the *TcADSDll.dll* which is provided when you install
