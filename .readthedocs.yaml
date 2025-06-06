@@ -4,6 +4,12 @@
 # Required
 version: 2
 
+# include adslib submodulee
+submodules:
+  include: 
+    - adslib
+  recursive: true
+
 # Set the OS, Python version and other tools you might need
 build:
   os: ubuntu-22.04
