@@ -15,7 +15,7 @@ from unittest import mock
 
 import pyads
 from pyads.testserver import AdsTestServer, AdvancedHandler, PLCVariable
-from pyads import constants, AdsSymbol, bytes_from_dict
+from pyads import constants, AdsSymbol, ADSError, bytes_from_dict
 
 from tests.test_connection_class import create_notification_struct
 
@@ -143,8 +143,8 @@ class AdsSymbolTestCase(unittest.TestCase):
             struct.pack("<21b", *range(21)),
             ads_type=constants.ADST_VOID,
             symbol_type="matrix_21_int8_T",  # Simulink array looks like this
-            index_group = 123,
-            index_offset = 100,
+            index_group=123,
+            index_offset=100,
         )
         self.handler.add_variable(var)
         self.plc.open()
@@ -158,7 +158,7 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         # Verify looked up info
         self.assertEqual(constants.PLCTYPE_ARR_SINT(21), symbol.plc_type)
-        self.assertEqual(var.symbol_type, symbol.symbol_type)
+        self.assertEqual("matrix_21_int8_T", symbol.symbol_type)
 
         self.assertAdsRequestsCount(0)  # No requests
 
@@ -265,10 +265,10 @@ class AdsSymbolTestCase(unittest.TestCase):
             # Create symbol while providing everything:
             symbol = AdsSymbol(self.plc, name=var.name)
             self.assertEqual(var.symbol_type, symbol.symbol_type)
-            with self.assertRaises(TypeError) as cm:
+            with self.assertRaises(ADSError) as cm:
                 # Error is thrown inside pyads_ex
                 symbol.read()
-            self.assertIn("NoneType", str(cm.exception))
+            self.assertIn("unknown datatype", str(cm.exception))
         self.assertAdsRequestsCount(1)  # Only a WRITE followed by a READ
 
     def test_read_write_errors(self):
@@ -369,6 +369,29 @@ class AdsSymbolTestCase(unittest.TestCase):
             read_values = symbol.read()
 
         self.assertEqual(values, read_values)
+
+    def test_read_enum(self):
+        """Test reading from a symbol when it's an ENUM type"""
+        self.handler.add_variable(
+            PLCVariable("TestEnum", 7, constants.ADST_UINT16, symbol_type="E_MyEnum"))
+
+        with self.plc:
+            symbol = self.plc.get_symbol("TestEnum")
+            value = symbol.read()
+
+        self.assertEqual(7, value)
+
+    def test_read_enum_array(self):
+        """Test reading from a symbol when it's an array of an ENUM type"""
+        value_bytes = struct.pack("<3h", 1, 2, 3)
+        self.handler.add_variable(
+            PLCVariable("TestEnumList", value_bytes, constants.ADST_UINT16, symbol_type="ARRAY [1..3] OF E_MyEnum"))
+
+        with self.plc:
+            symbol = self.plc.get_symbol("TestEnumList")
+            value = symbol.read()
+
+        self.assertEqual([1, 2, 3], value)
 
     def test_write(self):
         """Test symbol value writing"""
