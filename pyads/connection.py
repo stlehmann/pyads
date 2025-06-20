@@ -76,6 +76,7 @@ from .pyads_ex import (
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
     ADSError,
+    type_is_string
 )
 from .structs import (
     AmsAddr,
@@ -1019,7 +1020,7 @@ class Connection(object):
             addressof(contents) + SAdsNotificationHeader.data.offset
         )
         value: Any
-        if plc_datatype == PLCTYPE_STRING:
+        if type_is_string(plc_datatype):
             # read only until null-termination character
             value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
 
