@@ -1626,6 +1626,57 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         self.assertEqual(read_values, expected_result)
 
 
+    def test_read_write_list_sint_array(self):
+        expected_sint_array = [-128, 0, 127]
+
+        sint_array_bytes = bytearray(ctypes.sizeof(constants.PLCTYPE_SINT) * len(expected_sint_array))
+
+        struct.pack_into(
+            "<" + "b" * len(expected_sint_array),
+            sint_array_bytes,
+            0,
+            *expected_sint_array,
+        )
+
+
+        # Add to test plc
+        self.handler.add_variable(PLCVariable(
+            name = "sint_test_array", 
+            value = bytes(sint_array_bytes), 
+            ads_type = constants.ADST_INT8, 
+            symbol_type = "SINT"))
+
+
+        # Read variable
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["sint_test_array"])
+
+        # Expected result
+        expected_result = {
+            "sint_test_array": expected_sint_array
+        }
+
+        self.assertEqual(expected_result, read_values)
+
+        # Modify the value
+        expected_sint_array[0] = 121
+
+        # Write variable
+        with self.plc:
+            self.plc.write_list_by_name({"sint_test_array": expected_sint_array})
+
+        # Read variable again
+        with self.plc:
+            read_values = self.plc.read_list_by_name(["sint_test_array"])
+
+        # Expected result
+        expected_result = {
+            "sint_test_array": expected_sint_array
+        }
+
+        self.assertEqual(read_values, expected_result)
+
+
     def test_read_write_list_real_array(self):
         expected_real_array = [123.4, 456.7, 789.1]
 
