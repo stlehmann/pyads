@@ -2,7 +2,7 @@
 name = "pyads"
 description = "Python wrapper for TwinCAT ADS library"
 authors = [
-    { name = "Stefan Lehmann", email = "Stefan.St.Lehmann@gmail.com" },
+    { name = "Stefan Lehmann", email = "stlm@posteo.de" },
 ]
 readme = "README.md"
 classifiers = [
