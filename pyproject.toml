@@ -86,7 +86,6 @@ line-length = 88
 target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
-
 (
   /(
       .eggs
@@ -103,7 +102,7 @@ exclude = '''
   )/
   | pyads/__init__.py
 )
-"""
+'''
 
 [tool.pydocstyle]
 ignore = ["D105", "D213", "D203", "D107"]
