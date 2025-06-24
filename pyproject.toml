@@ -68,7 +68,7 @@ version = {attr = "pyads.__version__"}
 [tool.tox]
 legacy_tox_ini = """
     [tox]
-    envlist = py37, py38, py39, py310
+    envlist = py38, py39, py310, py311, py312
 
     [testenv]
     commands = discover
