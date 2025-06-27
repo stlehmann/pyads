@@ -37,7 +37,7 @@ jobs:
         python setup.py build
     - name: Install package
       run: |
-        python setup.py develop        
+        pip install -e .
     - name: Test with pytest
       run: |
         pytest -v --cov pyads
