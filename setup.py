@@ -1,13 +1,13 @@
-from pathlib import Path
-from setuptools import setup
-from setuptools.command.install import install
-from setuptools.command.build_py import build_py
-from wheel.bdist_wheel import bdist_wheel
-import sys
-import sysconfig
 import os
 import subprocess
+import sys
+import sysconfig
+from pathlib import Path
 
+from setuptools import setup
+from setuptools.command.build_py import build_py
+from setuptools.command.install import install
+from wheel.bdist_wheel import bdist_wheel
 
 src_folder = Path(__file__).parent.absolute() / "src"
 # ^ This will be on PATH for editable install
@@ -70,6 +70,7 @@ class CustomBuildPy(build_py):
 
 class CustomInstall(install):
     """Install compiled adslib (but only for Linux)."""
+
     def run(self):
         if CustomBuildPy.platform_is_unix():
             adslib_dest = Path(self.install_lib)
@@ -109,36 +110,9 @@ class CustomBDistWheel(bdist_wheel):
 
 # noinspection PyTypeChecker
 setup(
-    name="pyads",
-    version=find_version('pyads', '__init__.py'),
-    description="Python wrapper for TwinCAT ADS library",
-    long_description=long_description,
-    long_description_content_type='text/markdown',
-    author="Stefan Lehmann",
-    author_email="Stefan.St.Lehmann@gmail.com",
-    packages=["pyads", "pyads.testserver"],
-    package_data={'pyads': ['adslib.so']},
-    python_requires='>=3.8.0',
-    requires=[],
-    install_requires=[],
-    provides=['pyads'],
-    url='https://github.com/MrLeeh/pyads',
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-        'Topic :: Software Development :: Libraries',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: Microsoft :: Windows :: Windows 7',
-        'Operating System :: POSIX :: Linux',
-    ],
-    cmdclass=cmdclass,
-    data_files=data_files,
-    tests_require=['pytest', 'pytest-cov'],
-    has_ext_modules=lambda: True,
+    cmdclass={
+        "build_py": CustomBuildPy,
+        "install": CustomInstall,
+        "bdist_wheel": CustomBDistWheel,
+    },
 )
