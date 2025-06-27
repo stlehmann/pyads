@@ -7,7 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## 3.5.1 (Unreleased)
 
 ### Added
-- [#462](https://github.com/stlehmann/pyads/issues/462) Short description on Linux build dependencies in docs
+* [#462](https://github.com/stlehmann/pyads/issues/462) Short description on Linux build dependencies in docs
+
+### Changed
+* [#400](https://github.com/stlehmann/pyads/issues/400) Full support for pyproject.toml
 
 ## 3.5.0
 

@@ -12,6 +12,8 @@ build/
 *.egg-info/
 .eggs/
 venv/
+.venv/
+venv_*/
 
 *.tox
 deploy.py

@@ -1,16 +1,98 @@
+[project]
+name = "pyads"
+description = "Python wrapper for TwinCAT ADS library"
+authors = [
+    { name = "Stefan Lehmann", email = "stlm@posteo.de" },
+]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+license = { text = "MIT" }
+dynamic = ["version"]
+dependencies = []
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "recommonmark",
+]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "tox",
+]
+dev = [
+    "build",
+    "flake8",
+    "pytest==7.4.4",
+    "coverage",
+    "coveralls",
+]
+
+[project.urls]
+Repository = "https://github.com/stlehmann/pyads"
+Documentation = "https://pyads.readthedocs.io"
+
+[build-system]
+requires = ["setuptools >= 61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["pyads", "pyads.testserver"]
+package-dir = { "" = "src" }
+include-package-data = true
+# ^ needed for MANIFEST.in
+
+#[tool.setuptools.package-data]
+# Package data (adslib/) is handled by MANIFEST.in instead
+
+[tool.setuptools.exclude-package-data]
+pyads = ["adslib/**"]
+# ^ Odd trick, put this excludes the adslib source again from a wheel build and from a pip install
+
+[tool.setuptools.dynamic]
+version = {attr = "pyads.__version__"}
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    envlist = py38, py39, py310, py311, py312
+
+    [testenv]
+    commands = discover
+    deps = discover
+    changedir = tests
+    whitelist_externals=*
+    passenv = TWINCAT3DIR
+
+    [pytest]
+    testpaths = tests
+"""
+
 [tool.black]
 line-length = 88
 target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
-
 (
   /(
-      \.eggs
-    | \.git
-    | \.mypy_cache
-    | \.tox
-    | \.venv
+      .eggs
+    | .git
+    | .mypy_cache
+    | .tox
+    | .venv
     | _build
     | buck-out
     | build
@@ -21,3 +103,10 @@ exclude = '''
   | pyads/__init__.py
 )
 '''
+
+[tool.pydocstyle]
+ignore = ["D105", "D213", "D203", "D107"]
+
+[tool.coverage.run]
+include = ["pyads/*"]
+omit = ["pyads/testserver/__main__.py"]
