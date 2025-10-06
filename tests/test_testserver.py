@@ -10,7 +10,7 @@ regular pyads tests to increase the coverage of the test server itself.
 import time
 import unittest
 import pyads
-from pyads.testserver import AdsTestServer, BasicHandler
+from pyads.testserver import AdsTestServer, BasicHandler, AdvancedHandler, PLCVariable
 
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
@@ -83,6 +83,94 @@ class TestServerTestCase(unittest.TestCase):
             test_int.__del__()
         except pyads.ADSError as e:
             self.fail(f"Closing server connection raised: {e}")
+
+
+    def test_advanced_handler_register_multiple_notifications(self):
+        """Test registering multiple notifications on the same variable.
+        
+        Tests fix of issue [#471](https://github.com/stlehmann/pyads/issues/471), original pull request: [#474](https://github.com/stlehmann/pyads/pull/474)
+        """
+        handler = AdvancedHandler()
+        test_server = AdsTestServer(handler=handler, logging=False, ip_address=TEST_SERVER_IP_ADDRESS)
+
+        var1 = "MAIN.var1"
+        var2 = "MAIN.var2"
+
+        # Create two WORD variables in the handler, with explicit indices
+        handler.add_variable(
+            PLCVariable(
+                var1,
+                0,
+                symbol_type="WORD",
+                ads_type=pyads.constants.ADST_UINT16,
+                index_group=61445,
+                index_offset=10000,
+            )
+        )
+
+        handler.add_variable(
+            PLCVariable(
+                var2,
+                0,
+                symbol_type="WORD",
+                ads_type=pyads.constants.ADST_UINT16,
+                index_group=61445,
+                index_offset=10001,
+            )
+        )
+
+        test_server.start()
+        time.sleep(0.1)
+
+        plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT, TEST_SERVER_IP_ADDRESS)
+        plc.open()
+
+        try:
+            # Collect notifications
+            events = []
+
+            @plc.notification(pyads.PLCTYPE_UINT)
+            def on_change(handle, name, timestamp, value):
+                events.append((name, value))
+
+            attrib = pyads.NotificationAttrib(
+                length=2,
+                trans_mode=pyads.ADSTRANS_SERVERONCHA,
+                max_delay=0,
+                cycle_time=0,
+            )
+
+            handles1 = plc.add_device_notification(var1, attrib, on_change)
+            handles2 = plc.add_device_notification(var2, attrib, on_change)
+
+            # Trigger notifications
+            triggers = [
+                (var1, 456),
+                (var2, 4321),
+                (var1, 789),
+            ]
+            for var, value in triggers:
+                plc.write_by_name(var, value, pyads.PLCTYPE_UINT)
+
+            time.sleep(0.2)
+
+            # Cleanup notifications
+            if handles1 is not None:
+                plc.del_device_notification(*handles1)
+            if handles2 is not None:
+                plc.del_device_notification(*handles2)
+
+            # Assert we observed expected changes
+            values_by_name = {}
+            for name, value in events:
+                values_by_name.setdefault(name, []).append(value)
+
+            for var, value in triggers:
+                self.assertIn(value, values_by_name[var])
+        finally:
+            plc.close()
+            test_server.stop()
+            time.sleep(0.1)
 
 
 if __name__ == "__main__":
