@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 * [#400](https://github.com/stlehmann/pyads/issues/400) Full support for pyproject.toml
 
+### Fixed
+* [#471](https://github.com/stlehmann/pyads/issues/471) Fixed registering of multiple notifications on AdsTestServer
+
 ## 3.5.0
 
 ### Added
