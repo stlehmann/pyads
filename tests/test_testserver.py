@@ -102,9 +102,7 @@ class TestServerTestCase(unittest.TestCase):
                 var1,
                 0,
                 symbol_type="WORD",
-                ads_type=pyads.constants.ADST_UINT16,
-                index_group=61445,
-                index_offset=10000,
+                ads_type=pyads.constants.ADST_UINT16
             )
         )
 
@@ -114,8 +112,6 @@ class TestServerTestCase(unittest.TestCase):
                 0,
                 symbol_type="WORD",
                 ads_type=pyads.constants.ADST_UINT16,
-                index_group=61445,
-                index_offset=10001,
             )
         )
 
@@ -129,6 +125,9 @@ class TestServerTestCase(unittest.TestCase):
             # Collect notifications
             events = []
 
+            sym1 = plc.get_symbol(var1)
+            sym2 = plc.get_symbol(var2)
+
             @plc.notification(pyads.PLCTYPE_UINT)
             def on_change(handle, name, timestamp, value):
                 events.append((name, value))
@@ -140,8 +139,11 @@ class TestServerTestCase(unittest.TestCase):
                 cycle_time=0,
             )
 
-            handles1 = plc.add_device_notification(var1, attrib, on_change)
-            handles2 = plc.add_device_notification(var2, attrib, on_change)
+            # Adding notifications using index_group and index_offset from the symbols
+            # as using name "add_variable" without explicit indices would create indices (12345, 10000 + some offset) 
+            # and add_device_notification expects (61445, 10000 + some offset) in this case.
+            handles1 = plc.add_device_notification((sym1.index_group, sym1.index_offset), attrib, on_change)
+            handles2 = plc.add_device_notification((sym2.index_group, sym2.index_offset), attrib, on_change)
 
             # Trigger notifications
             triggers = [
