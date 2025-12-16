@@ -8,16 +8,21 @@
 import functools
 import sys
 import warnings
-
+import os
 from .structs import SAdsSymbolEntry
 from .constants import PLC_STRING_TYPE_NAME, PLC_DEFAULT_STRING_SIZE
 
 from typing import Callable, Any, Optional
 
 
+def platform_is_beckhoff_rt_linux() -> bool:
+    """Workaround to identify Beckhoff RT-Linux as a FreeBSD-based solution instead of Linux."""
+    return os.path.exists("/usr/bin/TcSystemServiceUm")
+
+
 def platform_is_linux() -> bool:
     """Return True if current platform is Linux or Mac OS."""
-    return sys.platform.startswith("linux") or sys.platform.startswith("darwin")
+    return (sys.platform.startswith("linux") or sys.platform.startswith("darwin")) and not platform_is_beckhoff_rt_linux()
 
 
 def platform_is_windows() -> bool:
@@ -28,7 +33,7 @@ def platform_is_windows() -> bool:
 
 def platform_is_freebsd() -> bool:
     """Return True if current platform is FreeBSD."""
-    return sys.platform.startswith("freebsd")
+    return sys.platform.startswith("freebsd") or platform_is_beckhoff_rt_linux()
 
 
 def deprecated(message: Optional[str] = None) -> Callable:
