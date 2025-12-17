@@ -5,7 +5,7 @@
 :created on: 2018-06-11 18:15:53
 
 """
-from errorcodes_nc import NC_ERROR_CODES
+from .errorcodes_nc import NC_ERROR_CODES
 
 ERROR_CODES = {
     0: "no error",
