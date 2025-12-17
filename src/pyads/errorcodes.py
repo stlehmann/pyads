@@ -5,6 +5,8 @@
 :created on: 2018-06-11 18:15:53
 
 """
+from errorcodes_nc import NC_ERROR_CODES
+
 ERROR_CODES = {
     0: "no error",
     1: "Internal error",
@@ -129,3 +131,6 @@ ERROR_CODES = {
     10061: "A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.",  # noqa: E501
     10065: "No connection could be made because the target machine actively refused it",
 }
+
+# Update the ERROR_CODES dictionary with NC_ERROR_CODES
+ERROR_CODES.update(NC_ERROR_CODES)
