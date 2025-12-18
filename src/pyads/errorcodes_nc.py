@@ -8,7 +8,7 @@
 
 # https://github.com/stlehmann/pyads/issues/457
 # General NC error codes (system-wide, internal, memory, parameter, etc.)
-GENERAL_ERRORS: dict[int, str] = {
+GENERAL_ERRORS = {
     16384: "Internal error - Internal system error in the NC on ring 0, no further details.",
     16385: "Memory error - The ring-0 memory management is not providing the required memory.",
     16386: "NC retain data error (persistent data) - Error loading NC Retain data; affected axes unreferenced (Homed=FALSE).",
@@ -43,7 +43,7 @@ GENERAL_ERRORS: dict[int, str] = {
 }
 
 # NC channel-related error codes
-CHANNEL_ERRORS: dict[int, str] = {
+CHANNEL_ERRORS = {
     16641: "Group index not allowed - Location within the channel for a group is not allowed.",
     16642: "Null pointer - Pointer to the group is invalid (usually after startup error).",
     16643: "Missing process image - Data exchange with PLC not possible (no interface/interpreter or PLC connection faulty).",
@@ -104,7 +104,7 @@ CHANNEL_ERRORS: dict[int, str] = {
 }
 
 # NC group-related error codes
-GROUP_ERRORS: dict[int, str] = {
+GROUP_ERRORS = {
     16896: "Group ID not allowed - Group ID already used, <=0, or >255.",
     16897: "Group type not allowed - Group type value undefined.",
     16898: "Master axis index not allowed - Invalid master axis index in interpolating 3D group.",
@@ -353,7 +353,7 @@ GROUP_ERRORS: dict[int, str] = {
 }
 
 # NC axis-related error codes
-AXIS_ERRORS: dict[int, str] = {
+AXIS_ERRORS = {
     17152: "Axis ID not allowed - Axis ID already used, <=0, >255, or not in current configuration.",
     17153: "Axis type not allowed - Axis type undefined (e.g. servo/fast-creep/stepper).",
     17158: "Slow manual velocity not allowed - Slow jog velocity outside allowed range.",
@@ -440,7 +440,7 @@ AXIS_ERRORS: dict[int, str] = {
 }
 
 # TF5055 NC Flying Saw specific error codes
-TF5055_ERRORS: dict[int, str] = {
+TF5055_ERRORS = {
     17266: "Sync profile would violate the lower end position of the slave (GearInSync_CheckMask_MinPos).",
     17267: "Sync profile would violate the upper end position of the slave (GearInSync_CheckMask_MaxPos).",
     17268: "Sync profile would violate the user limit Options.PositionLimitMin (GearInSync_CheckMask_OptionalMinPos).",
@@ -468,7 +468,7 @@ TF5055_ERRORS: dict[int, str] = {
 }
 
 # NC encoder-related error codes
-ENCODER_ERRORS: dict[int, str] = {
+ENCODER_ERRORS = {
     17408: "Encoder ID not allowed - Encoder ID already used, <=0, or >255.",
     17409: "Encoder type not allowed - Encoder type undefined.",
     17410: "Encoder mode invalid - Operation mode invalid (pos / pos+velo).",
@@ -537,7 +537,7 @@ ENCODER_ERRORS: dict[int, str] = {
 }
 
 # Controller-related NC errors
-CONTROLLER_ERRORS: dict[int, str] = {
+CONTROLLER_ERRORS = {
     17664: "Controller ID not allowed - ID already used, <=0, or >255.",
     17665: "Controller type not allowed - Undefined controller type.",
     17666: "Controller operation mode not allowed - Operating mode invalid.",
@@ -598,7 +598,7 @@ CONTROLLER_ERRORS: dict[int, str] = {
 }
 
 # Drive-related NC errors
-DRIVE_ERRORS: dict[int, str] = {
+DRIVE_ERRORS = {
     17920: "Drive ID not allowed - ID already used, <=0, or >255.",
     17921: "Drive type not allowed - Undefined drive type.",
     17922: "Drive operation mode not allowed - Operating mode invalid.",
@@ -663,7 +663,7 @@ DRIVE_ERRORS: dict[int, str] = {
 }
 
 # Table-related NC errors
-TABLE_ERRORS: dict[int, str] = {
+TABLE_ERRORS = {
     18944: "Table ID not allowed - ID already used, <=0, or >255.",
     18945: "Table type not permitted - Undefined table type.",
     18946: "Number of lines in table not allowed - Too few lines for selected interpolation type.",
@@ -701,7 +701,7 @@ TABLE_ERRORS: dict[int, str] = {
 }
 
 # NC ↔ PLC communication errors
-NC_PLC_ERRORS: dict[int, str] = {
+NC_PLC_ERRORS = {
     19200: "Axis was stopped - Stopped during travel (PLC via ADS/AXFNC/System Manager).",
     19201: "Axis cannot be started - Axis in error, busy, protected mode, or not ready.",
     19202: "Control mode not permitted - No target position control and no position area control.",
@@ -812,7 +812,7 @@ NC_PLC_ERRORS: dict[int, str] = {
 }
 
 # Kinematic transformation errors
-KINEMATIC_TRANSFORMATION_ERRORS: dict[int, str] = {
+KINEMATIC_TRANSFORMATION_ERRORS = {
     19456: "Transformation failed - Calculation of the kinematic transformation failed.",
     19457: "Ambiguous solution - Transformation solution is not unique.",
     19458: "Invalid axis position - Transformation cannot be calculated with current position data (e.g. position outside kinematics working area).",
@@ -830,7 +830,7 @@ KINEMATIC_TRANSFORMATION_ERRORS: dict[int, str] = {
 }
 
 # Bode return codes
-BODE_RETURN_CODES: dict[int, str] = {
+BODE_RETURN_CODES = {
     33024: "INTERNAL - Internal error.",
     33025: "NOTINITIALIZED - Not initialized (e.g. no NC axis).",
     33026: "INVALIDPARAM - Invalid parameter.",
@@ -868,7 +868,7 @@ BODE_RETURN_CODES: dict[int, str] = {
 }
 
 # Further / miscellaneous NC error codes
-FURTHER_ERROR_CODES: dict[int, str] = {
+FURTHER_ERROR_CODES = {
     33056: "Environment - Invalid configuration for Object (e.g. in System Manager).",
     33057: "Environment - Invalid environment for Object (e.g. TcCom-Object hierarchy or missing/faulty objects).",
     33058: "Environment - Incompatible driver or object.",
