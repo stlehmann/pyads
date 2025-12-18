@@ -434,6 +434,7 @@ AXIS_ERRORS = {
     17250: "Time range exceeded (past) - Calculated position too far in the past.",
     17251: "Position cannot be determined - Position never reached in past or will never be reached in future.",
     17252: "Position indeterminable (conflicting direction of travel) - Expected travel direction conflicts with actual.",
+    17253: "Monitoring - Position not convertible; converting to incremental position would exceed encoder range.",
     17264: "No slave coupling possible (velocity violation) - Coupling rejected to avoid exceeding slave max velocity.",
     17265: "No slave coupling possible (acceleration violation) - Coupling rejected to avoid exceeding slave max acceleration.",
     17312: "Axis consequential error - Consequential error due to another causative error on another axis.",
