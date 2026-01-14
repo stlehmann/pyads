@@ -14,6 +14,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -21,6 +23,8 @@ classifiers = [
 license = { text = "MIT" }
 dynamic = ["version"]
 dependencies = []
+requires-python = ">= 3.8,<4"
+# Outdated Python versions are still included, until they cause problems (after which they will bed dropped)
 
 [project.optional-dependencies]
 docs = [
@@ -68,7 +72,7 @@ version = {attr = "pyads.__version__"}
 [tool.tox]
 legacy_tox_ini = """
     [tox]
-    envlist = py38, py39, py310, py311, py312
+    envlist = py38, py39, py310, py311, py312, py313, py314
 
     [testenv]
     commands = discover
@@ -83,7 +87,7 @@ legacy_tox_ini = """
 
 [tool.black]
 line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312', 'py313', 'py314']
 include = '\.pyi?$'
 exclude = '''
 (
