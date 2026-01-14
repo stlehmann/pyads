@@ -1,7 +1,7 @@
 # This Dockerfile is for running the tests on a windows system where the
 # TwinCat router can interfere with the tests. In the first instance tests should be run with tox.
 
-ARG python_version=3.12
+ARG python_version=3.13
 
 # Build python environment and setup pyads
 FROM python:${python_version}

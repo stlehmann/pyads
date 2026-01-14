@@ -40,7 +40,7 @@ tests = [
 dev = [
     "build",
     "flake8",
-    "pytest==7.4.4",
+    "pytest",
     "coverage",
     "coveralls",
 ]
