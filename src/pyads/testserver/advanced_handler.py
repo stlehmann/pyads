@@ -135,7 +135,8 @@ class PLCVariable:
 
                 header = structs.SAdsNotificationHeader()
                 header.hNotification = 0
-                header.nTimeStamp = dt_to_filetime(datetime.now())
+                # Include the detected local timezone to the datetime-object:
+                header.nTimeStamp = dt_to_filetime(datetime.now().astimezone())
                 header.cbSampleSize = len(value)
 
                 # Perform byte-write into the header

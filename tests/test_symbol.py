@@ -559,7 +559,7 @@ class AdsSymbolTestCase(unittest.TestCase):
         var_addr = (self.test_var.index_group, self.test_var.index_offset)
         self.assertEqual(args[1], var_addr)  # Verify address
 
-        self.assertAlmostEqual(args[2], datetime.now(), delta=timedelta(seconds=2))  # Verify datetime
+        self.assertAlmostEqual(args[2], datetime.now().astimezone(), delta=timedelta(seconds=2))  # Verify datetime
 
         self.assertEqual(args[3], new_val)  # Verify new value
 

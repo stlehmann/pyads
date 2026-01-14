@@ -9,6 +9,7 @@
 import ctypes
 from ctypes import addressof, memmove, resize, sizeof, pointer
 import datetime
+from datetime import timezone
 import time
 import unittest
 import pyads
@@ -849,7 +850,7 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         def callback(handle, name, timestamp, value):
             self.assertEqual(handle, 1234)
             self.assertEqual(name, "TestName")
-            self.assertEqual(timestamp, datetime.datetime(2020, 1, 1))
+            self.assertEqual(timestamp, datetime.datetime(2020, 1, 1, tzinfo=timezone.utc))
             self.assertEqual(value, bytearray((5,)))
 
         notification = structs.SAdsNotificationHeader()
