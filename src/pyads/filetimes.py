@@ -40,37 +40,12 @@ EPOCH_AS_FILETIME = 116444736000000000  # January 1, 1970 as MS file time
 HUNDREDS_OF_NANOSECONDS = 10000000
 
 
-ZERO = timedelta(0)
-HOUR = timedelta(hours=1)
-
-
-class UTC(tzinfo):
-    """UTC."""
-
-    def utcoffset(self, dt):
-        # type: (Optional[datetime]) -> timedelta
-        """Return offset of localtime from UTC time."""
-        return ZERO
-
-    def tzname(self, dt):
-        # type: (Optional[datetime]) -> str
-        """Return name of the timezone."""
-        return "UTC"
-
-    def dst(self, dt):
-        # type: (Optional[datetime]) -> timedelta
-        """Return daylight savings time."""
-        return ZERO
-
-
-utc = UTC()
-
-
 def dt_to_filetime(dt):
     # type: (datetime) -> int
     """Convert a datetime to Microsoft filetime format.
 
-    If the object is time zone-naive, it is forced to UTC before conversion.
+    If the object is time zone-naive, it is assumed as UTC before conversion.
+    Otherwise the time will be converted to UTC first.
 
     >>> "%.0f" % dt_to_filetime(datetime(2009, 7, 25, 23, 0))
     '128930364000000000'
@@ -80,8 +55,10 @@ def dt_to_filetime(dt):
     116444736000000000L
 
     """
-    if (dt.tzinfo is None) or (dt.tzinfo.utcoffset(dt) is None):
-        dt = dt.replace(tzinfo=utc)
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        dt = dt.replace(tzinfo=timezone.utc)  # Just assert it as UTC
+    else:
+        dt = dt.astimezone(timezone.utc)  # Convert the datetime from another timezone to UTC
     return EPOCH_AS_FILETIME + (timegm(dt.timetuple()) * HUNDREDS_OF_NANOSECONDS)
 
 
@@ -98,9 +75,3 @@ def filetime_to_dt(ft):
 
     """
     return datetime.fromtimestamp((ft - EPOCH_AS_FILETIME) / HUNDREDS_OF_NANOSECONDS, tz=timezone.utc)
-
-
-if __name__ == "__main__":  # pragma: no cover
-    import doctest
-
-    doctest.testmod()

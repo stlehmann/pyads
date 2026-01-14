@@ -9,7 +9,7 @@
 """
 import unittest
 from datetime import datetime, timedelta, timezone
-from pyads.filetimes import UTC, dt_to_filetime, filetime_to_dt
+from pyads.filetimes import dt_to_filetime, filetime_to_dt
 
 
 class FiletimesTestCase(unittest.TestCase):
@@ -19,28 +19,30 @@ class FiletimesTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_utc_class(self):
-
-        utc = UTC()
-
-        # utc should have no offset to utc time
-        self.assertEqual(timedelta(0), utc.utcoffset(datetime.now()))
-
-        # timezone is UTC
-        self.assertEqual("UTC", utc.tzname(datetime.now()))
-
-        # daylight savings time is 0
-        self.assertEqual(timedelta(0), utc.dst(datetime.now()))
-
     def test_filetime_dt_conversion(self):
 
-        dt_now = datetime(2017, 10, 13, 10, 11, 12, tzinfo=timezone.utc)
+        some_timezone = timezone(timedelta(hours=3), name="Ankara")
+        # Ankara (Turkey) has UTC+3 ("EEST")
 
-        ft = dt_to_filetime(dt_now)
-        dt = filetime_to_dt(ft)
+        dts = [
+            # Already in UTC:
+            datetime(2017, 10, 13, 10, 11, 12, tzinfo=timezone.utc),
 
-        # should be identical
-        self.assertEqual(dt_now, dt)
+            # Different timezone:
+            datetime(2017, 10, 13, 13, 11, 12, tzinfo=some_timezone),
+
+            # No timezone at all:
+            datetime(2017, 10, 13, 10, 11, 12),
+        ]
+
+        for dt in dts:
+            ft = dt_to_filetime(dt)
+            dt_back = filetime_to_dt(ft)
+
+            # should be identical
+            if dt.tzinfo is None:
+                dt_back = dt_back.replace(tzinfo=None)
+            self.assertEqual(dt, dt_back)
 
 
 if __name__ == "__main__":
