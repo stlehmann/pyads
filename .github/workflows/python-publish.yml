@@ -27,10 +27,20 @@ jobs:
         with:
           submodules: recursive
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
+        # Fixes an issue when building on MacOS: https://cibuildwheel.pypa.io/en/stable/faq/#macos-building-cpython-38-wheels-on-arm64
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.1
         env:
+          # Build only for CPython:
+          CIBW_BUILD: "cp*"
+          # Skip the versions that give errors during building:
           CIBW_SKIP: "*-musllinux_*"
+          # Full matrix: https://cibuildwheel.pypa.io/en/stable/options/#build-skip
         # with:
         #   package-dir: .
         #   output-dir: wheelhouse
