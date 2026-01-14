@@ -92,18 +92,13 @@ class CustomBDistWheel(bdist_wheel):
         See https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/
         """
         impl_tag = "py2.py3"  # Same wheel across Python versions
-        abi_tag = "none"  # Same wheeel across ABI versions (not a C-extension)
-        # But we need to differentiate on the platform for the compiled adslib:
-        plat_tag = sysconfig.get_platform().replace("-", "_").replace(".", "_")
+        abi_tag = "none"  # Same wheel across ABI versions (not a C-extension)
 
-        if plat_tag.startswith("linux_"):
-            # But the basic Linux prefix is deprecated, use new scheme instead:
-            plat_tag = "manylinux_2_24" + plat_tag[5:]
-
-        # MacOS platform tags area already okay
-
-        # We also keep Windows tags in place, instead of using `any`, to prevent an
-        # obscure Linux platform to getting a wheel without adslib source
+        # But we need to differentiate on the platform for the compiled adslib
+        # For this we rely on the default function:
+        self.root_is_pure = False  # Prevent falling into the `any` platform
+        _, _, plat_tag = super().get_tag()
+        self.root_is_pure = True  # But otherwise the package must be thought of as pure
 
         return impl_tag, abi_tag, plat_tag
 
