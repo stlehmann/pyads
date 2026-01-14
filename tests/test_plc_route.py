@@ -154,8 +154,7 @@ class PLCRouteTestCase(unittest.TestCase):
     def test_correct_route(self):
         if platform_is_linux():
             # Start receiving listener
-            route_thread = threading.Thread(target=self.plc_route_receiver)
-            route_thread.setDaemon(True)
+            route_thread = threading.Thread(target=self.plc_route_receiver, daemon=True)
             route_thread.start()
 
             time.sleep(1)
@@ -179,8 +178,7 @@ class PLCRouteTestCase(unittest.TestCase):
     def test_incorrect_route(self):
         if platform_is_linux():
             # Start receiving listener
-            route_thread = threading.Thread(target=self.plc_route_receiver)
-            route_thread.setDaemon(True)
+            route_thread = threading.Thread(target=self.plc_route_receiver, daemon=True)
             route_thread.start()
 
             # Try to set up a route with ourselves using all the optionals AND an incorrect password

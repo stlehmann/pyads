@@ -44,6 +44,7 @@ class SAmsNetId(Structure):
     """Struct with array of 6 bytes used to describe a net id."""
 
     _pack_ = 1
+    _layout_ = "ms"
     _fields_ = [("b", c_ubyte * 6)]
 
 
@@ -51,6 +52,7 @@ class SAmsAddr(Structure):
     """Struct containing the netId and port of an ADS device."""
 
     _pack_ = 1
+    _layout_ = "ms"
     _fields_ = [("netId", SAmsNetId), ("port", c_uint16)]
 
 
@@ -233,6 +235,7 @@ class SAdsNotificationAttrib(Structure):
     """C structure representation of AdsNotificationAttrib."""
 
     _pack_ = 1
+    _layout_ = "ms"
     _anonymous_ = ("AttribUnion",)
     _fields_ = [
         ("cbLength", c_uint32),
@@ -254,6 +257,7 @@ class SAdsNotificationHeader(Structure):
     """
 
     _pack_ = 1
+    _layout_ = "ms"
     _fields_ = [
         ("hNotification", c_uint32),
         ("nTimeStamp", c_uint64),
@@ -266,6 +270,7 @@ class SAdsSymbolUploadInfo(Structure):
     """C structure representation of AdsSymbolUploadInfo."""
 
     _pack_ = 1
+    _layout_ = "ms"
     _fields_ = [("nSymbols", c_uint32), ("nSymSize", c_uint32)]
 
 
@@ -313,6 +318,7 @@ class SAdsSymbolEntry(Structure):
     """
 
     _pack_ = 1
+    _layout_ = "ms"
     _fields_ = [
         ("entryLength", c_uint32),
         ("iGroup", c_uint32),
@@ -359,4 +365,5 @@ class SAdsSumRequest(Structure):
     """
 
     _pack_ = 1
+    _layout_ = "ms"
     _fields_ = [("iGroup", c_uint32), ("iOffset", c_uint32), ("size", c_uint32)]
