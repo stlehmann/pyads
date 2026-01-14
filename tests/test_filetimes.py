@@ -8,7 +8,7 @@
 
 """
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pyads.filetimes import UTC, dt_to_filetime, filetime_to_dt
 
 
@@ -34,7 +34,7 @@ class FiletimesTestCase(unittest.TestCase):
 
     def test_filetime_dt_conversion(self):
 
-        dt_now = datetime(2017, 10, 13, 10, 11, 12)
+        dt_now = datetime(2017, 10, 13, 10, 11, 12, tzinfo=timezone.utc)
 
         ft = dt_to_filetime(dt_now)
         dt = filetime_to_dt(ft)

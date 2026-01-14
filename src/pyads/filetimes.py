@@ -30,7 +30,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from typing import Optional
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta, tzinfo, timezone
 from calendar import timegm
 
 
@@ -89,7 +89,7 @@ def filetime_to_dt(ft):
     # type: (int) -> datetime
     """Convert a Microsoft filetime number to a Python datetime.
 
-    The new datetime object is time zone-naive but is equivalent to tzinfo=utc.
+    The new datetime object is in the UTC timezone, since a MS filetime is by definition in UTC as well.
 
     >>> filetime_to_dt(116444736000000000)
     datetime.datetime(1970, 1, 1, 0, 0)
@@ -97,7 +97,7 @@ def filetime_to_dt(ft):
     datetime.datetime(2009, 7, 25, 23, 0)
 
     """
-    return datetime.utcfromtimestamp((ft - EPOCH_AS_FILETIME) / HUNDREDS_OF_NANOSECONDS)
+    return datetime.fromtimestamp((ft - EPOCH_AS_FILETIME) / HUNDREDS_OF_NANOSECONDS, tz=timezone.utc)
 
 
 if __name__ == "__main__":  # pragma: no cover
