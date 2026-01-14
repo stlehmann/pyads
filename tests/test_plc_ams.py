@@ -37,8 +37,7 @@ class PLCAMSTestCase(unittest.TestCase):
 
     def test_get_ams(self):
         # Start receiving listener
-        route_thread = threading.Thread(target=self.plc_ams_request_receiver)
-        route_thread.setDaemon(True)
+        route_thread = threading.Thread(target=self.plc_ams_request_receiver, daemon=True)
         route_thread.start()
 
         # Confirm that the AMS net id is properly fetched from PLC
