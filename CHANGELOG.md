@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Added
+* [#482](https://github.com/stlehmann/pyads/issues/482) Support for Python 3.13 and 3.14 is included
+
+### Changed
+* [#488](https://github.com/stlehmann/pyads/issues/488) `datetime` objects passed on by notifications now have an explicit UTC timezone, instead of `None` 
+
+### Rmeoved
+* [#488](https://github.com/stlehmann/pyads/issues/488) Removed custom `UTC` class, replaced by regular `datetime.timezone.utc`
+
 ## 3.5.1
 
 ### Added
