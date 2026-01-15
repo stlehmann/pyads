@@ -37,7 +37,7 @@ From source:
 ```bash
 git clone https://github.com/stlehmann/pyads.git --recursive
 cd pyads
-python setup.py install
+pip install .
 ```
 
 ## Features

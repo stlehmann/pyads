@@ -17,7 +17,7 @@ From source:
 ```bash
 git clone https://github.com/stlehmann/pyads.git --recursive
 cd pyads
-python setup.py install
+pip install .
 ```
 
 Note: pyads only supports python 3.8 and above.
