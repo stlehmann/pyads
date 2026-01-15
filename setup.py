@@ -96,7 +96,7 @@ class CustomBDistWheel(bdist_wheel):
 
         See https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/
         """
-        impl_tag = "py2.py3"  # Same wheel across Python versions
+        impl_tag = "py3"  # Same wheel across Python versions
         abi_tag = "none"  # Same wheel across ABI versions (not a C-extension)
 
         # But we need to differentiate on the platform for the compiled adslib
