@@ -50,7 +50,8 @@ Repository = "https://github.com/stlehmann/pyads"
 Documentation = "https://pyads.readthedocs.io"
 
 [build-system]
-requires = ["setuptools >= 61.0", "wheel"]
+requires = ["setuptools >= 70.1", "wheel"]
+# Minimum of 70.1 because of new location of `bdist_wheel`
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]

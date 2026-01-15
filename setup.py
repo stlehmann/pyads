@@ -1,13 +1,18 @@
 import os
 import subprocess
 import sys
-import sysconfig
+import struct
 from pathlib import Path
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.install import install
-from wheel.bdist_wheel import bdist_wheel
+from setuptools.command.bdist_wheel import bdist_wheel, get_platform
+
+
+def _is_32bit_interpreter() -> bool:
+    return struct.calcsize("P") == 4
+
 
 src_folder = Path(__file__).parent.absolute() / "src"
 # ^ This will be on PATH for editable install
@@ -95,12 +100,21 @@ class CustomBDistWheel(bdist_wheel):
         abi_tag = "none"  # Same wheel across ABI versions (not a C-extension)
 
         # But we need to differentiate on the platform for the compiled adslib
-        # For this we rely on the default function:
-        self.root_is_pure = False  # Prevent falling into the `any` platform
-        _, _, plat_tag = super().get_tag()
-        self.root_is_pure = True  # But otherwise the package must be thought of as pure
 
-        return impl_tag, abi_tag, plat_tag
+        # The following code is copied from `setuptools.command.bdist_wheel.get_tag()`
+        plat_name = get_platform(self.bdist_dir)
+
+        if _is_32bit_interpreter():
+            if plat_name in ("linux-x86_64", "linux_x86_64"):
+                plat_name = "linux_i686"
+            if plat_name in ("linux-aarch64", "linux_aarch64"):
+                plat_name = "linux_armv7l"
+
+        plat_name = (
+            plat_name.lower().replace("-", "_").replace(".", "_").replace(" ", "_")
+        )
+
+        return impl_tag, abi_tag, plat_name
 
 
 # noinspection PyTypeChecker
