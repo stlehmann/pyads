@@ -5,13 +5,11 @@
 
 name: Upload Python Package
 
-on: [pull_request]
+on:
+  release:
+    types: [created]
 
-#on:
-#  release:
-#    types: [created]
-#
-#  workflow_dispatch: # allow running the workflow manually
+  workflow_dispatch: # allow running the workflow manually
 
 jobs:
   build_wheels:
