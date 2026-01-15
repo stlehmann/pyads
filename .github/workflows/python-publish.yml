@@ -59,6 +59,7 @@ jobs:
           path: dist/*.tar.gz
 
   upload_all:
+      name: Upload to PyPi
       needs: [build_wheels, build_sdist]
       environment: testpypi
       permissions:
