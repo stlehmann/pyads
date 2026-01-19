@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Changed
+* Minimum Python version changed to 3.9 (Python 3.8 is no longer supported)
+* [#495](https://github.com/stlehmann/pyads/issues/495) Organizing of metadata in `pyproject.toml` 
+
 ## 3.5.1
 
 ### Added
