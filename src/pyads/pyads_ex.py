@@ -1371,12 +1371,7 @@ def adsSyncDelDeviceNotificationReqEx(
     pAmsAddr = ctypes.pointer(adr.amsAddrStruct())
     nHNotification = ctypes.c_ulong(notification_handle)
     err_code = adsSyncDelDeviceNotificationReqFct(port, pAmsAddr, nHNotification)
-
-    store_key = (adr, notification_handle)
-    callback_store.pop(store_key, None)
-    # It is not correct if this notification is not in the callback store, but we can't
-    # do anything about it, so avoid exceptions
-    
+    del callback_store[(adr, notification_handle)]
     if err_code:
         raise ADSError(err_code)
 
