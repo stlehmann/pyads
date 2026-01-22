@@ -80,7 +80,7 @@ class TestServerTestCase(unittest.TestCase):
             # (e.g. the machine with ADS Server disconnected)
             # this raised an ADSError up to commit [a7af674](https://github.com/stlehmann/pyads/tree/a7af674b49b1c91966f2bac1f00f86273cbd9af8)
             #  `clear_device_notifications()` failed, if not wrapped in try-catch as the server is no longer present.
-            test_int.__del__()
+            del test_int  # Trigger destructor
         except pyads.ADSError as e:
             self.fail(f"Closing server connection raised: {e}")
 

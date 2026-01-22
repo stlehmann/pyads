@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
     - name: Checkout repository and submodules
@@ -28,16 +28,10 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install package (with dependencies)
+    - name: Install package, dependencies and tools
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest coverage coveralls pytest-cov setuptools wheel
-    - name: Build adslib
-      run: |
-        python setup.py build
-    - name: Install package
-      run: |
-        pip install -e .
+        python -m pip install .[tests,dev]
     - name: Test with pytest
       run: |
         pytest -v --cov pyads

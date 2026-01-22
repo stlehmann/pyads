@@ -11,9 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 * [#488](https://github.com/stlehmann/pyads/issues/488) `datetime` objects passed on by notifications now have an explicit UTC timezone, instead of `None` 
+* [#495](https://github.com/stlehmann/pyads/issues/495) Organizing of metadata in `pyproject.toml` 
 
 ### Removed
 * [#488](https://github.com/stlehmann/pyads/issues/488) Removed custom `UTC` class, replaced by regular `datetime.timezone.utc`
+* Minimum Python version changed to 3.9 (Python 3.8 is no longer supported)
 
 ## 3.5.1
 
