@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 * [#488](https://github.com/stlehmann/pyads/issues/488) `datetime` objects passed on by notifications now have an explicit UTC timezone, instead of `None` 
 
-### Rmeoved
+### Removed
 * [#488](https://github.com/stlehmann/pyads/issues/488) Removed custom `UTC` class, replaced by regular `datetime.timezone.utc`
 
 ## 3.5.1
