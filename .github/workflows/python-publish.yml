@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}
+          name: cibw-wheels-${{ matrix.os }}-*
           path: dist
 
       - uses: actions/setup-python@v5
