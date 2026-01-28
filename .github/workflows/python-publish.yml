@@ -40,6 +40,30 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
 
+  test_wheels:
+    name: Test distributions
+    needs: build_wheels 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        # Can't really test with Windows because 'TcAdsDll.dll' will be missing
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Now install the package from the local wheels and try to use it:
+      - run: |
+          pip install pyads --no-index --find-links ./dist
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)" 
+
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
