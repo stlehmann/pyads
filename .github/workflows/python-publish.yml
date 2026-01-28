@@ -74,4 +74,4 @@ jobs:
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/pyads-stlehmann
+          repository-url: https://test.pypi.org/p/pyads-stlehmann
