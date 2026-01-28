@@ -61,7 +61,7 @@ jobs:
       needs: [build_wheels, build_sdist]
       environment:
         name: testpypi
-        url: https://test.pypi.org/p/pyads
+        url: https://test.pypi.org/p/pyads-stlehmann
       permissions:
         id-token: write
       runs-on: ubuntu-latest
@@ -74,4 +74,4 @@ jobs:
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/pyads
+          repository-url: https://test.pypi.org/pyads-stlehmann
