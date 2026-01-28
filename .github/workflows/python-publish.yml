@@ -57,9 +57,11 @@ jobs:
           path: dist/*.tar.gz
 
   upload_all:
-      name: Upload to PyPi
+      name: Upload to TestPyPi
       needs: [build_wheels, build_sdist]
-      environment: pypi
+      environment:
+        name: testpypi
+        url: https://test.pypi.org/p/pyads
       permissions:
         id-token: write
       runs-on: ubuntu-latest
@@ -71,3 +73,5 @@ jobs:
           merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/pyads
