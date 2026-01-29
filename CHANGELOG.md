@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Unreleased
 
 ### Added
+* [#487](https://github.com/stlehmann/pyads/issues/487) Switch to cibuildwheel for building wheels in CI (including Windows, Linux and MacOS wheels)
 * [#482](https://github.com/stlehmann/pyads/issues/482) Support for Python 3.13 and 3.14 is included
 
 ### Changed
