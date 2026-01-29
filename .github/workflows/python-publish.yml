@@ -12,6 +12,24 @@ on:
   workflow_dispatch: # allow running the workflow manually
 
 jobs:
+
+  test_editable:
+    name: Test editable install
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - run: |
+          pip install -e . -vv
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)"
+
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -46,7 +64,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
         # Can't really test with Windows because 'TcAdsDll.dll' will be missing
 
     steps:
