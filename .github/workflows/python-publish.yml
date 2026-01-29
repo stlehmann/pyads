@@ -1,5 +1,7 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+#
+# This workflow will build multiple Python wheels and upload the packages when a release is created
+# For more information see: https://cibuildwheel.pypa.io/en/stable/ci-services/#github-actions
+#
 
 name: Upload Python Package
 
@@ -10,26 +12,103 @@ on:
   workflow_dispatch: # allow running the workflow manually
 
 jobs:
-  deploy:
 
+  test_editable:
+    name: Test editable install
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build twine
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        python -m build
-        twine upload dist/*
+      - uses: actions/checkout@v4
+        with:
+          submodules: "true"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - run: |
+          pip install -e . -vv
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)"
+
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-15-intel is an Intel runner, macos-14 is Apple silicon
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.1
+        env:
+          # We only compile `adslib`, with no link to Python at all, so we only need to pick a single Python version
+          # We will fairly the different OS flavours
+          CIBW_BUILD: "cp314-*"
+          # Skip the versions that give errors during building:
+          CIBW_SKIP: "*-musllinux_*"
+          # Full matrix: https://cibuildwheel.pypa.io/en/stable/options/#build-skip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
+  test_wheels:
+    name: Test distributions
+    needs: build_wheels 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        # Can't really test with Windows because 'TcAdsDll.dll' will be missing
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Now install the package from the local wheels and try to use it:
+      - run: |
+          pip install pyads-stlehmann --no-index --find-links ./dist
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)" 
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Build sdist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+
+  upload_all:
+      name: Upload to PyPi
+      needs: [build_wheels, build_sdist, test_wheels, test_editable]
+      environment: pypi
+      permissions:
+        id-token: write
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
