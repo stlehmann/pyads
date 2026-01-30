@@ -79,7 +79,7 @@ jobs:
 
       # Now install the package from the local wheels and try to use it:
       - run: |
-          pip install pyads-stlehmann --no-index --find-links ./dist
+          pip install pyads --no-index --find-links ./dist
           python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)" 
 
   build_sdist:
