@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Unreleased
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Removed
+
+## 3.5.2
 
 ### Added
 * [#487](https://github.com/stlehmann/pyads/issues/487) Switch to cibuildwheel for building wheels in CI (including Windows, Linux and MacOS wheels)
