@@ -165,9 +165,9 @@ class PLCVariable:
     def register_notification(self) -> int:
         """Register a new notification."""
 
-        handle = self.notification_count
+        handle = PLCVariable.notification_count
         self.notifications.append(handle)
-        self.notification_count += 1
+        PLCVariable.notification_count += 1
         return handle
 
     def unregister_notification(self, handle: int = None):
