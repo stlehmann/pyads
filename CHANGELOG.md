@@ -12,6 +12,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+## 3.6
+
+### Added
+
+### Changed
+* [#502](https://github.com/stlehmann/pyads/pull/502) Update adslib to Upstream Master
+
+### Removed
+
 ## 3.5.2
 
 ### Added
