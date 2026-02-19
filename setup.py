@@ -1,13 +1,13 @@
 import os
+import struct
 import subprocess
 import sys
-import struct
 from pathlib import Path
 
 from setuptools import setup
+from setuptools.command.bdist_wheel import bdist_wheel, get_platform
 from setuptools.command.build_py import build_py
 from setuptools.command.install import install
-from setuptools.command.bdist_wheel import bdist_wheel, get_platform
 
 
 def _is_32bit_interpreter() -> bool:
@@ -16,7 +16,7 @@ def _is_32bit_interpreter() -> bool:
 
 src_folder = Path(__file__).parent.absolute() / "src"
 # ^ This will be on PATH for editable install
-adslib_folder = Path(__file__).parent.absolute() / "adslib"
+adslib_folder = Path(__file__).parent.absolute() / "adslib/build"
 adslib_file = src_folder / "adslib.so"
 
 
