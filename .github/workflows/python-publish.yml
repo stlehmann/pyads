@@ -18,14 +18,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install build tools
+        run: sudo apt update && sudo apt install -y meson
       - uses: actions/checkout@v4
         with:
           submodules: "true"
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-
       - run: |
           pip install -e . -vv
           python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)"
