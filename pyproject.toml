@@ -76,7 +76,7 @@ version = {attr = "pyads.__version__"}
 before-all = "pip install meson ninja"
 
 [tool.cibuildwheel.linux]
-before-all = "apt install -y meson"
+before-all = "sudo apt update && sudo apt install -y meson"
 
 [tool.tox]
 legacy_tox_ini = """
