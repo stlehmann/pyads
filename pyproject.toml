@@ -72,7 +72,7 @@ pyads = ["adslib/**"]
 [tool.setuptools.dynamic]
 version = {attr = "pyads.__version__"}
 
-[tool.cibuildwheel.linux]
+[tool.cibuildwheel]
 before-all = "pip install meson ninja"
 
 [tool.tox]
