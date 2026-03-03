@@ -72,6 +72,9 @@ pyads = ["adslib/**"]
 [tool.setuptools.dynamic]
 version = {attr = "pyads.__version__"}
 
+[tool.cibuildwheel.linux]
+before-all = "apt install -y meson"
+
 [tool.tox]
 legacy_tox_ini = """
     [tox]
