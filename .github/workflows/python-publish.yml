@@ -102,7 +102,6 @@ jobs:
       name: Upload to PyPi
       needs: [build_wheels, build_sdist, test_wheels, test_editable]
       environment: testpypi
-      url: https://test.pypi.org/p/pyads-stlehmann
       permissions:
         id-token: write
       runs-on: ubuntu-latest
