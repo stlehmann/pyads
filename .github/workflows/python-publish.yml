@@ -101,7 +101,7 @@ jobs:
   upload_all:
       name: Upload to PyPi
       needs: [build_wheels, build_sdist, test_wheels, test_editable]
-      environment: pypi
+      environment: TestPyPi
       permissions:
         id-token: write
       runs-on: ubuntu-latest
@@ -112,3 +112,5 @@ jobs:
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
