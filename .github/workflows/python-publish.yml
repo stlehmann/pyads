@@ -113,4 +113,4 @@ jobs:
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/p/pyads-stlehmann
+          repository-url: https://test.pypi.org/p/pyads-stlehmann/
