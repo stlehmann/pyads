@@ -21,9 +21,6 @@ classifiers = [
 license = "MIT"
 license-files = ["LICENSE"]
 dynamic = ["version"]
-dependencies = [
-    "setuptools>=82.0.0",
-]
 requires-python = ">= 3.9,<4"
 # Outdated Python versions are still included, until they cause problems (after which they will bed dropped)
 # Python 3.8 cannot be used anymore because of a setuptoools minimum version
