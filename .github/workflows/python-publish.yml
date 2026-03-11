@@ -101,7 +101,8 @@ jobs:
   upload_all:
       name: Upload to PyPi
       needs: [build_wheels, build_sdist, test_wheels, test_editable]
-      environment: TestPyPi
+      environment: testpypi
+      url: https://test.pypi.org/p/pyads-stlehmann
       permissions:
         id-token: write
       runs-on: ubuntu-latest
@@ -113,4 +114,4 @@ jobs:
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/p/pyads-stlehmann
