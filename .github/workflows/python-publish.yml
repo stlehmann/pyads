@@ -79,7 +79,7 @@ jobs:
 
       # Now install the package from the local wheels and try to use it:
       - run: |
-          pip install pyads-stlehmann --no-index --find-links ./dist
+          pip install pyads --no-index --find-links ./dist
           python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)" 
 
   build_sdist:
@@ -101,7 +101,7 @@ jobs:
   upload_all:
       name: Upload to PyPi
       needs: [build_wheels, build_sdist, test_wheels, test_editable]
-      environment: testpypi
+      environment: pypi
       permissions:
         id-token: write
       runs-on: ubuntu-latest
@@ -112,5 +112,3 @@ jobs:
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
