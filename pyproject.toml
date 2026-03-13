@@ -1,5 +1,5 @@
 [project]
-name = "pyads"
+name = "pyads-stlehmann"
 description = "Python wrapper for TwinCAT ADS library"
 authors = [
     { name = "Stefan Lehmann", email = "stlm@posteo.de" },
@@ -21,9 +21,6 @@ classifiers = [
 license = "MIT"
 license-files = ["LICENSE"]
 dynamic = ["version"]
-dependencies = [
-    "setuptools>=82.0.0",
-]
 requires-python = ">= 3.9,<4"
 # Outdated Python versions are still included, until they cause problems (after which they will bed dropped)
 # Python 3.8 cannot be used anymore because of a setuptoools minimum version
@@ -72,8 +69,11 @@ pyads = ["adslib/**"]
 [tool.setuptools.dynamic]
 version = {attr = "pyads.__version__"}
 
+[tool.cibuildwheel]
+before-all = "pip install meson ninja"
+
 [tool.cibuildwheel.linux]
-before-all = "apt install -y meson"
+before-all = "yum install -y meson"
 
 [tool.tox]
 legacy_tox_ini = """
