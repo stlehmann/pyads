@@ -1,5 +1,5 @@
 [project]
-name = "pyads"
+name = "pyads-stlehmann"
 description = "Python wrapper for TwinCAT ADS library"
 authors = [
     { name = "Stefan Lehmann", email = "stlm@posteo.de" },
