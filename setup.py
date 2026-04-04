@@ -40,7 +40,10 @@ class CustomBuildPy(build_py):
     def _compile_library():
         """Use `make` to build adslib - build is done in-place."""
         # Produce `adslib.so`:
-        subprocess.call(["make", "-C", "adslib"])
+        os.chdir("adslib")
+        subprocess.call(["meson", "setup", "build"])
+        subprocess.call(["ninja", "-C", "build"])
+        os.chdir("..")
 
     @staticmethod
     def _clean_library():
