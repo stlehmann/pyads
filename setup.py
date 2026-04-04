@@ -66,7 +66,7 @@ class CustomBuildPy(build_py):
         if self.compile_adslib():
             # Move .so file from Git submodule into src/ to have it on PATH:
             self.move_file(
-                str(adslib_folder / "adslib.so"),
+                str(adslib_folder / "libadslib.so"),
                 str(adslib_file),
             )
 
