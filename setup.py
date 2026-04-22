@@ -41,8 +41,10 @@ class CustomBuildPy(build_py):
         """Use `make` to build adslib - build is done in-place."""
         # Produce `adslib.so`:
         os.chdir("adslib")
-        subprocess.call(["meson", "setup", "build"])
-        subprocess.call(["ninja", "-C", "build"])
+        env = os.environ.copy()
+        env["BHF_ADS_EXPORT_C"] = "1"
+        subprocess.call(["meson", "setup", "build"], env=env)
+        subprocess.call(["ninja", "-C", "build"], env=env)
         os.chdir("..")
 
     @staticmethod
