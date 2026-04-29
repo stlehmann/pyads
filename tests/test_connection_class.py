@@ -1452,7 +1452,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         var = PLCVariable(
             "wstr",
             expected1.encode("utf-16-le") + b"\x00\x00",
-            constants.ADST_WSTRING, f"WSTRING({len(expected1)})"
+            constants.ADST_WSTRING, "WSTRING(80)"
         )
         self.handler.add_variable(var)
 
@@ -1490,9 +1490,9 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
         # Add to test plc
         self.handler.add_variable(PLCVariable(
-            name = "wstr_test_array", 
-            value = bytes(w_string_bytes), 
-            ads_type = constants.ADST_WSTRING, 
+            name = "wstr_test_array",
+            value = bytes(w_string_bytes),
+            ads_type = constants.ADST_WSTRING,
             symbol_type = f"WSTRING({w_string_char_size})"))
 
 
@@ -1540,9 +1540,9 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
         # Add to test plc
         self.handler.add_variable(PLCVariable(
-            name = "str_test_array", 
-            value = bytes(string_bytes), 
-            ads_type = constants.ADST_STRING, 
+            name = "str_test_array",
+            value = bytes(string_bytes),
+            ads_type = constants.ADST_STRING,
             symbol_type = f"STRING({string_char_size})"))
 
 
@@ -1591,9 +1591,9 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
         # Add to test plc
         self.handler.add_variable(PLCVariable(
-            name = "int_test_array", 
-            value = bytes(int_array_bytes), 
-            ads_type = constants.ADST_INT16, 
+            name = "int_test_array",
+            value = bytes(int_array_bytes),
+            ads_type = constants.ADST_INT16,
             symbol_type = f"INT"))
 
 
@@ -1643,9 +1643,9 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
         # Add to test plc
         self.handler.add_variable(PLCVariable(
-            name = "real_test_array", 
-            value = bytes(real_array_bytes), 
-            ads_type = constants.ADST_REAL32, 
+            name = "real_test_array",
+            value = bytes(real_array_bytes),
+            ads_type = constants.ADST_REAL32,
             symbol_type = f"REAL"))
 
 
@@ -1653,7 +1653,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         with self.plc:
             read_values = self.plc.read_list_by_name(["real_test_array"])
 
-        # Verify result to 1dp 
+        # Verify result to 1dp
         for i, value in enumerate(read_values["real_test_array"]):
             self.assertEqual(expected_real_array[i], round(value, 1))
 
@@ -1669,7 +1669,7 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         with self.plc:
             read_values = self.plc.read_list_by_name(["real_test_array"])
 
-        # Verify result to 1dp 
+        # Verify result to 1dp
         for i, value in enumerate(read_values["real_test_array"]):
             self.assertEqual(expected_real_array[i], round(value, 1))
 
