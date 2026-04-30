@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - [#508](https://github.com/stlehmann/pyads/pull/508) Finally we directly use Beckhoff/ADS library, thanks to @pbruenn
+- allow AdsWrite for zero length buffer using `adsSyncWriteReqEx`, based on [standalone/AdsLib: allow AdsWrite for zero length buffer](https://github.com/Beckhoff/ADS/commit/8bee2f64b62724aa5313997d8e60d0c68c789da6)
 
 ### Removed
 
