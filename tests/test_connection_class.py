@@ -52,8 +52,11 @@ class AdsConnectionClassTestCase(unittest.TestCase):
     def setUpClass(cls):
         # type: () -> None
         """Setup the ADS testserver."""
-        cls.test_server = AdsTestServer(logging=False)
-        cls.test_server.start()
+        try:
+            cls.test_server = AdsTestServer(logging=False)
+            cls.test_server.start()
+        except OSError as exc:
+            raise unittest.SkipTest(str(exc))
 
         # wait a bit otherwise error might occur
         time.sleep(1)
@@ -1299,8 +1302,11 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
     def setUpClass(cls):
         # Start dummy ADS Endpoint
         cls.handler = AdvancedHandler()
-        cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
-        cls.test_server.start()
+        try:
+            cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
+            cls.test_server.start()
+        except OSError as exc:
+            raise unittest.SkipTest(str(exc))
 
         # wait a bit otherwise error might occur
         time.sleep(1)

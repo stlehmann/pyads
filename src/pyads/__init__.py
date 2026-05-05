@@ -118,4 +118,6 @@ from .constants import (
 
 from .symbol import AdsSymbol
 
+from .typed_symbols import TypeSystem, TypedSymbolTable
+
 __version__ = '3.6.0.dev1'

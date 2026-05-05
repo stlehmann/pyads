@@ -25,9 +25,16 @@ class TestServerTestCase(unittest.TestCase):
     case is only for a few items that were left uncovered.
     """
 
+    @staticmethod
+    def _create_server_or_skip(handler):
+        try:
+            return AdsTestServer(handler=handler, logging=False)
+        except OSError as exc:
+            raise unittest.SkipTest(str(exc))
+
     def test_start_stop(self):
         handler = BasicHandler()
-        test_server = AdsTestServer(handler=handler, logging=False)
+        test_server = self._create_server_or_skip(handler)
         test_server.start()
         time.sleep(0.1)  # Give server a moment to spin up
         test_server.stop()
@@ -35,7 +42,7 @@ class TestServerTestCase(unittest.TestCase):
 
     def test_context(self):
         handler = BasicHandler()
-        test_server = AdsTestServer(handler=handler, logging=False)
+        test_server = self._create_server_or_skip(handler)
 
         with test_server:
 
@@ -55,7 +62,7 @@ class TestServerTestCase(unittest.TestCase):
         """
         # 1. spin up the server
         handler = BasicHandler()
-        test_server = AdsTestServer(handler=handler, logging=False)
+        test_server = self._create_server_or_skip(handler)
         test_server.start()
         time.sleep(0.1)  # Give server a moment to spin up
 

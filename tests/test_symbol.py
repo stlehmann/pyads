@@ -33,8 +33,11 @@ class AdsSymbolTestCase(unittest.TestCase):
         # type: () -> None
         """Setup the ADS test server."""
         cls.handler = AdvancedHandler()
-        cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
-        cls.test_server.start()
+        try:
+            cls.test_server = AdsTestServer(handler=cls.handler, logging=False)
+            cls.test_server.start()
+        except OSError as exc:
+            raise unittest.SkipTest(str(exc))
 
         # wait a bit otherwise error might occur
         time.sleep(1)

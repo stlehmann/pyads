@@ -5,7 +5,9 @@
 :created on: 2018-06-11 18:15:53
 
 """
+
 from __future__ import annotations
+
 import struct
 from ctypes import (
     memmove,
@@ -126,6 +128,7 @@ class Connection(object):
         self.ams_net_port = ams_net_port
         self._notifications = {}  # type: Dict[int, str]
         self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
+        self._type_system_cache = None
 
     @property
     def ams_netid(self) -> str:
@@ -488,6 +491,30 @@ class Connection(object):
                                    symbol_type=symbol_type, comment=comment)
                 symbols.append(symbol)
         return symbols
+
+    def get_type_system(self, refresh: bool = False, debug: bool = False) -> "TypeSystem":
+        """Return a runtime type system for ADS symbols and datatypes.
+
+        The type system is built from ``ADSIGRP_SYM_UPLOAD`` and
+        ``ADSIGRP_SYM_DT_UPLOAD`` and cached on the connection. It is read-only
+        and does not change existing symbol APIs.
+
+        :param bool refresh: rebuild the cached type system when True
+        :param bool debug: enable debug logging while uploading/parsing
+        :return: TypeSystem with symbols, datatypes, schema, and typed reads
+        """
+        if self._port is None:
+            raise ValueError("Cannot build type system with a closed Connection")
+        if refresh or self._type_system_cache is None:
+            from .typed_symbols import TypeSystem
+
+            self._type_system_cache = TypeSystem.from_connection(self, debug=debug)
+        return self._type_system_cache
+
+    def get_typed_symbol_table(self) -> "TypedSymbolTable":
+        """Backward-compatible alias for :meth:`get_type_system`."""
+
+        return self.get_type_system()
 
     def get_handle(self, data_name: str) -> Optional[int]:
         """Get the handle of the PLC-variable, handles obtained using this

@@ -37,6 +37,7 @@ deploy
 coverage
 .mypy_cache/
 .pytest_cache/
+tests/live_ads_config.json
 
 # vscode files
 .vscode/
