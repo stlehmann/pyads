@@ -44,7 +44,7 @@ jobs:
           submodules: recursive
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.1
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           # We only compile `adslib`, with no link to Python at all, so we only need to pick a single Python version
           # We will fairly the different OS flavours
