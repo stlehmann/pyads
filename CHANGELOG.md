@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - [#508](https://github.com/stlehmann/pyads/pull/508) Finally we directly use Beckhoff/ADS library, thanks to @pbruenn
+- [#518](https://github.com/stlehmann/pyads/issues/518) Fix signed/unsigned issue with INT8 PLC datatype.
 
 ### Removed
 
