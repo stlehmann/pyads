@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         # macos-15-intel is an Intel runner, macos-14 is Apple silicon
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, ubuntu-24.04-riscv, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
 
     steps:
       - uses: actions/checkout@v5
@@ -44,7 +44,7 @@ jobs:
           submodules: recursive
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.1
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           # We only compile `adslib`, with no link to Python at all, so we only need to pick a single Python version
           # We will fairly the different OS flavours
@@ -64,7 +64,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, ubuntu-24.04-riscv, macos-15-intel, macos-latest]
         # Can't really test with Windows because 'TcAdsDll.dll' will be missing
 
     steps:
