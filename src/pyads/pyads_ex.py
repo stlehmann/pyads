@@ -641,11 +641,17 @@ def adsSyncWriteReqEx(
             data = plc_data_type(*value)
         elif type(value) is plc_data_type:
             data = value
+        elif plc_data_type is None:  # zero length write request
+            data = None
         else:
             data = plc_data_type(value)
 
-        data_pointer = ctypes.pointer(data)
-        data_length = ctypes.sizeof(data)
+        if data is not None:  # default behaviour
+            data_pointer = ctypes.pointer(data)
+            data_length = ctypes.sizeof(data)
+        else:  # zero length write request
+            data_pointer = None
+            data_length = 0
 
     error_code = sync_write_request(
         port,
