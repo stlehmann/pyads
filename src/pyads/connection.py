@@ -282,7 +282,7 @@ class Connection(object):
 
     def write(
             self, index_group: int, index_offset: int, value: Any,
-            plc_datatype: Type["PLCDataType"]
+            plc_datatype: Optional[Type["PLCDataType"]]
     ) -> None:
         """Send data synchronous to an ADS-device.
 
@@ -290,8 +290,9 @@ class Connection(object):
             constants
         :param int index_offset: PLC storage address
         :param Any value: value to write to the storage address of the PLC
-        :param Type["PLCDataType"] plc_datatype: type of the data given to the PLC,
-            according to PLCTYPE constants
+        :param Optional[Type["PLCDataType"]] plc_datatype: type of the data given
+            to the PLC, according to PLCTYPE constants. Pass ``None`` to send a
+            zero-length write request (no data buffer).
 
         """
         if self._port is not None:
