@@ -605,7 +605,7 @@ def adsSyncWriteReqEx(
     index_group: int,
     index_offset: int,
     value: Any,
-    plc_data_type: Type,
+    plc_data_type: Optional[Type],
 ) -> None:
     """Send data synchronous to an ADS-device.
 
@@ -615,8 +615,9 @@ def adsSyncWriteReqEx(
         constants
     :param int index_offset: PLC storage address
     :param value: value to write to the storage address of the PLC
-    :param int plc_data_type: type of the data given to the PLC,
-        according to PLCTYPE constants
+    :param Optional[Type] plc_data_type: type of the data given to the PLC,
+        according to PLCTYPE constants. Pass ``None`` to send a zero-length
+        write request (no data buffer).
 
     """
     sync_write_request = _adsDLL.AdsSyncWriteReqEx

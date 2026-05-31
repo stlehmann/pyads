@@ -263,6 +263,30 @@ class AdsConnectionClassTestCase(unittest.TestCase):
 
         self.assertEqual(value, received_value)
 
+    def test_write_zero_length(self):
+        """Zero-length write request (plc_datatype=None) sends no buffer."""
+        with self.plc:
+            self.plc.write(
+                index_group=constants.INDEXGROUP_DATA,
+                index_offset=1,
+                value=None,
+                plc_datatype=None,
+            )
+
+        # Retrieve list of received requests from server
+        requests = self.test_server.request_history
+
+        # Assert that the server received a request
+        self.assertEqual(len(requests), 1)
+
+        # Assert that the server received the correct command
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_WRITE)
+
+        # The length field must be zero and no value payload should follow
+        data_length = struct.unpack("<I", requests[0].ams_header.data[8:12])[0]
+        self.assertEqual(data_length, 0)
+        self.assertEqual(requests[0].ams_header.data[12:], b"")
+
     def test_write_float(self):
         value = 123.456
 
