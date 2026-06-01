@@ -1,0 +1,8 @@
+{
+  "device": "Beckhoff CX (example)",
+  "ams_net_id": "1.2.3.4.1.1",
+  "ams_port": 851,
+  "reported_ads_port": 28678,
+  "ip_address": "192.168.0.10",
+  "root_symbol": "MAIN.someRoot"
+}

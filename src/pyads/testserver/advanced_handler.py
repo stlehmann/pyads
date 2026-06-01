@@ -203,6 +203,10 @@ class AdvancedHandler(AbstractHandler):
 
     def __init__(self) -> None:
         self._data: Dict[Tuple[int, int], PLCVariable] = {}
+        self._symbol_upload_blob: Optional[bytes] = None
+        self._datatype_upload_blob: Optional[bytes] = None
+        self._symbol_upload_count: int = 0
+        self._datatype_upload_count: int = 0
         # This will be our variables database
         # We won't both with indexing it by handle or name, speed is not
         # important. We store by group + offset index and will have to
@@ -213,6 +217,45 @@ class AdvancedHandler(AbstractHandler):
     def reset(self) -> None:
         """Clear saved variables in handler"""
         self._data = {}
+        self._symbol_upload_blob = None
+        self._datatype_upload_blob = None
+        self._symbol_upload_count = 0
+        self._datatype_upload_count = 0
+
+    @staticmethod
+    def _count_entries(blob: bytes, minimum_entry_size: int = 4) -> int:
+        """Count ADS entries in a length-prefixed blob."""
+        count = 0
+        pos = 0
+        end = len(blob)
+        while pos + minimum_entry_size <= end:
+            entry_length = struct.unpack_from("<I", blob, pos)[0]
+            if entry_length <= 0 or pos + entry_length > end:
+                break
+            count += 1
+            pos += entry_length
+        return count
+
+    def configure_symbol_upload(
+        self,
+        symbol_blob: bytes,
+        datatype_blob: bytes = b"",
+        symbol_count: Optional[int] = None,
+        datatype_count: Optional[int] = None,
+    ) -> None:
+        """Configure deterministic symbol/datatype upload responses."""
+        self._symbol_upload_blob = bytes(symbol_blob or b"")
+        self._datatype_upload_blob = bytes(datatype_blob or b"")
+        self._symbol_upload_count = (
+            symbol_count
+            if symbol_count is not None
+            else self._count_entries(self._symbol_upload_blob, minimum_entry_size=30)
+        )
+        self._datatype_upload_count = (
+            datatype_count
+            if datatype_count is not None
+            else self._count_entries(self._datatype_upload_blob, minimum_entry_size=40)
+        )
 
     def handle_request(self, request: AmsPacket) -> AmsResponseData:
         """Handle incoming requests and create a response."""
@@ -260,15 +303,44 @@ class AdvancedHandler(AbstractHandler):
                 response_value = self.get_variable_by_handle(index_offset).value
 
             elif index_group == constants.ADSIGRP_SYM_UPLOADINFO2:
-                symbol_count = len(self._data)
-                response_length = 120 * symbol_count
-                response_value = struct.pack("II", symbol_count, response_length)
+                if self._symbol_upload_blob is not None:
+                    response_value = struct.pack(
+                        "<IIIIII",
+                        self._symbol_upload_count,
+                        len(self._symbol_upload_blob),
+                        self._datatype_upload_count,
+                        len(self._datatype_upload_blob or b""),
+                        0,
+                        0,
+                    )
+                else:
+                    symbol_count = len(self._data)
+                    response_length = 120 * symbol_count
+                    response_value = struct.pack("<II", symbol_count, response_length)
+
+            elif index_group == constants.ADSIGRP_SYM_UPLOADINFO:
+                if self._symbol_upload_blob is not None:
+                    response_value = struct.pack(
+                        "<II",
+                        self._symbol_upload_count,
+                        len(self._symbol_upload_blob),
+                    )
+                else:
+                    symbol_count = len(self._data)
+                    response_length = 120 * symbol_count
+                    response_value = struct.pack("<II", symbol_count, response_length)
 
             elif index_group == constants.ADSIGRP_SYM_UPLOAD:
-                response_value = b""
-                for (group, offset) in self._data.keys():
-                    response_value += struct.pack("III", 120, group, offset)
-                    response_value += b"\x00" * 108
+                if self._symbol_upload_blob is not None:
+                    response_value = self._symbol_upload_blob
+                else:
+                    response_value = b""
+                    for (group, offset) in self._data.keys():
+                        response_value += struct.pack("<III", 120, group, offset)
+                        response_value += b"\x00" * 108
+
+            elif index_group == constants.ADSIGRP_SYM_DT_UPLOAD:
+                response_value = self._datatype_upload_blob or b""
 
             else:
                 # Create response of repeated 0x0F with a null

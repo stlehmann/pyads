@@ -20,6 +20,7 @@ from __future__ import absolute_import
 from typing import Any, List, Type, Optional
 from types import TracebackType
 import atexit
+import os
 import select
 import socket
 import struct
@@ -45,14 +46,19 @@ class AdsTestServer(threading.Thread):
             self,
             handler: "AbstractHandler" = None,
             ip_address: str = "127.0.0.1",
-            port: int = ADS_PORT,
+            port: Optional[int] = None,
             logging: bool = True,
             *args: Any,
             **kwargs: Any,
     ) -> None:
         self.handler = handler or BasicHandler()
         self.ip_address = ip_address
-        self.port = port
+        configured_port = (
+            int(os.environ.get("PYADS_TESTSERVER_PORT", ADS_PORT))
+            if port is None
+            else int(port)
+        )
+        self.port = configured_port
         self._run = True
 
         global logger
@@ -67,7 +73,14 @@ class AdsTestServer(threading.Thread):
         # Set option to allow instant socket reuse after shutdown
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        self.server.bind((self.ip_address, self.port))
+        try:
+            self.server.bind((self.ip_address, self.port))
+        except OSError as exc:
+            raise OSError(
+                "Could not bind AdsTestServer to {}:{} ({})".format(
+                    self.ip_address, self.port, exc
+                )
+            ) from exc
 
         # Make sure we clean up on exit
         atexit.register(self.close)

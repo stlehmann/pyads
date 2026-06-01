@@ -26,6 +26,16 @@ class PLCRouteTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+    @staticmethod
+    def _require_udp_port() -> None:
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
+            try:
+                sock.bind(("", PORT_REMOTE_UDP))
+            except OSError as exc:
+                raise unittest.SkipTest(
+                    "UDP port {} unavailable: {}".format(PORT_REMOTE_UDP, exc)
+                )
+
     def plc_route_receiver(self):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
             sock.bind(("", PORT_REMOTE_UDP))
@@ -153,6 +163,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
     def test_correct_route(self):
         if platform_is_linux():
+            self._require_udp_port()
             # Start receiving listener
             route_thread = threading.Thread(target=self.plc_route_receiver, daemon=True)
             route_thread.start()
@@ -177,6 +188,7 @@ class PLCRouteTestCase(unittest.TestCase):
 
     def test_incorrect_route(self):
         if platform_is_linux():
+            self._require_udp_port()
             # Start receiving listener
             route_thread = threading.Thread(target=self.plc_route_receiver, daemon=True)
             route_thread.start()

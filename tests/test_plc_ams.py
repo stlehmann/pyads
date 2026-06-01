@@ -13,6 +13,16 @@ class PLCAMSTestCase(unittest.TestCase):
     PLC_IP = "127.0.0.1"
     PLC_AMS_ID = "11.22.33.44.1.1"
 
+    @staticmethod
+    def _require_udp_port() -> None:
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
+            try:
+                sock.bind(("", PORT_REMOTE_UDP))
+            except OSError as exc:
+                raise unittest.SkipTest(
+                    "UDP port {} unavailable: {}".format(PORT_REMOTE_UDP, exc)
+                )
+
     def plc_ams_request_receiver(self):
         with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
             sock.bind(("", PORT_REMOTE_UDP))
@@ -36,6 +46,7 @@ class PLCAMSTestCase(unittest.TestCase):
             sock.sendto(response, addr)
 
     def test_get_ams(self):
+        self._require_udp_port()
         # Start receiving listener
         route_thread = threading.Thread(target=self.plc_ams_request_receiver, daemon=True)
         route_thread.start()
