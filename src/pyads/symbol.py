@@ -243,7 +243,10 @@ class AdsSymbol:
         except ADSError:
             pass  # Quietly continue, without a connection no cleanup could be done
         if self._acquired_handle:
-            self._plc.release_handle(self.index_offset)
+            try:
+                self._plc.release_handle(self.index_offset)
+            except ADSError:
+                pass
 
     def add_device_notification(
             self,
