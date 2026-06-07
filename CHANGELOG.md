@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- [#261](https://github.com/stlehmann/pyads/issues/261) `AdsSymbol` now correctly handles function block properties with `{attribute 'monitoring' := 'call'}` (index group `0xF019`) by transparently switching to handle-based access
+
 ### Changed
 
 - [#508](https://github.com/stlehmann/pyads/pull/508) Finally we directly use Beckhoff/ADS library, thanks to @pbruenn
