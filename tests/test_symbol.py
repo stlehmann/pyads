@@ -616,6 +616,98 @@ class AdsSymbolTestCase(unittest.TestCase):
             self.plc.write_control(constants.ADSSTATE_IDLE, 0, 0, constants.PLCTYPE_INT)
 
 
+class FBPropertySymbolTestCase(unittest.TestCase):
+    """Tests for function block properties with {attribute 'monitoring' := 'call'}.
+
+    These return iGroup=ADSIGRP_SYM_FB_PROP_CALL (0xF019) from adsGetSymbolInfo
+    and cannot be accessed by offset — a handle must be used instead.
+    """
+
+    def _make_plc(self):
+        plc = mock.MagicMock()
+        plc._port = 851
+        plc._adr = mock.MagicMock()
+        plc.get_handle.return_value = 42
+        return plc
+
+    def _make_info(self, iGroup, iOffs=0, symbol_type="LREAL", comment=""):
+        info = mock.MagicMock()
+        info.iGroup = iGroup
+        info.iOffs = iOffs
+        info.symbol_type = symbol_type
+        info.comment = comment
+        return info
+
+    @mock.patch("pyads.symbol.adsGetSymbolInfo")
+    def test_fb_property_uses_handle(self, mock_get_info):
+        """Symbol with iGroup=0xF019 must acquire a handle and switch to VALBYHND."""
+        mock_get_info.return_value = self._make_info(
+            iGroup=constants.ADSIGRP_SYM_FB_PROP_CALL, iOffs=999
+        )
+        plc = self._make_plc()
+
+        symbol = AdsSymbol(plc, name="FB.Property")
+
+        plc.get_handle.assert_called_once_with("FB.Property")
+        self.assertEqual(symbol.index_group, constants.ADSIGRP_SYM_VALBYHND)
+        self.assertEqual(symbol.index_offset, 42)
+        self.assertTrue(symbol._acquired_handle)
+
+    @mock.patch("pyads.symbol.adsGetSymbolInfo")
+    def test_normal_symbol_no_handle(self, mock_get_info):
+        """Normal symbol must use offset directly and must not call get_handle."""
+        mock_get_info.return_value = self._make_info(
+            iGroup=constants.INDEXGROUP_DATA, iOffs=8
+        )
+        plc = self._make_plc()
+
+        symbol = AdsSymbol(plc, name="GVL.SomeVar")
+
+        plc.get_handle.assert_not_called()
+        self.assertEqual(symbol.index_group, constants.INDEXGROUP_DATA)
+        self.assertEqual(symbol.index_offset, 8)
+        self.assertFalse(symbol._acquired_handle)
+
+    @mock.patch("pyads.symbol.adsGetSymbolInfo")
+    def test_fb_property_handle_released_on_del(self, mock_get_info):
+        """release_handle must be called with the acquired handle on destruction."""
+        mock_get_info.return_value = self._make_info(
+            iGroup=constants.ADSIGRP_SYM_FB_PROP_CALL
+        )
+        plc = self._make_plc()
+
+        symbol = AdsSymbol(plc, name="FB.Property")
+        del symbol
+
+        plc.release_handle.assert_called_once_with(42)
+
+    @mock.patch("pyads.symbol.adsGetSymbolInfo")
+    def test_normal_symbol_handle_not_released_on_del(self, mock_get_info):
+        """release_handle must NOT be called for ordinary symbols on destruction."""
+        mock_get_info.return_value = self._make_info(
+            iGroup=constants.INDEXGROUP_DATA, iOffs=8
+        )
+        plc = self._make_plc()
+
+        symbol = AdsSymbol(plc, name="GVL.SomeVar")
+        del symbol
+
+        plc.release_handle.assert_not_called()
+
+    @mock.patch("pyads.symbol.adsGetSymbolInfo")
+    def test_fb_property_handle_release_adsError_suppressed(self, mock_get_info):
+        """ADSError from release_handle in __del__ must not propagate."""
+        from pyads.pyads_ex import ADSError
+        mock_get_info.return_value = self._make_info(
+            iGroup=constants.ADSIGRP_SYM_FB_PROP_CALL
+        )
+        plc = self._make_plc()
+        plc.release_handle.side_effect = ADSError()
+
+        symbol = AdsSymbol(plc, name="FB.Property")
+        del symbol  # Must not raise
+
+
 class TypesTestCase(unittest.TestCase):
     """Basic test to cover the PLCTYPE_ARR_* functions"""
 

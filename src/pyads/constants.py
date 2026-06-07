@@ -254,6 +254,7 @@ ADSIGRP_SYM_DT_UPLOAD = 0xF00E
 ADSIGRP_SYM_UPLOADINFO2 = 0xF00F
 
 ADSIGRP_SYMNOTE = 0xF010  #: notification of named handle
+ADSIGRP_SYM_FB_PROP_CALL = 0xF019  #: function block property with {attribute 'monitoring' := 'call'}
 ADSIGRP_IOIMAGE_RWIB = 0xF020  #: read/write input byte(s)
 ADSIGRP_IOIMAGE_RWIX = 0xF021  #: read/write input bit
 ADSIGRP_IOIMAGE_RWOB = 0xF030  #: read/write output byte(s)
