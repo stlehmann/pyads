@@ -111,6 +111,7 @@ class AdsSymbol:
         self._plc = plc
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
         self._auto_update_handle: Optional[Tuple[int, int]] = None
+        self._acquired_handle: bool = False  # True when get_handle() was called internally and must be released
 
         # Check if the required info is present:
         missing_info = index_group is None or index_offset is None or symbol_type is None
@@ -167,6 +168,7 @@ class AdsSymbol:
             # get symbol using handle instead
             self.index_group = constants.ADSIGRP_SYM_VALBYHND
             self.index_offset = self._plc.get_handle(self.name)
+            self._acquired_handle = True
         else:
             self.index_offset = info.iOffs
 
@@ -240,7 +242,7 @@ class AdsSymbol:
             self.clear_device_notifications()
         except ADSError:
             pass  # Quietly continue, without a connection no cleanup could be done
-        if self.index_group == constants.ADSIGRP_SYM_VALBYHND:
+        if self._acquired_handle:
             self._plc.release_handle(self.index_offset)
 
     def add_device_notification(
