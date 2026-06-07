@@ -6,6 +6,7 @@
 
 """
 from typing import Union, Callable, Any, Tuple, Type, Optional, List, Dict
+import atexit
 import ctypes
 import os
 import platform
@@ -123,6 +124,10 @@ else:  # pragma: no cover, can not test unsupported platform
     raise RuntimeError("Unsupported platform {0}.".format(sys.platform))
 
 callback_store: Dict[Tuple[AmsAddr, int], Callable[[SAmsAddr, SAdsNotificationHeader, int], None]] = dict()
+
+# Clear callback_store at interpreter shutdown before ctypes tears down the C
+# library, preventing segfaults from dangling function-pointer references.
+atexit.register(callback_store.clear)
 
 
 class ADSError(Exception):
