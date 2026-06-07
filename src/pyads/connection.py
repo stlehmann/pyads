@@ -6,6 +6,7 @@
 
 """
 from __future__ import annotations
+import sys
 import struct
 from ctypes import (
     memmove,
@@ -165,6 +166,8 @@ class Connection(object):
 
         Make sure to close the connection when an instance runs out of scope.
         """
+        if sys.is_finalizing():
+            return
         # If the connection is already closed, nothing new will happen
         self.close()
 
