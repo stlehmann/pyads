@@ -162,7 +162,7 @@ class AdsSymbol:
         info = adsGetSymbolInfo(self._plc._port, self._plc._adr, self.name)
 
         self.index_group = info.iGroup
-        if self.index_group == 0xF019:
+        if self.index_group == constants.ADSIGRP_SYM_FB_PROP_CALL:
             # For function block properties with monitoring = call
             # get symbol using handle instead
             self.index_group = constants.ADSIGRP_SYM_VALBYHND
