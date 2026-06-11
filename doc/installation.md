@@ -24,9 +24,9 @@ Note: pyads only supports python 3.8 and above.
 
 ## Installation on Linux
 
-For Linux *pyads* uses the ADS library *adslib.so* which needs to be compiled
+For Linux *pyads* uses the ADS library *AdsLib.so* which needs to be compiled
 from source if you use a source package. This should not be an issue, however
-if you should encounter any problems with the *adslib.so* please contact me.
+if you should encounter any problems with the *AdsLib.so* please contact me.
 
 For the compilation to work you need to make sure `cmake` and `g++` are installed
 on your system.
@@ -57,9 +57,9 @@ carry on.
 >>> import pyads
 ```
 
-If you get an *OSError* saying that the *adslib.so* could not be found there
+If you get an *OSError* saying that the *AdsLib.so* could not be found there
 probably went something wrong with the build process of the shared library. In
-this case you can create the *adslib.so* manually by doing the following:
+this case you can create the *AdsLib.so* manually by doing the following:
 
 ```bash
 cd adslib
@@ -67,4 +67,4 @@ make
 sudo make install
 ```
 
-This compiles and places the *adslib.so* in your */usr/lib/* directory.
+This compiles and places the *AdsLib.so* in your */usr/lib/* directory.
