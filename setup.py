@@ -17,14 +17,14 @@ def _is_32bit_interpreter() -> bool:
 src_folder = Path(__file__).parent.absolute() / "src"
 # ^ This will be on PATH for editable install
 adslib_folder = Path(__file__).parent.absolute() / "adslib/build"
-adslib_file = src_folder / "adslib.so"
+adslib_file = src_folder / "AdsLib.so"
 
 
 def _adslib_shared_lib_name() -> str:
     """Return the shared library filename produced by meson/ninja."""
     if sys.platform.startswith("darwin"):
-        return "libadslib.dylib"
-    return "libadslib.so"
+        return "libAdsLib.dylib"
+    return "libAdsLib.so"
 
 
 class CustomBuildPy(build_py):
@@ -46,7 +46,7 @@ class CustomBuildPy(build_py):
     @staticmethod
     def _compile_library():
         """Use `make` to build adslib - build is done in-place."""
-        # Produce `adslib.so`:
+        # Produce `AdsLib.so`:
         os.chdir("adslib")
         env = os.environ.copy()
         env["BHF_ADS_EXPORT_C"] = "1"
