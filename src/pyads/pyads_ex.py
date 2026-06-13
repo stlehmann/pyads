@@ -84,14 +84,14 @@ elif platform_is_linux():
     adslib_path = None
 
     for p in sys.path:
-        adslib_path = os.path.join(p, "adslib.so")
+        adslib_path = os.path.join(p, "AdsLib.so")
         if os.path.exists(adslib_path):
             break
 
     if adslib_path is None:
-        raise OSError(f"Failed to locate `adslib.so` library in {sys.path}")
+        raise OSError(f"Failed to locate `AdsLib.so` library in {sys.path}")
 
-    # For some reason loading on just "adslib.so" always fails, even if it is under
+    # For some reason loading on just "AdsLib.so" always fails, even if it is under
     # sys.path, so manually search for it first
     _adsDLL = ctypes.CDLL(adslib_path)
 

@@ -17,7 +17,7 @@ def _is_32bit_interpreter() -> bool:
 src_folder = Path(__file__).parent.absolute() / "src"
 # ^ This will be on PATH for editable install
 adslib_folder = Path(__file__).parent.absolute() / "adslib/build"
-adslib_file = src_folder / "adslib.so"
+adslib_file = src_folder / "AdsLib.so"
 
 
 class CustomBuildPy(build_py):
@@ -39,7 +39,7 @@ class CustomBuildPy(build_py):
     @staticmethod
     def _compile_library():
         """Use `make` to build adslib - build is done in-place."""
-        # Produce `adslib.so`:
+        # Produce `AdsLib.so`:
         os.chdir("adslib")
         env = os.environ.copy()
         env["BHF_ADS_EXPORT_C"] = "1"
@@ -71,7 +71,7 @@ class CustomBuildPy(build_py):
         if self.compile_adslib():
             # Move .so file from Git submodule into src/ to have it on PATH:
             self.move_file(
-                str(adslib_folder / "libadslib.so"),
+                str(adslib_folder / "libAdsLib.so"),
                 str(adslib_file),
             )
 
