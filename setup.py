@@ -62,6 +62,7 @@ class CustomBuildPy(build_py):
             "**/*.o",
             "*.bin",
             "*.so",
+            "*.dylib",
         )
         for pattern in patterns:
             for file in adslib_folder.glob(pattern):
