@@ -12,7 +12,7 @@ pyads - Python package
 [![Downloads](https://pepy.tech/badge/pyads/week)](https://pepy.tech/project/pyads)
 
 This is a python wrapper for TwinCATs ADS library. It provides python functions
-for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *adslib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](https://infosys.beckhoff.com/content/1033/tc3_adsdll2/index.html?id=4279787267115190858).
+for communicating with TwinCAT devices. *pyads* uses the C API provided by *TcAdsDll.dll* on Windows *AdsLib.so* on Linux. The documentation for the ADS API is available on [infosys.beckhoff.com](https://infosys.beckhoff.com/content/1033/tc3_adsdll2/index.html?id=4279787267115190858).
 
 Documentation: http://pyads.readthedocs.io/en/latest/index.html
 
