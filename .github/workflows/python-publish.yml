@@ -78,9 +78,12 @@ jobs:
           python-version: "3.13"
 
       # Now install the package from the local wheels and try to use it:
+      # Use `python -m pip` instead of `pip` directly: on the riscv64 runner the
+      # `pip` console-script's shebang points at an interpreter path that doesn't
+      # exist, causing "cannot execute: required file not found".
       - run: |
-          pip install pyads --no-index --find-links ./dist
-          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)" 
+          python -m pip install pyads --no-index --find-links ./dist
+          python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)"
 
   build_sdist:
     name: Build source distribution
