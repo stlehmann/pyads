@@ -20,6 +20,13 @@ adslib_folder = Path(__file__).parent.absolute() / "adslib/build"
 adslib_file = src_folder / "adslib.so"
 
 
+def _adslib_shared_lib_name() -> str:
+    """Return the shared library filename produced by meson/ninja."""
+    if sys.platform.startswith("darwin"):
+        return "libadslib.dylib"
+    return "libadslib.so"
+
+
 class CustomBuildPy(build_py):
     """Custom command for `build_py`.
 
@@ -55,6 +62,7 @@ class CustomBuildPy(build_py):
             "**/*.o",
             "*.bin",
             "*.so",
+            "*.dylib",
         )
         for pattern in patterns:
             for file in adslib_folder.glob(pattern):
@@ -71,7 +79,7 @@ class CustomBuildPy(build_py):
         if self.compile_adslib():
             # Move .so file from Git submodule into src/ to have it on PATH:
             self.move_file(
-                str(adslib_folder / "libadslib.so"),
+                str(adslib_folder / _adslib_shared_lib_name()),
                 str(adslib_file),
             )
 
