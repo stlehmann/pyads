@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+### Changed
+
+### Removed
+
+## 3.6.0
+
+### Added
+
 - [#261](https://github.com/stlehmann/pyads/issues/261) `AdsSymbol` now correctly handles function block properties with `{attribute 'monitoring' := 'call'}` (index group `0xF019`) by transparently switching to handle-based access
 
 ### Changed
@@ -15,16 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [#508](https://github.com/stlehmann/pyads/pull/508) Finally we directly use Beckhoff/ADS library, thanks to @pbruenn
 - [#515](https://github.com/stlehmann/pyads/pull/515) allow AdsWrite for zero length buffer using `adsSyncWriteReqEx`, based on [standalone/AdsLib: allow AdsWrite for zero length buffer](https://github.com/Beckhoff/ADS/commit/8bee2f64b62724aa5313997d8e60d0c68c789da6)
 - [#518](https://github.com/stlehmann/pyads/issues/518) Fix signed/unsigned issue with INT8 PLC datatype.
-
-### Removed
-
-## 3.6
-
-### Added
-
-### Changed
-
 - [#502](https://github.com/stlehmann/pyads/pull/502) Update adslib to Upstream version 113.0.31-1
+- Update adslib to Beckhoff/ADS tag 113.0.34-1, rename `AdsLib.so` to match upstream library name
 
 ### Removed
 
