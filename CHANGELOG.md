@@ -17,14 +17,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - [#261](https://github.com/stlehmann/pyads/issues/261) `AdsSymbol` now correctly handles function block properties with `{attribute 'monitoring' := 'call'}` (index group `0xF019`) by transparently switching to handle-based access
+- [#520](https://github.com/stlehmann/pyads/issues/520) RISC-V (riscv64) wheels are now built and published via CI
 
 ### Changed
 
 - [#508](https://github.com/stlehmann/pyads/pull/508) Finally we directly use Beckhoff/ADS library, thanks to @pbruenn
 - [#515](https://github.com/stlehmann/pyads/pull/515) allow AdsWrite for zero length buffer using `adsSyncWriteReqEx`, based on [standalone/AdsLib: allow AdsWrite for zero length buffer](https://github.com/Beckhoff/ADS/commit/8bee2f64b62724aa5313997d8e60d0c68c789da6)
 - [#518](https://github.com/stlehmann/pyads/issues/518) Fix signed/unsigned issue with INT8 PLC datatype.
+- [#525](https://github.com/stlehmann/pyads/pull/525) Update type annotations on `adsSyncWriteReqEx` and `Connection.write` to accept `None` as `plc_data_type` for zero-length writes
 - [#502](https://github.com/stlehmann/pyads/pull/502) Update adslib to Upstream version 113.0.31-1
 - Update adslib to Beckhoff/ADS tag 113.0.34-1, rename `AdsLib.so` to match upstream library name
+
+### Fixed
+
+- [#524](https://github.com/stlehmann/pyads/issues/524) Fix segmentation fault on interpreter shutdown — `Connection.__del__` now skips `adsPortCloseEx` when `sys.is_finalizing()` is true
+- [#533](https://github.com/stlehmann/pyads/issues/533) Fix macOS wheel builds failing due to `libadslib.dylib` vs `.so` filename mismatch
 
 ### Removed
 
