@@ -163,11 +163,19 @@ class PLCVariable:
         self.value = value
 
     def register_notification(self) -> int:
-        """Register a new notification."""
+        """Register a new notification.
 
-        handle = self.notification_count
+        Notification handles must be unique across all variables: real TwinCAT
+        returns globally-unique handles and clients key their dispatch on them.
+        ``notification_count`` is a class attribute, but ``self.notification_count
+        += 1`` rebinds it as a per-instance value, so the first notification on
+        every variable returns the same handle (10), the second 11, and so on.
+        Increment the shared class counter instead, so handles never collide.
+        """
+
+        handle = PLCVariable.notification_count
+        PLCVariable.notification_count += 1
         self.notifications.append(handle)
-        self.notification_count += 1
         return handle
 
     def unregister_notification(self, handle: int = None):
@@ -486,7 +494,20 @@ class AdvancedHandler(AbstractHandler):
 
         # Try to map the command id to a function, else return error code
         if command_id in function_map:
-            content = function_map[command_id]()
+            try:
+                content = function_map[command_id]()
+            except Exception:
+                # A command handler that raises must not crash this connection's
+                # handler thread: that leaves the client's later requests
+                # unanswered until they time out, and wedges the server. Most
+                # commonly handle_read_write() does write_data.decode() on a
+                # read-write whose payload is not a UTF-8 symbol name (e.g. a
+                # binary SUMUP batch), or get_variable_by_name() is given an
+                # unknown symbol. Return an ADS device error instead.
+                logger.exception(
+                    "Command handler %s raised", hex(command_id))
+                error_code = struct.pack("<I", 0x0700)  # ADSERR_DEVICE_ERROR
+                return AmsResponseData(state, error_code, b"")
 
         else:
             logger.info("Unknown Command: {0}".format(hex(command_id)))

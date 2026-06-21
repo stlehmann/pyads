@@ -194,7 +194,16 @@ class AdsClientConnection(threading.Thread):
             if not ready:
                 continue
 
-            data, _ = self.client.recvfrom(4096)
+            try:
+                data, _ = self.client.recvfrom(4096)
+            except (ConnectionResetError, OSError):
+                # A client killed mid-request drops the connection abruptly,
+                # raising ConnectionResetError. Treat the reset as a disconnect
+                # rather than letting it crash this handler thread, which would
+                # leave the server unable to serve the next connection.
+                self.client.close()
+                self._run = False
+                continue
 
             if not data:
                 self.client.close()
