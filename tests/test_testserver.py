@@ -7,10 +7,12 @@ Since the test server has become a user feature in itself, these tests supplemen
 regular pyads tests to increase the coverage of the test server itself.
 """
 
+import socket
+import struct
 import time
 import unittest
 import pyads
-from pyads.testserver import AdsTestServer, BasicHandler
+from pyads.testserver import AdsTestServer, AdvancedHandler, BasicHandler, PLCVariable
 
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
@@ -83,6 +85,70 @@ class TestServerTestCase(unittest.TestCase):
             del test_int  # Trigger destructor
         except pyads.ADSError as e:
             self.fail(f"Closing server connection raised: {e}")
+
+
+    def test_handler_exception_returns_device_error_and_survives(self):
+        """A command handler that raises must return an ADS device error, not
+        crash the connection thread.
+
+        Regression guard for the try/except added around the command dispatch in
+        ``AdvancedHandler.handle_request``. Requesting a handle for an unknown
+        symbol makes ``get_variable_by_name`` raise ``KeyError`` inside the
+        handler; the server must answer with a device error and keep serving.
+        """
+        handler = AdvancedHandler()
+        handler.add_variable(
+            PLCVariable("Known", 0, pyads.constants.ADST_INT16, "INT")
+        )
+        test_server = AdsTestServer(handler=handler, logging=False)
+
+        with test_server:
+            time.sleep(0.1)  # Give server a moment to spin up
+            plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+            with plc:
+                # Unknown symbol -> handler raises -> converted to ADS error.
+                with self.assertRaises(pyads.ADSError):
+                    plc.get_handle("DoesNotExist")
+
+                # The connection thread survived: a valid request still works.
+                self.assertIsNotNone(plc.get_handle("Known"))
+
+        time.sleep(0.1)  # Give server a moment to spin down
+
+    def test_abrupt_client_disconnect_is_handled(self):
+        """An abruptly reset client connection must not crash the server.
+
+        Regression guard for the try/except around ``recvfrom`` in
+        ``AdsClientConnection``. A raw socket connects and forces a TCP RST via
+        ``SO_LINGER``, so the server's ``recvfrom`` raises
+        ``ConnectionResetError``; the server must treat it as a disconnect and
+        still accept the next client.
+        """
+        handler = AdvancedHandler()
+        handler.add_variable(
+            PLCVariable("Known", 0, pyads.constants.ADST_INT16, "INT")
+        )
+        test_server = AdsTestServer(handler=handler, logging=False)
+
+        with test_server:
+            time.sleep(0.1)  # Give server a moment to spin up
+
+            raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            raw.connect((TEST_SERVER_IP_ADDRESS, 0xBF02))  # ADS TCP port 48898
+            time.sleep(0.1)  # let the connection thread enter its recv loop
+            # SO_LINGER with timeout 0 makes close() send a RST instead of FIN.
+            raw.setsockopt(
+                socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0)
+            )
+            raw.close()
+            time.sleep(0.1)  # let the server observe the reset
+
+            # Server still accepts and serves a fresh connection.
+            plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+            with plc:
+                self.assertIsNotNone(plc.get_handle("Known"))
+
+        time.sleep(0.1)  # Give server a moment to spin down
 
 
 if __name__ == "__main__":
