@@ -115,6 +115,66 @@ class TestServerTestCase(unittest.TestCase):
 
         time.sleep(0.1)  # Give server a moment to spin down
 
+    def test_sumup_write_reports_per_item_errors_and_keeps_good_writes(self):
+        """A SUMUP_WRITE batch with one bad sub-request returns one error code
+        per sub-request, and the sub-writes that already succeeded still land.
+
+        Regression guard for the per-item handling in the SUMUP_WRITE branch of
+        ``handle_read_write``. Previously any sub-write that raised bubbled to
+        the dispatch catch-all and collapsed the whole batch to a single device
+        error, discarding both the per-item result array that pyads' own
+        ``adsSumWriteBytes`` parses and the writes that had already landed. This
+        drives the handler directly: the client resolves handles first, so a
+        per-item *write* failure is not reachable through ``pyads.Connection``.
+        """
+        from pyads.testserver.handler import AmsHeader, AmsTcpHeader, AmsPacket
+
+        var = PLCVariable(
+            "Known",
+            bytes(2),
+            ads_type=pyads.constants.ADST_INT16,
+            symbol_type="INT",
+            index_group=0x4020,
+            index_offset=0x0001,
+        )
+        handler = AdvancedHandler()
+        handler.add_variable(var)
+
+        # Two sub-requests: the known variable, then an unknown index that makes
+        # get_variable_by_indices raise.
+        good = struct.pack("<III", var.index_group, var.index_offset, 2)
+        bad = struct.pack("<III", 0xDEADBEEF, 0xDEADBEEF, 2)
+        payload = struct.pack("<hh", 0x1234, 0x5678)
+        write_data = good + bad + payload
+        ams_data = (
+            struct.pack("<I", pyads.constants.ADSIGRP_SUMUP_WRITE)
+            + struct.pack("<I", 2)  # num_requests, coded in the index_offset
+            + struct.pack("<I", 2 * 4)  # read_length: one error code per request
+            + struct.pack("<I", len(write_data))
+            + write_data
+        )
+        header = AmsHeader(
+            target_net_id=b"\x01" * 6,
+            target_port=struct.pack("<H", TEST_SERVER_AMS_PORT),
+            source_net_id=b"\x02" * 6,
+            source_port=struct.pack("<H", 40000),
+            command_id=struct.pack("<H", pyads.constants.ADSCOMMAND_READWRITE),
+            state_flags=struct.pack("<H", 0x0004),
+            length=struct.pack("<I", len(ams_data)),
+            error_code=struct.pack("<I", 0),
+            invoke_id=struct.pack("<I", 1),
+            data=ams_data,
+        )
+        packet = AmsPacket(tcp_header=AmsTcpHeader(length=0), ams_header=header)
+
+        response = handler.handle_request(packet)
+
+        # Response is result(4) + read_length(4) + one error code per request.
+        codes = struct.unpack("<II", response.data[8:16])
+        self.assertEqual(codes, (0, 0x0700))
+        # The successful sub-write landed despite the sibling failure.
+        self.assertEqual(struct.unpack("<h", var.value[:2])[0], 0x1234)
+
     def test_abrupt_client_disconnect_is_handled(self):
         """An abruptly reset client connection must not crash the server.
 

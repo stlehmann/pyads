@@ -378,12 +378,25 @@ class AdvancedHandler(AbstractHandler):
                 data = write_data[num_requests * 12 :]
                 offset = 0
 
+                # ADS reports one error code per sub-request. Handle each write
+                # independently so a failure in one sub-request neither discards
+                # the writes that already landed nor collapses the whole batch to
+                # a single error. pyads' own adsSumWriteBytes parses exactly this
+                # per-item error array.
+                error_codes = []
                 for index_group, index_offset, size in rq_list:
-                    var = self.get_variable_by_indices(index_group, index_offset)
-                    var.write(data[offset : offset + size], request)
+                    try:
+                        var = self.get_variable_by_indices(index_group, index_offset)
+                        var.write(data[offset : offset + size], request)
+                        error_codes.append(0)
+                    except Exception:
+                        logger.exception(
+                            "SUMUP_WRITE sub-request %d failed", len(error_codes)
+                        )
+                        error_codes.append(0x0700)  # ADSERR_DEVICE_ERROR
                     offset += size
 
-                read_data = struct.pack("<" + num_requests * "I", *(num_requests * [0]))
+                read_data = struct.pack("<" + num_requests * "I", *error_codes)
 
             # Read a list of variables
             elif index_group == constants.ADSIGRP_SUMUP_READ:

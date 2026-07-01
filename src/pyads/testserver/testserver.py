@@ -196,11 +196,13 @@ class AdsClientConnection(threading.Thread):
 
             try:
                 data, _ = self.client.recvfrom(4096)
-            except (ConnectionResetError, OSError):
-                # A client killed mid-request drops the connection abruptly,
-                # raising ConnectionResetError. Treat the reset as a disconnect
-                # rather than letting it crash this handler thread, which would
-                # leave the server unable to serve the next connection.
+            except OSError:
+                # A client killed mid-request drops the connection abruptly
+                # (ConnectionResetError, an OSError subclass). Treat it as a
+                # disconnect rather than letting it crash this handler thread,
+                # which would leave the server unable to serve the next
+                # connection. Log it so a genuine socket fault is not hidden.
+                logger.exception("recvfrom failed; closing connection")
                 self.client.close()
                 self._run = False
                 continue
