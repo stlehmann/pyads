@@ -7,10 +7,12 @@ Since the test server has become a user feature in itself, these tests supplemen
 regular pyads tests to increase the coverage of the test server itself.
 """
 
+import socket
+import struct
 import time
 import unittest
 import pyads
-from pyads.testserver import AdsTestServer, BasicHandler
+from pyads.testserver import AdsTestServer, AdvancedHandler, BasicHandler, PLCVariable
 
 # These are pretty arbitrary
 TEST_SERVER_AMS_NET_ID = "127.0.0.1.1.1"
@@ -83,6 +85,130 @@ class TestServerTestCase(unittest.TestCase):
             del test_int  # Trigger destructor
         except pyads.ADSError as e:
             self.fail(f"Closing server connection raised: {e}")
+
+
+    def test_handler_exception_returns_device_error_and_survives(self):
+        """A command handler that raises must return an ADS device error, not
+        crash the connection thread.
+
+        Regression guard for the try/except added around the command dispatch in
+        ``AdvancedHandler.handle_request``. Requesting a handle for an unknown
+        symbol makes ``get_variable_by_name`` raise ``KeyError`` inside the
+        handler; the server must answer with a device error and keep serving.
+        """
+        handler = AdvancedHandler()
+        handler.add_variable(
+            PLCVariable("Known", 0, pyads.constants.ADST_INT16, "INT")
+        )
+        test_server = AdsTestServer(handler=handler, logging=False)
+
+        with test_server:
+            time.sleep(0.1)  # Give server a moment to spin up
+            plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+            with plc:
+                # Unknown symbol -> handler raises -> converted to ADS error.
+                with self.assertRaises(pyads.ADSError):
+                    plc.get_handle("DoesNotExist")
+
+                # The connection thread survived: a valid request still works.
+                self.assertIsNotNone(plc.get_handle("Known"))
+
+        time.sleep(0.1)  # Give server a moment to spin down
+
+    def test_sumup_write_reports_per_item_errors_and_keeps_good_writes(self):
+        """A SUMUP_WRITE batch with one bad sub-request returns one error code
+        per sub-request, and the sub-writes that already succeeded still land.
+
+        Regression guard for the per-item handling in the SUMUP_WRITE branch of
+        ``handle_read_write``. Previously any sub-write that raised bubbled to
+        the dispatch catch-all and collapsed the whole batch to a single device
+        error, discarding both the per-item result array that pyads' own
+        ``adsSumWriteBytes`` parses and the writes that had already landed. This
+        drives the handler directly: the client resolves handles first, so a
+        per-item *write* failure is not reachable through ``pyads.Connection``.
+        """
+        from pyads.testserver.handler import AmsHeader, AmsTcpHeader, AmsPacket
+
+        var = PLCVariable(
+            "Known",
+            bytes(2),
+            ads_type=pyads.constants.ADST_INT16,
+            symbol_type="INT",
+            index_group=0x4020,
+            index_offset=0x0001,
+        )
+        handler = AdvancedHandler()
+        handler.add_variable(var)
+
+        # Two sub-requests: the known variable, then an unknown index that makes
+        # get_variable_by_indices raise.
+        good = struct.pack("<III", var.index_group, var.index_offset, 2)
+        bad = struct.pack("<III", 0xDEADBEEF, 0xDEADBEEF, 2)
+        payload = struct.pack("<hh", 0x1234, 0x5678)
+        write_data = good + bad + payload
+        ams_data = (
+            struct.pack("<I", pyads.constants.ADSIGRP_SUMUP_WRITE)
+            + struct.pack("<I", 2)  # num_requests, coded in the index_offset
+            + struct.pack("<I", 2 * 4)  # read_length: one error code per request
+            + struct.pack("<I", len(write_data))
+            + write_data
+        )
+        header = AmsHeader(
+            target_net_id=b"\x01" * 6,
+            target_port=struct.pack("<H", TEST_SERVER_AMS_PORT),
+            source_net_id=b"\x02" * 6,
+            source_port=struct.pack("<H", 40000),
+            command_id=struct.pack("<H", pyads.constants.ADSCOMMAND_READWRITE),
+            state_flags=struct.pack("<H", 0x0004),
+            length=struct.pack("<I", len(ams_data)),
+            error_code=struct.pack("<I", 0),
+            invoke_id=struct.pack("<I", 1),
+            data=ams_data,
+        )
+        packet = AmsPacket(tcp_header=AmsTcpHeader(length=0), ams_header=header)
+
+        response = handler.handle_request(packet)
+
+        # Response is result(4) + read_length(4) + one error code per request.
+        codes = struct.unpack("<II", response.data[8:16])
+        self.assertEqual(codes, (0, 0x0700))
+        # The successful sub-write landed despite the sibling failure.
+        self.assertEqual(struct.unpack("<h", var.value[:2])[0], 0x1234)
+
+    def test_abrupt_client_disconnect_is_handled(self):
+        """An abruptly reset client connection must not crash the server.
+
+        Regression guard for the try/except around ``recvfrom`` in
+        ``AdsClientConnection``. A raw socket connects and forces a TCP RST via
+        ``SO_LINGER``, so the server's ``recvfrom`` raises
+        ``ConnectionResetError``; the server must treat it as a disconnect and
+        still accept the next client.
+        """
+        handler = AdvancedHandler()
+        handler.add_variable(
+            PLCVariable("Known", 0, pyads.constants.ADST_INT16, "INT")
+        )
+        test_server = AdsTestServer(handler=handler, logging=False)
+
+        with test_server:
+            time.sleep(0.1)  # Give server a moment to spin up
+
+            raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            raw.connect((TEST_SERVER_IP_ADDRESS, 0xBF02))  # ADS TCP port 48898
+            time.sleep(0.1)  # let the connection thread enter its recv loop
+            # SO_LINGER with timeout 0 makes close() send a RST instead of FIN.
+            raw.setsockopt(
+                socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0)
+            )
+            raw.close()
+            time.sleep(0.1)  # let the server observe the reset
+
+            # Server still accepts and serves a fresh connection.
+            plc = pyads.Connection(TEST_SERVER_AMS_NET_ID, TEST_SERVER_AMS_PORT)
+            with plc:
+                self.assertIsNotNone(plc.get_handle("Known"))
+
+        time.sleep(0.1)  # Give server a moment to spin down
 
 
 if __name__ == "__main__":
