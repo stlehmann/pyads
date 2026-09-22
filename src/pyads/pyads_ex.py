@@ -15,7 +15,14 @@ import sys
 from contextlib import closing
 from functools import wraps
 
-from .utils import platform_is_linux, platform_is_windows, platform_is_freebsd, find_wstring_null_terminator, get_num_of_chars
+from .utils import (
+    platform_is_linux,
+    platform_is_windows,
+    platform_is_freebsd,
+    find_wstring_null_terminator,
+    get_num_of_chars,
+    get_array_length,
+)
 from .structs import (
     AmsAddr,
     SAmsAddr,
@@ -1051,18 +1058,25 @@ def adsSumRead(
                     if null_idx is None:
                         raise ValueError("No null-terminator found in buffer")
                     value = bytearray(sum_response[offset: offset + null_idx]).decode("utf-16-le")
-            elif data_symbols[data_name].size > ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType]):
-                value = list(struct.unpack_from(
-                    "<" + DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]][-1] * (data_symbols[data_name].size // ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType])),
-                    sum_response,
-                    offset=offset,
-                ))
             else:
-                value = struct.unpack_from(
-                    DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
-                    sum_response,
-                    offset=offset,
-                )[0]
+                symbol = data_symbols[data_name]
+                plc_type = ads_type_to_ctype[symbol.dataType]
+                fmt = DATATYPE_MAP[plc_type]
+                num_elements = get_array_length(
+                    symbol.symbol_type, symbol.size, ctypes.sizeof(plc_type)
+                )
+                if num_elements is None:
+                    value = struct.unpack_from(
+                        fmt,
+                        sum_response,
+                        offset=offset,
+                    )[0]
+                else:
+                    value = list(struct.unpack_from(
+                        "<" + fmt[-1] * num_elements,
+                        sum_response,
+                        offset=offset,
+                    ))
 
             result[data_name] = value
         offset += data_symbols[data_name].size
@@ -1157,20 +1171,27 @@ def adsSumWrite(
                     buf[current_offset: current_offset + (2 * len(element))] = element.encode("utf-16-le")
             else:
                 buf[offset: offset + 2 * len(value)] = value.encode("utf-16-le")
-        elif data_symbols[data_name].size > ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType]):
-            struct.pack_into(
-                "<" + DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]][-1] * (data_symbols[data_name].size // ctypes.sizeof(ads_type_to_ctype[data_symbols[data_name].dataType])),
-                buf,
-                offset,
-                *value,
-            )
         else:
-            struct.pack_into(
-                DATATYPE_MAP[ads_type_to_ctype[data_symbols[data_name].dataType]],
-                buf,
-                offset,
-                value,
+            symbol = data_symbols[data_name]
+            plc_type = ads_type_to_ctype[symbol.dataType]
+            fmt = DATATYPE_MAP[plc_type]
+            num_elements = get_array_length(
+                symbol.symbol_type, symbol.size, ctypes.sizeof(plc_type)
             )
+            if num_elements is None:
+                struct.pack_into(
+                    fmt,
+                    buf,
+                    offset,
+                    value,
+                )
+            else:
+                struct.pack_into(
+                    "<" + fmt[-1] * num_elements,
+                    buf,
+                    offset,
+                    *value,
+                )
         offset += data_symbols[data_name].size
 
     error_descriptions = adsSumWriteBytes(

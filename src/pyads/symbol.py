@@ -19,6 +19,7 @@ from . import constants  # To access all constants, use package notation
 from .constants import PLCDataType
 from .pyads_ex import adsGetSymbolInfo, ADSError
 from .structs import NotificationAttrib
+from .utils import regex_array
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
@@ -48,7 +49,8 @@ class AdsSymbol:
     """
 
     # Regex for array - e.g. "ARRAY [1..10] OF DINT"
-    _regex_array = re.compile(r"ARRAY \[(\d+)..(\d+)\] OF (.*)")
+    # Shared with the sum-read/sum-write decoder, so there is a single parser
+    _regex_array = regex_array
     # Regex for matrix - e.g. "matrix_10_int32"
     _regex_matrix = re.compile(r"matrix_(\d+)_(.*)_T")
     # Regex for list - e.g. "DINT(10)"

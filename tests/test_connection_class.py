@@ -1613,12 +1613,12 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         )
 
 
-        # Add to test plc
+        # Add to test plc - a real PLC reports the array in its textual type
         self.handler.add_variable(PLCVariable(
             name = "int_test_array", 
             value = bytes(int_array_bytes), 
             ads_type = constants.ADST_INT16, 
-            symbol_type = f"INT"))
+            symbol_type = "ARRAY [1..3] OF INT"))
 
 
         # Read variable
@@ -1665,12 +1665,15 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             *expected_real_array,
         )
 
-        # Add to test plc
+        # Add to test plc. The symbol type is deliberately the scalar "REAL"
+        # rather than "ARRAY [1..3] OF REAL": this covers the fallback in
+        # utils.get_array_length for symbols whose type string is not a
+        # recognisable array form.
         self.handler.add_variable(PLCVariable(
             name = "real_test_array", 
             value = bytes(real_array_bytes), 
             ads_type = constants.ADST_REAL32, 
-            symbol_type = f"REAL"))
+            symbol_type = "REAL"))
 
 
         # Read variable
@@ -1696,6 +1699,54 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
         # Verify result to 1dp 
         for i, value in enumerate(read_values["real_test_array"]):
             self.assertEqual(expected_real_array[i], round(value, 1))
+
+    def test_read_list_by_name_array_shapes(self):
+        """read_list_by_name must agree with read_by_name for every array shape.
+
+        See https://github.com/stlehmann/pyads/issues/501. All values are exactly
+        representable in float32, so they can be compared without rounding.
+        """
+        shapes = [
+            ("arr_1_1", "ARRAY [1..1] OF REAL", [1.5]),
+            ("arr_1_2", "ARRAY [1..2] OF REAL", [1.5, 2.5]),
+            ("arr_2_4", "ARRAY [2..4] OF REAL", [1.0, 2.0, 3.0]),
+            ("scalar", "REAL", 4.5),
+        ]
+
+        for name, symbol_type, value in shapes:
+            values = value if isinstance(value, list) else [value]
+            self.handler.add_variable(PLCVariable(
+                name=name,
+                value=struct.pack("<" + "f" * len(values), *values),
+                ads_type=constants.ADST_REAL32,
+                symbol_type=symbol_type))
+
+        with self.plc:
+            for name, symbol_type, value in shapes:
+                with self.subTest(symbol_type=symbol_type):
+                    self.assertEqual(value, self.plc.read_by_name(name))
+                    self.assertEqual(
+                        {name: value}, self.plc.read_list_by_name([name])
+                    )
+
+    def test_write_list_by_name_array_of_one(self):
+        """write_list_by_name must accept a one-element list for ARRAY[1..1].
+
+        See https://github.com/stlehmann/pyads/issues/501.
+        """
+        self.handler.add_variable(PLCVariable(
+            name="arr_of_one",
+            value=struct.pack("<f", 1.5),
+            ads_type=constants.ADST_REAL32,
+            symbol_type="ARRAY [1..1] OF REAL"))
+
+        with self.plc:
+            errors = self.plc.write_list_by_name({"arr_of_one": [9.5]})
+            self.assertEqual({"arr_of_one": "no error"}, errors)
+            self.assertEqual(
+                {"arr_of_one": [9.5]},
+                self.plc.read_list_by_name(["arr_of_one"]),
+            )
 
     def test_wstring_struct(self):
         wstring_structure_def = (

@@ -8,7 +8,7 @@
 """
 import pyads
 from pyads import AmsAddr
-from pyads.utils import platform_is_linux
+from pyads.utils import platform_is_linux, get_array_length
 from collections import OrderedDict
 import unittest
 
@@ -901,6 +901,28 @@ class AdsTest(unittest.TestCase):
         ]
         self.assertEqual(split_list, expected)
         split_list.clear()
+
+    def test_get_array_length(self):
+        # type: () -> None
+        """Test the array-vs-scalar decision used by the sum read/write paths."""
+        # The textual type decides, so ARRAY[1..1] is an array even though it
+        # is exactly one element long (see issue #501)
+        self.assertEqual(1, get_array_length("ARRAY [1..1] OF REAL", 4, 4))
+        self.assertEqual(2, get_array_length("ARRAY [1..2] OF REAL", 8, 4))
+
+        # The element count comes from the size, not from the array bounds, so
+        # arrays that do not start at 1 need no special handling
+        self.assertEqual(3, get_array_length("ARRAY [2..4] OF REAL", 12, 4))
+
+        # Plain scalar
+        self.assertIsNone(get_array_length("REAL", 4, 4))
+
+        # Fallback for type strings that are not a recognisable array form
+        self.assertEqual(3, get_array_length("REAL", 12, 4))
+        self.assertEqual(11, get_array_length("ARRAY [-5..5] OF INT", 22, 2))
+
+        # Unknown element size must not raise
+        self.assertIsNone(get_array_length("REAL", 4, 0))
 
 
 if __name__ == "__main__":
