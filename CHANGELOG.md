@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- [#468](https://github.com/stlehmann/pyads/issues/468) `Connection` accepts a `timeout` keyword argument which is re-applied on every `open()`, new `Connection.get_timeout()` and `pyads.get_timeout()` wrapping `AdsSyncGetTimeoutEx`
+
 ### Changed
 
 - [#539](https://github.com/stlehmann/pyads/pull/539) Fix `AdvancedHandler` test server: unique notification handles, survive abrupt disconnects/handler exceptions, per-item `SUMUP_WRITE` error codes

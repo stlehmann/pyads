@@ -87,6 +87,19 @@ class AdsTest(unittest.TestCase):
         self.assertIsNone(pyads.set_timeout(100))
         pyads.open_port()
 
+    def test_get_timeout(self):
+        # type: () -> None
+        """Test get_timeout function."""
+        pyads.open_port()
+        try:
+            pyads.set_timeout(100)
+            self.assertEqual(100, pyads.get_timeout())
+        finally:
+            pyads.close_port()
+
+        # without an open port there is no timeout to report
+        self.assertIsNone(pyads.get_timeout())
+
     def test_size_of_structure(self):
         # type: () -> None
         """Test size_of_structure function"""

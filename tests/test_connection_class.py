@@ -1027,6 +1027,70 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         with self.plc:
             self.assertIsNone(self.plc.set_timeout(100))
 
+    def test_set_get_timeout(self):
+        # type: () -> None
+        """Test set_timeout/get_timeout round-trip."""
+        with self.plc:
+            self.plc.set_timeout(100)
+            self.assertEqual(100, self.plc.get_timeout())
+
+    def test_default_timeout(self):
+        # type: () -> None
+        """Test that omitting the timeout keeps the ADS library default."""
+        self.assertIsNone(self.plc.get_timeout())
+        with self.plc:
+            # 5000 ms is AmsPort::DEFAULT_TIMEOUT of the ADS library
+            self.assertEqual(5000, self.plc.get_timeout())
+
+    def test_timeout_from_constructor(self):
+        # type: () -> None
+        """Test that the timeout given to the constructor is applied on open."""
+        plc = pyads.Connection(
+            TEST_SERVER_AMS_NET_ID,
+            TEST_SERVER_AMS_PORT,
+            TEST_SERVER_IP_ADDRESS,
+            timeout=1000,
+        )
+        # the timeout is a property of the port, so there is none before open()
+        self.assertIsNone(plc.get_timeout())
+        with plc:
+            self.assertEqual(1000, plc.get_timeout())
+
+    def test_timeout_survives_reconnect(self):
+        # type: () -> None
+        """Test that the timeout is re-applied on every open().
+
+        Closing a port resets its timeout to the default of the ADS library,
+        so the connection has to re-apply the configured value.
+
+        """
+        plc = pyads.Connection(
+            TEST_SERVER_AMS_NET_ID,
+            TEST_SERVER_AMS_PORT,
+            TEST_SERVER_IP_ADDRESS,
+            timeout=1000,
+        )
+        with plc:
+            self.assertEqual(1000, plc.get_timeout())
+        with plc:
+            self.assertEqual(1000, plc.get_timeout())
+
+    def test_set_timeout_survives_reconnect(self):
+        # type: () -> None
+        """Test that a timeout set with set_timeout() is re-applied on open()."""
+        with self.plc:
+            self.plc.set_timeout(1000)
+            self.assertEqual(1000, self.plc.get_timeout())
+        with self.plc:
+            self.assertEqual(1000, self.plc.get_timeout())
+
+    def test_set_timeout_before_open(self):
+        # type: () -> None
+        """Test that set_timeout() before open() is applied on open()."""
+        self.plc.set_timeout(1000)
+        with self.plc:
+            self.assertEqual(1000, self.plc.get_timeout())
+
     def test_get_and_release_handle(self):
         # type: () -> None
         """Test get_handle and release_handle methods"""

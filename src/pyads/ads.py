@@ -56,6 +56,7 @@ from .pyads_ex import (
     adsGetLocalAddressEx,
     adsGetNetIdForPLC,
     adsSyncSetTimeoutEx,
+    adsSyncGetTimeoutEx,
     adsSetLocalAddress,
     ADSError,
 )
@@ -222,6 +223,19 @@ def set_timeout(ms: int) -> None:
     """Set timeout."""
     if port is not None:
         return adsSyncSetTimeoutEx(port, ms)
+
+
+def get_timeout() -> Optional[int]:
+    """Return the current timeout.
+
+    :rtype: Optional[int]
+    :return: timeout in ms, None if no port is open
+
+    """
+    if port is not None:
+        return adsSyncGetTimeoutEx(port)
+
+    return None
 
 
 def size_of_structure(structure_def: StructureDef) -> int:
