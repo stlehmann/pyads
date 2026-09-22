@@ -1400,3 +1400,19 @@ def adsSyncSetTimeoutEx(port: int, n_ms: int) -> None:
     err_code = adsSyncSetTimeoutFct(port, cms)
     if err_code:
         raise ADSError(err_code)
+
+
+def adsSyncGetTimeoutEx(port: int) -> int:
+    """Get Timeout.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :rtype: int
+    :return: timeout in ms
+
+    """
+    adsSyncGetTimeoutFct = _adsDLL.AdsSyncGetTimeoutEx
+    cms = ctypes.c_uint32()
+    err_code = adsSyncGetTimeoutFct(port, ctypes.byref(cms))
+    if err_code:
+        raise ADSError(err_code)
+    return cms.value

@@ -31,6 +31,32 @@ A context notation (using ``with:``) can be used to open a connection:
 The context manager will make sure the connection is closed, either when
 the ``with`` clause runs out, or an uncaught error is thrown.
 
+Connection timeout
+^^^^^^^^^^^^^^^^^^
+
+ADS requests time out after 5000 ms by default. A different timeout can be passed to the
+:py:class:`.Connection` constructor and is re-applied every time the connection is opened:
+
+.. code:: python
+
+   >>> import pyads
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1, timeout=1000)
+   >>> with plc:
+   >>>     plc.get_timeout()
+   1000
+
+The timeout can also be changed on an existing connection with
+:py:meth:`.Connection.set_timeout`. Just like the constructor argument the value is stored
+on the connection, so it survives a close/open cycle:
+
+.. code:: python
+
+   >>> plc.set_timeout(1000)
+
+:py:meth:`.Connection.get_timeout` returns the timeout currently in use, or ``None`` if
+the connection is not open. The timeout is a property of the ADS port, which means there
+is no value to report before :py:meth:`.Connection.open` is called.
+
 Read and write by name
 ^^^^^^^^^^^^^^^^^^^^^^^
 

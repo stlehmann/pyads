@@ -16,6 +16,7 @@ from .ads import (
     delete_route,
     set_local_address,
     set_timeout,
+    get_timeout,
     size_of_structure,
     dict_from_bytes,
     bytes_from_dict,
