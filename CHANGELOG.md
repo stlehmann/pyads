@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [#539](https://github.com/stlehmann/pyads/pull/539) Fix `AdvancedHandler` test server: unique notification handles, survive abrupt disconnects/handler exceptions, per-item `SUMUP_WRITE` error codes
 - [#541](https://github.com/stlehmann/pyads/pull/541) Declare `meson` and `ninja` in `build-system.requires` so building from source works under PEP 517 build isolation
+- [#501](https://github.com/stlehmann/pyads/issues/501) `read_list_by_name` now returns a one-element list for `ARRAY[1..1]` symbols instead of a bare scalar, matching `read_by_name`; `write_list_by_name` correspondingly expects a one-element list for such symbols
 
 ### Removed
 
