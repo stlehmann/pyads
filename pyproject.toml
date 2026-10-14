@@ -49,8 +49,10 @@ Repository = "https://github.com/stlehmann/pyads"
 Documentation = "https://pyads.readthedocs.io"
 
 [build-system]
-requires = ["setuptools >= 77.0.3", "wheel"]
+requires = ["setuptools >= 77.0.3", "wheel", "meson", "ninja"]
 # ^ Support for new `license` format
+# ^ `meson` and `ninja` are used by `setup.py` to compile the bundled adslib,
+#   so they have to be available inside the PEP 517 build environment
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
