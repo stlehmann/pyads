@@ -6,6 +6,7 @@
 
 """
 import functools
+import re
 import sys
 import warnings
 import os
@@ -108,3 +109,36 @@ def get_num_of_chars(symbol_type_str: SAdsSymbolEntry.symbol_type) -> int:
         return(int(symbol_type_str[start_index:-1]))
     except ValueError:
         return(PLC_DEFAULT_STRING_SIZE)
+
+
+# Regex for a one-dimensional PLC array type - e.g. "ARRAY [1..10] OF DINT"
+regex_array = re.compile(r"ARRAY \[(\d+)..(\d+)\] OF (.*)")
+
+
+def get_array_length(
+    symbol_type_str: str, size: int, element_size: int
+) -> Optional[int]:
+    """Get the number of elements to decode for a sum-read/sum-write payload.
+
+    A PLC declares array-ness in its textual type ("ARRAY [1..1] OF REAL"), not in
+    ``SAdsSymbolEntry.dataType`` - which reports only the element type. Comparing
+    ``size`` against the element size therefore cannot tell an ``ARRAY[1..1]`` from
+    a scalar, so the type string decides first. Symbols whose type string is not a
+    recognised array form (Simulink matrices, aliases, negative array bounds) fall
+    back to the size comparison.
+
+    :param str symbol_type_str: PLC-style type name, from
+        ``SAdsSymbolEntry.symbol_type``
+    :param int size: total size of the symbol in bytes
+    :param int element_size: size in bytes of a single element of ``dataType``
+    :return: number of array elements, or None if the symbol is a scalar
+    :rtype: Optional[int]
+
+    """
+    if element_size <= 0:
+        return None
+
+    if size > element_size or regex_array.match(symbol_type_str) is not None:
+        return size // element_size
+
+    return None
