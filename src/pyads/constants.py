@@ -31,10 +31,6 @@ PLC_DEFAULT_STRING_SIZE: int = 80
 MAX_ADS_SUB_COMMANDS: int = 500
 
 
-class PLCTYPE_WSTRING:
-    """Special dummy class for handling WSTRING."""
-
-
 # plc data types:
 PLCTYPE_BOOL = c_bool
 PLCTYPE_BYTE = c_ubyte
@@ -45,6 +41,7 @@ PLCTYPE_LREAL = c_double
 PLCTYPE_REAL = c_float
 PLCTYPE_SINT = c_int8
 PLCTYPE_STRING = c_char
+PLCTYPE_WSTRING = c_wchar
 PLCTYPE_TOD = c_int32
 PLCTYPE_UBYTE = c_ubyte
 PLCTYPE_UDINT = c_uint32
