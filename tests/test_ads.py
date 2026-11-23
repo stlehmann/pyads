@@ -8,13 +8,29 @@
 """
 import pyads
 from pyads import AmsAddr
+from pyads import constants
 from pyads.utils import platform_is_linux
 from collections import OrderedDict
+from ctypes import sizeof
 import unittest
 
 
 class AdsTest(unittest.TestCase):
     """Unittests for ADS module."""
+
+    def test_plctype_arr_exports(self):
+        # type: () -> None
+        """All PLCTYPE_ARR_* helpers must be reachable from the pyads namespace."""
+        names = sorted(n for n in dir(constants) if n.startswith("PLCTYPE_ARR_"))
+        self.assertTrue(names, "no PLCTYPE_ARR_* helpers found in pyads.constants")
+
+        missing = [n for n in names if not hasattr(pyads, n)]
+        self.assertEqual(
+            [], missing, "not re-exported in pyads/__init__.py: {}".format(missing)
+        )
+
+        # the repro from issue #509
+        self.assertEqual(sizeof(pyads.PLCTYPE_ARR_BOOL(2)), 2)
 
     def test_AmsAddr(self):
         # type: () -> None

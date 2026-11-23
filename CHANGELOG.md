@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- [#509](https://github.com/stlehmann/pyads/issues/509) Export the remaining `PLCTYPE_ARR_*` helpers (`BOOL`, `UINT`, `USHORT`, `UDINT`, `SINT`, `USINT`) from the top-level `pyads` namespace
+
 ### Changed
 
 - [#539](https://github.com/stlehmann/pyads/pull/539) Fix `AdvancedHandler` test server: unique notification handles, survive abrupt disconnects/handler exceptions, per-item `SUMUP_WRITE` error codes
