@@ -25,6 +25,8 @@ from .ads import (
 
 from .connection import Connection
 
+from .subscription import Notification, Subscription
+
 from .pyads_ex import ADSError
 
 from .constants import (
