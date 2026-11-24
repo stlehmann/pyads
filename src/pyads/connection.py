@@ -552,6 +552,7 @@ class Connection(object):
             ptr = 0
 
             for idx in range(sym_count):
+                ptr_entry = ptr
                 read_length, index_group, index_offset = struct.unpack(
                     "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
@@ -575,6 +576,9 @@ class Connection(object):
                                    index_group=index_group,
                                    index_offset=index_offset,
                                    symbol_type=symbol_type, comment=comment)
+                symbol._ads_size, symbol._ads_data_type = struct.unpack(
+                    "II", symbol_list_msg[ptr_entry + 12: ptr_entry + 20]
+                )
                 symbols.append(symbol)
         return symbols
 
