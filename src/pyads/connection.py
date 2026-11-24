@@ -43,6 +43,7 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
+    PLCTYPE_WSTRING,
     PLC_DEFAULT_STRING_SIZE,
     DATATYPE_MAP,
     ADSIGRP_SUMUP_READ,
@@ -97,7 +98,61 @@ from .ads import (
     size_of_structure,
 )
 from .symbol import AdsSymbol
-from .utils import decode_ads
+from .utils import decode_ads, find_wstring_null_terminator
+
+
+def _decode_notification_data(
+        contents: SAdsNotificationHeader,
+        plc_datatype: Optional[Type],
+        decode_wstring: bool = False,
+) -> Any:
+    """Decode the payload of a notification header into a Python value.
+
+    Shared by :meth:`Connection.parse_notification` and the
+    :meth:`Connection.subscribe` dispatcher so there is a single decoder.
+
+    :param contents: the dereferenced notification header
+    :param plc_datatype: PLC datatype of the payload, or None for raw bytes
+    :param decode_wstring: decode ``PLCTYPE_WSTRING`` as UTF-16-LE ``str``.
+        Off by default so :meth:`Connection.parse_notification` keeps
+        returning a ``bytearray`` for WSTRING (unchanged behaviour).
+    :return: the decoded value
+
+    """
+    data_size = contents.cbSampleSize
+    # Get dynamically sized data array
+    data = (c_ubyte * data_size).from_address(
+        addressof(contents) + SAdsNotificationHeader.data.offset
+    )
+    value: Any
+    if plc_datatype == PLCTYPE_STRING:
+        # read only until null-termination character
+        value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
+
+    elif decode_wstring and plc_datatype == PLCTYPE_WSTRING:
+        raw = bytearray(data)
+        null_idx = find_wstring_null_terminator(raw)
+        value = raw[: len(raw) if null_idx is None else null_idx].decode("utf-16-le")
+
+    elif plc_datatype is not None and issubclass(plc_datatype, Structure):
+        value = plc_datatype()
+        fit_size = min(data_size, sizeof(value))
+        memmove(addressof(value), addressof(data), fit_size)
+
+    elif plc_datatype is not None and issubclass(plc_datatype, Array):
+        if data_size == sizeof(plc_datatype):
+            value = list(plc_datatype.from_buffer_copy(bytes(data)))
+        else:
+            # invalid size
+            value = None
+
+    elif plc_datatype not in DATATYPE_MAP:
+        value = bytearray(data)
+
+    else:
+        value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+
+    return value
 
 
 class Connection(object):
@@ -1065,33 +1120,7 @@ class Connection(object):
                         >>>     plc.del_device_notification(handles)
                         """
         contents = notification.contents
-        data_size = contents.cbSampleSize
-        # Get dynamically sized data array
-        data = (c_ubyte * data_size).from_address(
-            addressof(contents) + SAdsNotificationHeader.data.offset
-        )
-        value: Any
-        if plc_datatype == PLCTYPE_STRING:
-            # read only until null-termination character
-            value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
-
-        elif plc_datatype is not None and issubclass(plc_datatype, Structure):
-            value = plc_datatype()
-            fit_size = min(data_size, sizeof(value))
-            memmove(addressof(value), addressof(data), fit_size)
-
-        elif plc_datatype is not None and issubclass(plc_datatype, Array):
-            if data_size == sizeof(plc_datatype):
-                value = list(plc_datatype.from_buffer_copy(bytes(data)))
-            else:
-                # invalid size
-                value = None
-
-        elif plc_datatype not in DATATYPE_MAP:
-            value = bytearray(data)
-
-        else:
-            value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+        value = _decode_notification_data(contents, plc_datatype)
 
         if timestamp_as_filetime:
             timestamp = contents.nTimeStamp
