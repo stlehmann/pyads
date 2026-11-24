@@ -12,6 +12,7 @@ import platform
 import socket
 import struct
 import sys
+import warnings
 from contextlib import closing
 from functools import wraps
 
@@ -1186,6 +1187,15 @@ def adsSumWrite(
                     value,
                 )
             else:
+                if num_elements == 1 and not isinstance(value, (list, tuple)):
+                    warnings.warn(
+                        f"Writing a scalar to '{data_name}' ({symbol.symbol_type}) "
+                        "with write_list_by_name is deprecated, pass a one-element "
+                        "list instead. Scalars will be rejected in a future release.",
+                        DeprecationWarning,
+                        stacklevel=3,
+                    )
+                    value = [value]
                 struct.pack_into(
                     "<" + fmt[-1] * num_elements,
                     buf,

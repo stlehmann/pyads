@@ -1748,6 +1748,27 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
                 self.plc.read_list_by_name(["arr_of_one"]),
             )
 
+    def test_write_list_by_name_array_of_one_scalar_deprecated(self):
+        """Writing a scalar to ARRAY[1..1] still works but is deprecated.
+
+        See https://github.com/stlehmann/pyads/issues/501.
+        """
+        self.handler.add_variable(PLCVariable(
+            name="arr_of_one",
+            value=struct.pack("<f", 1.5),
+            ads_type=constants.ADST_REAL32,
+            symbol_type="ARRAY [1..1] OF REAL"))
+
+        with self.plc:
+            with self.assertWarns(DeprecationWarning) as cm:
+                errors = self.plc.write_list_by_name({"arr_of_one": 9.5})
+            self.assertEqual(__file__, cm.filename)
+            self.assertEqual({"arr_of_one": "no error"}, errors)
+            self.assertEqual(
+                {"arr_of_one": [9.5]},
+                self.plc.read_list_by_name(["arr_of_one"]),
+            )
+
     def test_wstring_struct(self):
         wstring_structure_def = (
             ("name", pyads.PLCTYPE_WSTRING, 1),

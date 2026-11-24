@@ -112,7 +112,7 @@ def get_num_of_chars(symbol_type_str: SAdsSymbolEntry.symbol_type) -> int:
 
 
 # Regex for a one-dimensional PLC array type - e.g. "ARRAY [1..10] OF DINT"
-regex_array = re.compile(r"ARRAY \[(\d+)..(\d+)\] OF (.*)")
+regex_array = re.compile(r"ARRAY \[(-?\d+)\.\.(-?\d+)\] OF (.*)")
 
 
 def get_array_length(
@@ -124,8 +124,8 @@ def get_array_length(
     ``SAdsSymbolEntry.dataType`` - which reports only the element type. Comparing
     ``size`` against the element size therefore cannot tell an ``ARRAY[1..1]`` from
     a scalar, so the type string decides first. Symbols whose type string is not a
-    recognised array form (Simulink matrices, aliases, negative array bounds) fall
-    back to the size comparison.
+    recognised array form (Simulink matrices, aliases) fall back to the size
+    comparison.
 
     :param str symbol_type_str: PLC-style type name, from
         ``SAdsSymbolEntry.symbol_type``

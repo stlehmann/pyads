@@ -935,7 +935,11 @@ class AdsTest(unittest.TestCase):
 
         # Fallback for type strings that are not a recognisable array form
         self.assertEqual(3, get_array_length("REAL", 12, 4))
+
+        # Negative bounds, including the one-element case the size fallback
+        # cannot detect
         self.assertEqual(11, get_array_length("ARRAY [-5..5] OF INT", 22, 2))
+        self.assertEqual(1, get_array_length("ARRAY [-1..-1] OF REAL", 4, 4))
 
         # Unknown element size must not raise
         self.assertIsNone(get_array_length("REAL", 4, 0))
