@@ -970,6 +970,21 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         notification = create_notification_struct(data)
         callback(pointer(notification), "")
 
+    def test_parse_notification_wstring_returns_bytearray(self):
+        # type: () -> None
+        """parse_notification keeps returning raw bytes for WSTRING.
+
+        Only ``Connection.subscribe`` opts in to WSTRING decoding; the existing
+        notification API must not change behaviour.
+        """
+        payload = "Grüße".encode("utf-16-le") + b"\x00\x00"
+        notification = create_notification_struct(payload)
+        _, _, value = self.plc.parse_notification(
+            pointer(notification), constants.PLCTYPE_WSTRING
+        )
+        self.assertIsInstance(value, bytearray)
+        self.assertEqual(value, bytearray(payload))
+
     def test_multiple_connect(self):
         """
         Using context manager multiple times after each other for
