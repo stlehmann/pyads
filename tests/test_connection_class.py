@@ -1766,3 +1766,63 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+_CLOSE_WITH_NOTIFICATION_SCRIPT = """
+import time
+import pyads
+from pyads.testserver import AdsTestServer
+
+server = AdsTestServer(logging=False)
+server.start()
+time.sleep(0.5)
+try:
+    plc = pyads.Connection({net_id!r}, {port!r}, {ip!r})
+    plc.open()
+    plc.add_device_notification({target}, pyads.NotificationAttrib(4),
+                                lambda n, d: None)
+    plc.close()
+    assert not plc.is_open
+finally:
+    server.stop()
+"""
+
+
+class CloseWithActiveNotificationTestCase(unittest.TestCase):
+    """Regression tests for #554.
+
+    Closing a connection with a still-registered notification used to
+    segfault inside adsPortCloseEx on Linux/macOS. The scenario runs in a
+    subprocess so a crash fails the test instead of killing the test run.
+    """
+
+    def _run_close(self, target):
+        # type: (str) -> None
+        import subprocess
+        import sys
+
+        script = _CLOSE_WITH_NOTIFICATION_SCRIPT.format(
+            net_id=TEST_SERVER_AMS_NET_ID,
+            port=TEST_SERVER_AMS_PORT,
+            ip=TEST_SERVER_IP_ADDRESS,
+            target=target,
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            "close() with an active notification failed:\n" + result.stderr,
+        )
+
+    def test_close_with_notification_by_name(self):
+        # type: () -> None
+        self._run_close('"GVL.x"')
+
+    def test_close_with_notification_by_index(self):
+        # type: () -> None
+        self._run_close("(0x4020, 0)")

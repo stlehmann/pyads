@@ -213,12 +213,16 @@ class Connection(object):
         if not self._open:
             return
 
-        if linux:
-            adsDelRoute(self._adr.netIdStruct())
-
+        # Close the port before deleting the route: adsPortCloseEx cleans up
+        # any notifications still registered on the port, and that cleanup
+        # needs the route's AmsConnection. Deleting the route first frees the
+        # connection and the cleanup then segfaults (#554).
         if self._port is not None:
             adsPortCloseEx(self._port)
             self._port = None
+
+        if linux:
+            adsDelRoute(self._adr.netIdStruct())
 
         self._open = False
 
