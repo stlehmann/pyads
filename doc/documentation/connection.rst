@@ -42,7 +42,7 @@ ADS requests time out after 5000 ms by default. A different timeout can be passe
    >>> import pyads
    >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1, timeout=1000)
    >>> with plc:
-   >>>     plc.get_timeout()
+   ...     plc.get_timeout()
    1000
 
 The timeout can also be changed on an existing connection with

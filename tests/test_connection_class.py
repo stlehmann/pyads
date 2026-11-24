@@ -12,6 +12,7 @@ import datetime
 from datetime import timezone
 import time
 import unittest
+from unittest import mock
 import pyads
 import struct
 from pyads.testserver import AdsTestServer, AmsPacket, AdvancedHandler, PLCVariable
@@ -1090,6 +1091,78 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         self.plc.set_timeout(1000)
         with self.plc:
             self.assertEqual(1000, self.plc.get_timeout())
+
+    def test_open_releases_port_if_timeout_fails(self):
+        # type: () -> None
+        """Test that open() cleans up if the timeout can't be applied."""
+        plc = pyads.Connection(
+            TEST_SERVER_AMS_NET_ID,
+            TEST_SERVER_AMS_PORT,
+            TEST_SERVER_IP_ADDRESS,
+            timeout=1000,
+        )
+        with mock.patch(
+            "pyads.connection.adsSyncSetTimeoutEx",
+            side_effect=pyads.ADSError(1),
+        ), mock.patch(
+            "pyads.connection.adsPortCloseEx", wraps=pyads.pyads_ex.adsPortCloseEx
+        ) as port_close, mock.patch(
+            "pyads.connection.adsDelRoute", wraps=pyads.pyads_ex.adsDelRoute
+        ) as del_route:
+            with self.assertRaises(pyads.ADSError):
+                plc.open()
+
+        self.assertFalse(plc.is_open)
+        self.assertIsNone(plc._port)
+        port_close.assert_called_once()
+        self.assertEqual(pyads.ads.linux, del_route.called)
+
+        # the connection is still usable once the timeout can be applied
+        with plc:
+            self.assertEqual(1000, plc.get_timeout())
+
+    def test_set_timeout_keeps_previous_value_if_rejected(self):
+        # type: () -> None
+        """Test that a timeout rejected by the ADS library is not stored."""
+        with self.plc:
+            self.plc.set_timeout(1000)
+            with mock.patch(
+                "pyads.connection.adsSyncSetTimeoutEx",
+                side_effect=pyads.ADSError(1),
+            ):
+                with self.assertRaises(pyads.ADSError):
+                    self.plc.set_timeout(2000)
+            self.assertEqual(1000, self.plc.get_timeout())
+
+        # the previous value is re-applied on the next open()
+        with self.plc:
+            self.assertEqual(1000, self.plc.get_timeout())
+
+    def test_timeout_out_of_range(self):
+        # type: () -> None
+        """Test that timeouts the native library would wrap are rejected."""
+        for ms in (-1, 2**31):
+            with self.assertRaises(ValueError):
+                pyads.Connection(
+                    TEST_SERVER_AMS_NET_ID,
+                    TEST_SERVER_AMS_PORT,
+                    TEST_SERVER_IP_ADDRESS,
+                    timeout=ms,
+                )
+            with self.assertRaises(ValueError):
+                self.plc.set_timeout(ms)
+            with self.plc:
+                with self.assertRaises(ValueError):
+                    self.plc.set_timeout(ms)
+                self.assertEqual(5000, self.plc.get_timeout())
+
+    def test_timeout_bounds_accepted(self):
+        # type: () -> None
+        """Test that the smallest and largest valid timeouts are accepted."""
+        for ms in (0, 2**31 - 1):
+            with self.plc:
+                self.plc.set_timeout(ms)
+                self.assertEqual(ms, self.plc.get_timeout())
 
     def test_get_and_release_handle(self):
         # type: () -> None

@@ -77,6 +77,7 @@ from .pyads_ex import (
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
     adsSyncGetTimeoutEx,
+    validate_timeout,
     ADSError,
 )
 from .structs import (
@@ -120,6 +121,8 @@ class Connection(object):
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
         self._open = False
+        if timeout is not None:
+            validate_timeout(timeout)
         self._timeout = timeout
         if ip_address is None:
             if ams_net_id is None:
@@ -206,14 +209,29 @@ class Connection(object):
             try:
                 adsAddRoute(self._adr.netIdStruct(), self.ip_address)
             except ADSError:
-                adsPortCloseEx(self._port)
-                self._port = None
+                self._release_port(delete_route=False)
                 raise
 
         if self._timeout is not None:
-            adsSyncSetTimeoutEx(self._port, self._timeout)
+            try:
+                adsSyncSetTimeoutEx(self._port, self._timeout)
+            except ADSError:
+                self._release_port(delete_route=linux)
+                raise
 
         self._open = True
+
+    def _release_port(self, delete_route: bool) -> None:
+        """Clean up after a failed :py:meth:`open`.
+
+        :param bool delete_route: also delete the route added in :py:meth:`open`
+
+        """
+        if delete_route:
+            adsDelRoute(self._adr.netIdStruct())
+        if self._port is not None:
+            adsPortCloseEx(self._port)
+            self._port = None
 
     def close(self) -> None:
         """:summary: Close the connection to the TwinCAT message router."""
@@ -912,11 +930,14 @@ class Connection(object):
         :py:meth:`open`, so it survives a close/open cycle.
 
         :param int ms: timeout in ms
+        :raises ValueError: if the timeout is not in the range 0..2**31-1
 
         """
-        self._timeout = ms
+        validate_timeout(ms)
         if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
+        # only store the value once the ADS library has accepted it
+        self._timeout = ms
 
     def get_timeout(self) -> Optional[int]:
         """Return the current ADS timeout of the connection.
