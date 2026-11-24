@@ -25,6 +25,7 @@ from typing import Optional, Union, Tuple, Any, Type, Callable, Dict, List, cast
 from .constants import (
     ADSIGRP_SYM_UPLOAD,
     ADSIGRP_SYM_UPLOADINFO2,
+    ADSIGRP_SYM_VALBYHND,
     ADSIOFFS_DEVDATA_ADSSTATE,
     PLCTYPE_BOOL,
     PLCTYPE_BYTE,
@@ -839,6 +840,154 @@ class Connection(object):
         return self.write_by_name(
             data_name, byte_values, c_ubyte * structure_size, handle=handle
         )
+
+    def invoke_rpc_method(
+            self,
+            method_path: str,
+            param_vals: Optional[Union[Dict[str, Any], List[Any]]] = None,
+            param_def: Optional[StructureDef] = None,
+            return_type: Optional[Union[Type["PLCDataType"], StructureDef]] = None,
+            handle: Optional[int] = None,
+            output_def: Optional[StructureDef] = None,
+    ) -> Any:
+        """Call a PLC method via RPC.
+
+        The method must be declared with the ``{attribute 'TcRpcEnable'}``
+        pragma in the PLC. The input parameters are sent back to back without
+        padding, so ``param_def`` must list them in the same order as their
+        ``VAR_INPUT`` declarations. The PLC answers with the return value
+        followed by the ``VAR_OUTPUT`` parameters, also without padding. The
+        PLC checks the sizes and raises an ``ADSError`` (1797, parameter size
+        not correct) if ``param_def``, ``return_type`` and ``output_def`` do not
+        match the method.
+
+        :param str method_path: full path to the method, with the instance and
+            the method name separated by ``#``, e.g. ``'MAIN.fbMath#M_Add'``.
+            Can be an empty string if handle is used.
+        :param Optional[Union[Dict[str, Any], List[Any]]] param_vals: values of
+            the method's input parameters, either as a dict keyed by the names
+            in ``param_def`` or as a list in the order of ``param_def``.
+            ``None`` if the method has no parameters (default: None)
+        :param Optional[StructureDef] param_def: structure definition of the
+            input parameters, required if ``param_vals`` is given. Uses the
+            same format as ``write_structure_by_name`` (default: None)
+        :param return_type: type of the return value, either a PLCTYPE
+            constant or a structure definition for a returned struct.
+            ``None`` if the method has no return value (default: None)
+        :type return_type: Optional[Union[Type["PLCDataType"], StructureDef]]
+        :param Optional[int] handle: handle of the method as obtained by
+            ``get_handle(method_path)``. Pass it in to call the method with a
+            single ADS request. If ``None``, a handle is acquired and released
+            around the call (default: None)
+        :param Optional[StructureDef] output_def: structure definition of the
+            method's ``VAR_OUTPUT`` parameters in declaration order. Required
+            if the method has outputs, as the PLC rejects the call otherwise
+            (default: None)
+        :return: the return value of the method, a dict if ``return_type`` is
+            a structure definition, or ``None`` if there is no return type.
+            If ``output_def`` is given, a tuple of the return value and a dict
+            of the output values.
+
+        Example:
+
+        .. code:: python
+
+            # {attribute 'TcRpcEnable'}
+            # METHOD M_Add : INT
+            # VAR_INPUT
+            #     i1 : INT;
+            #     i2 : INT;
+            # END_VAR
+
+            >>> param_def = (
+            ...     ('i1', pyads.PLCTYPE_INT, 1),
+            ...     ('i2', pyads.PLCTYPE_INT, 1),
+            ... )
+            >>> plc.invoke_rpc_method(
+            ...     'MAIN.fbMath#M_Add', [3, 4], param_def, pyads.PLCTYPE_INT
+            ... )
+            7
+
+            # With a VAR_OUTPUT parameter ``n : DINT``:
+            >>> plc.invoke_rpc_method(
+            ...     'MAIN.fbMath#M_AddCount', [3, 4], param_def, pyads.PLCTYPE_INT,
+            ...     output_def=(('n', pyads.PLCTYPE_DINT, 1),),
+            ... )
+            (7, {'n': 1})
+
+        """
+        if not self._port:
+            return None
+
+        write_value: Optional[List[int]] = None
+        write_type: Optional[Type] = None
+        if param_vals is not None:
+            if param_def is None:
+                raise ValueError("param_def is required when param_vals is given")
+            if isinstance(param_vals, (list, tuple)):
+                if len(param_vals) != len(param_def):
+                    raise ValueError(
+                        "Expected {} parameter values, got {}".format(
+                            len(param_def), len(param_vals)
+                        )
+                    )
+                param_vals = {
+                    item[0]: value for item, value in zip(param_def, param_vals)
+                }
+            write_value = bytes_from_dict(param_vals, param_def)
+            write_type = c_ubyte * len(write_value)
+
+        # The PLC answers with the return value followed by the VAR_OUTPUT
+        # parameters, and rejects a read shorter than both together.
+        return_def: Optional[StructureDef] = None
+        read_type: Optional[Type]
+        if output_def is not None:
+            if isinstance(return_type, tuple):
+                return_def = return_type
+            elif return_type is not None:
+                return_def = (("return", return_type, 1),)
+            else:
+                return_def = ()
+            return_size = size_of_structure(return_def) if return_def else 0
+            read_type = c_ubyte * (return_size + size_of_structure(output_def))
+        elif isinstance(return_type, tuple):
+            return_def = return_type
+            read_type = c_ubyte * size_of_structure(return_def)
+        else:
+            read_type = return_type
+
+        release = handle is None
+        if handle is None:
+            handle = adsGetHandle(self._port, self._adr, method_path)
+
+        try:
+            result = adsSyncReadWriteReqEx2(
+                self._port,
+                self._adr,
+                ADSIGRP_SYM_VALBYHND,
+                handle,
+                read_type,
+                write_value,
+                write_type,
+            )
+        finally:
+            if release:
+                adsReleaseHandle(self._port, self._adr, handle)
+
+        if output_def is not None:
+            outputs = dict_from_bytes(result[return_size:], output_def)
+            if not return_def:
+                return None, outputs
+            value = cast(
+                Dict[str, Any], dict_from_bytes(result[:return_size], return_def)
+            )
+            if not isinstance(return_type, tuple):
+                return value["return"], outputs
+            return value, outputs
+
+        if return_def is not None:
+            return dict_from_bytes(result, return_def)
+        return result
 
     def add_device_notification(
             self,

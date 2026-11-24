@@ -1972,6 +1972,214 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
             val = self.plc.read_structure_by_name("wstring_array_struct", wstring_array_structure_def)
             self.assertEqual(wstring_array_values, val)
 
+    def _add_rpc_method(self, name: str, return_bytes: bytes) -> PLCVariable:
+        """Register a fake RPC method that returns ``return_bytes``."""
+        var = PLCVariable(name, return_bytes, ads_type=None, symbol_type="METHOD")
+        self.handler.add_variable(var)
+        return var
+
+    RPC_PARAM_DEF = (
+        ("i1", pyads.PLCTYPE_INT, 1),
+        ("i2", pyads.PLCTYPE_INT, 1),
+    )
+
+    def test_invoke_rpc_method(self):
+        """Params are sent packed by handle, return value is parsed."""
+        var = self._add_rpc_method("MAIN.fbMath#M_Add", struct.pack("<h", 7))
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method(
+                "MAIN.fbMath#M_Add", [3, -4], self.RPC_PARAM_DEF, pyads.PLCTYPE_INT
+            )
+
+        self.assertEqual(result, 7)
+        self.assertEqual(var.value, struct.pack("<hh", 3, -4))
+
+        # acquire handle, call by handle, release handle
+        requests = self.test_server.request_history
+        self.assertEqual(len(requests), 3)
+        self.assert_command_id(requests[0], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[1], constants.ADSCOMMAND_READWRITE)
+        self.assert_command_id(requests[2], constants.ADSCOMMAND_WRITE)
+        data = requests[1].ams_header.data
+        self.assertEqual(
+            struct.unpack("<IIII", data[:16]),
+            (constants.ADSIGRP_SYM_VALBYHND, var.handle, 2, 4),
+        )
+
+    def test_invoke_rpc_method_dict_params(self):
+        """Params can be given as a dict keyed by param_def names."""
+        var = self._add_rpc_method("MAIN.fbMath#M_Add", struct.pack("<h", 7))
+
+        with self.plc:
+            self.plc.invoke_rpc_method(
+                "MAIN.fbMath#M_Add",
+                {"i2": 4, "i1": 3},
+                self.RPC_PARAM_DEF,
+                pyads.PLCTYPE_INT,
+            )
+
+        self.assertEqual(var.value, struct.pack("<hh", 3, 4))
+
+    def test_invoke_rpc_method_with_handle(self):
+        """A pre-acquired handle results in a single ADS request."""
+        self._add_rpc_method("MAIN.fbMath#M_Add", struct.pack("<h", 7))
+
+        with self.plc:
+            handle = self.plc.get_handle("MAIN.fbMath#M_Add")
+            self.test_server.request_history = []
+            result = self.plc.invoke_rpc_method(
+                "", [3, 4], self.RPC_PARAM_DEF, pyads.PLCTYPE_INT, handle=handle
+            )
+            self.assertEqual(len(self.test_server.request_history), 1)
+            self.plc.release_handle(handle)
+
+        self.assertEqual(result, 7)
+
+    def test_invoke_rpc_method_no_params_no_return(self):
+        """Without params or return type nothing is written or read."""
+        self._add_rpc_method("MAIN.fb#M_Reset", b"")
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method("MAIN.fb#M_Reset")
+
+        self.assertIsNone(result)
+        data = self.test_server.request_history[1].ams_header.data
+        self.assertEqual(
+            struct.unpack("<II", data[8:16]), (0, 0)  # read length, write length
+        )
+
+    def test_invoke_rpc_method_struct_return(self):
+        """A structure definition as return_type returns a dict."""
+        return_def = (
+            ("bOk", pyads.PLCTYPE_BOOL, 1),
+            ("rValue", pyads.PLCTYPE_LREAL, 1),
+        )
+        self._add_rpc_method("MAIN.fb#M_Get", struct.pack("<?d", True, 1.5))
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method("MAIN.fb#M_Get", return_type=return_def)
+
+        self.assertEqual(result, {"bOk": True, "rValue": 1.5})
+
+    def test_invoke_rpc_method_outputs(self):
+        """Return value and VAR_OUTPUTs are read back to back."""
+        var = self._add_rpc_method(
+            "MAIN.fb#M_Mixed", struct.pack("<dI", 3.5, 42)
+        )
+        param_def = (("b", pyads.PLCTYPE_BYTE, 1), ("t", pyads.PLCTYPE_LREAL, 1))
+        output_def = (("n", pyads.PLCTYPE_DINT, 1),)
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method(
+                "MAIN.fb#M_Mixed", [3, 0.5], param_def, pyads.PLCTYPE_LREAL,
+                output_def=output_def,
+            )
+
+        self.assertEqual(result, (3.5, {"n": 42}))
+        # inputs are packed: 1 + 8 bytes, no padding
+        self.assertEqual(var.value, struct.pack("<Bd", 3, 0.5))
+        data = self.test_server.request_history[1].ams_header.data
+        self.assertEqual(struct.unpack("<II", data[8:16]), (12, 9))
+
+    def test_invoke_rpc_method_outputs_struct_return(self):
+        """A struct return value is split from the outputs."""
+        self._add_rpc_method("MAIN.fb#M_Get", struct.pack("<?hi", True, 5, 42))
+        return_def = (("bOk", pyads.PLCTYPE_BOOL, 1), ("i", pyads.PLCTYPE_INT, 1))
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method(
+                "MAIN.fb#M_Get", return_type=return_def,
+                output_def=(("n", pyads.PLCTYPE_DINT, 1),),
+            )
+
+        self.assertEqual(result, ({"bOk": True, "i": 5}, {"n": 42}))
+
+    def test_invoke_rpc_method_outputs_no_return(self):
+        """Outputs without a return value give None as return value."""
+        self._add_rpc_method("MAIN.fb#M_Out", struct.pack("<i", -1))
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method(
+                "MAIN.fb#M_Out", output_def=(("n", pyads.PLCTYPE_DINT, 1),)
+            )
+
+        self.assertEqual(result, (None, {"n": -1}))
+
+    def test_invoke_rpc_method_in_out(self):
+        """VAR_IN_OUT is written with the inputs and read with the outputs."""
+        # return value 30, then x = 15, then n = 7
+        var = self._add_rpc_method("MAIN.fb#M_InOut", struct.pack("<iih", 30, 15, 7))
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method(
+                "MAIN.fb#M_InOut",
+                [5, 10],
+                (("a", pyads.PLCTYPE_DINT, 1), ("x", pyads.PLCTYPE_DINT, 1)),
+                pyads.PLCTYPE_DINT,
+                output_def=(("x", pyads.PLCTYPE_DINT, 1), ("n", pyads.PLCTYPE_INT, 1)),
+            )
+
+        self.assertEqual(result, (30, {"x": 15, "n": 7}))
+        self.assertEqual(var.value, struct.pack("<ii", 5, 10))
+
+    def test_invoke_rpc_method_strings(self):
+        """Strings are sent and read at their full declared size."""
+        def plc_string(text: str, length: int) -> bytes:
+            return text.encode().ljust(length + 1, b"\x00")
+
+        var = self._add_rpc_method(
+            "MAIN.fb#M_Str",
+            plc_string("abc42", 80) + plc_string("io+", 10) + plc_string("out", 10),
+        )
+        param_def = (
+            ("f", pyads.PLCTYPE_STRING, 1, 20),
+            ("i", pyads.PLCTYPE_INT, 1),
+            ("sio", pyads.PLCTYPE_STRING, 1, 10),
+        )
+        output_def = (
+            ("sio", pyads.PLCTYPE_STRING, 1, 10),
+            ("o", pyads.PLCTYPE_STRING, 1, 10),
+        )
+
+        with self.plc:
+            result = self.plc.invoke_rpc_method(
+                "MAIN.fb#M_Str", ["abc", 42, "io"], param_def, pyads.PLCTYPE_STRING,
+                output_def=output_def,
+            )
+
+        self.assertEqual(result, ("abc42", {"sio": "io+", "o": "out"}))
+        self.assertEqual(
+            var.value,
+            plc_string("abc", 20) + struct.pack("<h", 42) + plc_string("io", 10),
+        )
+        data = self.test_server.request_history[1].ams_header.data
+        self.assertEqual(struct.unpack("<II", data[8:16]), (81 + 11 + 11, 21 + 2 + 11))
+
+    def test_invoke_rpc_method_invalid_params(self):
+        """Mismatched params raise before anything is sent."""
+        with self.plc:
+            with self.assertRaises(ValueError):
+                self.plc.invoke_rpc_method("MAIN.fb#M_Add", [1])
+            with self.assertRaises(ValueError):
+                self.plc.invoke_rpc_method("MAIN.fb#M_Add", [1], self.RPC_PARAM_DEF)
+
+        self.assertEqual(self.test_server.request_history, [])
+
+    def test_invoke_rpc_method_releases_handle_on_error(self):
+        """The acquired handle is released even when the call fails."""
+        self._add_rpc_method("MAIN.fbMath#M_Add", struct.pack("<h", 7))
+
+        with self.plc:
+            with self.assertRaises(RuntimeError):
+                # LREAL return type is longer than the 2 bytes returned
+                self.plc.invoke_rpc_method(
+                    "MAIN.fbMath#M_Add", return_type=pyads.PLCTYPE_LREAL
+                )
+
+        requests = self.test_server.request_history
+        self.assert_command_id(requests[-1], constants.ADSCOMMAND_WRITE)
+
 
 if __name__ == "__main__":
     unittest.main()
