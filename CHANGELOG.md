@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Deprecated
 
 - [#501](https://github.com/stlehmann/pyads/issues/501) Passing a scalar to `write_list_by_name` for an `ARRAY[1..1]` symbol emits a `DeprecationWarning`; pass a one-element list instead. Scalars will be rejected in a future release
+- [#554](https://github.com/stlehmann/pyads/issues/554) Fix segfault in `Connection.close()` on Linux/macOS when a device notification is still registered, by closing the port before deleting the route
 
 ### Removed
 
