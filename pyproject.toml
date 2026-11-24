@@ -8,7 +8,6 @@ readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -21,9 +20,8 @@ classifiers = [
 license = "MIT"
 license-files = ["LICENSE"]
 dynamic = ["version"]
-requires-python = ">= 3.9,<4"
-# Outdated Python versions are still included, until they cause problems (after which they will bed dropped)
-# Python 3.8 cannot be used anymore because of a setuptoools minimum version
+requires-python = ">= 3.10,<4"
+# End-of-life Python versions stay supported until they cause problems in CI or the build
 
 [project.optional-dependencies]
 docs = [
@@ -80,7 +78,7 @@ before-all = "yum install -y meson"
 [tool.tox]
 legacy_tox_ini = """
     [tox]
-    envlist = py38, py39, py310, py311, py312, py313, py314
+    envlist = py310, py311, py312, py313, py314
 
     [testenv]
     commands = discover
@@ -95,7 +93,7 @@ legacy_tox_ini = """
 
 [tool.black]
 line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311', 'py312', 'py313', 'py314']
+target-version = ['py310', 'py311', 'py312', 'py313', 'py314']
 include = '\.pyi?$'
 exclude = '''
 (

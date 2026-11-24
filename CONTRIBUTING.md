@@ -89,11 +89,11 @@ Either stop all services and process manually, or run
 #### Docker
 
 With Docker installed docker images can be built and run for any python version.
-The following commands will build an image using python3.8, then tests will run when the
+The following commands will build an image using python3.10, then tests will run when the
 container starts:
 
 ```
-docker build --build-arg python_version=3.8 -t container_name .
+docker build --build-arg python_version=3.10 -t container_name .
 docker run --rm container_name
 ```
 
@@ -111,7 +111,7 @@ With the subsystem installed, open a Linux shell in your clone directory and run
 1. `sudo apt install python3 python3-pip`
 1. `cd adslib && make && sudo make install && cd ..`
 1. `python3 -m pip install tox`
-1. `python3 -m tox -e py38` (Ubuntu 20.04 with Python 3.8)
+1. `python3 -m tox -e py310` (Ubuntu 22.04 with Python 3.10)
 
 ## Documentation contributions
 

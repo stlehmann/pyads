@@ -20,7 +20,7 @@ cd pyads
 pip install .
 ```
 
-Note: pyads only supports python 3.8 and above.
+Note: pyads only supports python 3.10 and above.
 
 ## Installation on Linux
 
