@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import re
 from ctypes import sizeof
-from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type, cast
+from typing import (
+    TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type, cast
+)
 
 from . import constants  # To access all constants, use package notation
 from .constants import PLCDataType
