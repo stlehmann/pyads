@@ -51,6 +51,14 @@ pyads\.structs module
     :undoc-members:
     :show-inheritance:
 
+pyads\.subscription module
+--------------------------
+
+.. automodule:: pyads.subscription
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pyads\.symbol module
 --------------------
 
