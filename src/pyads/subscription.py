@@ -8,10 +8,11 @@
 from __future__ import annotations
 
 import logging
+import threading
 from ctypes import Array, sizeof
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Type
 
 from .constants import (
     ADST_STRING,
@@ -21,6 +22,9 @@ from .constants import (
     PLCTYPE_WSTRING,
     ads_type_to_ctype,
 )
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .connection import Connection
 
 logger = logging.getLogger(__name__)
 
@@ -122,3 +126,90 @@ def resolve_notification_type(
     raise _unresolvable(
         name, symbol_type, "structures and other complex types are not decoded automatically"
     )
+
+
+class Subscription:
+    """A live, decoded device notification created by ``subscribe()``.
+
+    Returned by :meth:`pyads.Connection.subscribe` and
+    :meth:`pyads.AdsSymbol.subscribe`. It stays active until
+    :meth:`unsubscribe` is called or the connection is closed; dropping the
+    Python object does **not** end it. Can be used as a context manager.
+
+    :ivar name: variable name as subscribed
+    :ivar plc_datatype: PLC datatype used for decoding
+    :ivar size: notification length in bytes
+    :ivar notification_handle: ADS notification handle (set once registered)
+    :ivar user_handle: user handle returned by the registration
+
+    """
+
+    def __init__(
+        self, connection: "Connection", name: str, plc_datatype: Type, size: int
+    ) -> None:
+        """Create an unregistered subscription (internal; use ``subscribe()``)."""
+        self._connection = connection
+        self.name = name
+        self.plc_datatype = plc_datatype
+        self.size = size
+        self.notification_handle: Optional[int] = None
+        self.user_handle: Optional[int] = None
+        self._lock = threading.Lock()
+        self._active = True
+        self._error_count = 0
+
+    def __repr__(self) -> str:
+        """Return a short description of the subscription."""
+        state = "active" if self._active else "inactive"
+        return f"<Subscription {self.name!r} handle={self.notification_handle} {state}>"
+
+    @property
+    def active(self) -> bool:
+        """Return True while the subscription delivers notifications.
+
+        :rtype: bool
+
+        """
+        return self._active
+
+    def unsubscribe(self) -> None:
+        """Remove the device notification. Calling it again is a no-op.
+
+        :raises ADSError: if the PLC rejects the removal (the subscription is
+            inactive locally regardless)
+
+        """
+        with self._lock:
+            if not self._active:
+                return
+            self._active = False
+        self._connection._remove_subscription(self)
+
+    def __enter__(self) -> "Subscription":
+        """Return the subscription itself."""
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        """Unsubscribe on leaving the with-block."""
+        self.unsubscribe()
+
+    def _report_error(self) -> None:
+        """Log an exception from decoding or the user callback.
+
+        Must be called from inside an ``except`` block. The first error of a
+        subscription is logged with traceback at ERROR level, later ones only
+        at DEBUG so a broken callback on a fast variable cannot flood the log.
+        """
+        self._error_count += 1
+        if self._error_count == 1:
+            logger.exception(
+                "Error handling notification for %s (further errors logged at DEBUG)",
+                self.name,
+            )
+        else:
+            logger.debug(
+                "Error handling notification for %s (%d errors)",
+                self.name,
+                self._error_count,
+                exc_info=True,
+            )

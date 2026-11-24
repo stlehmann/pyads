@@ -465,7 +465,11 @@ class AdvancedHandler(AbstractHandler):
             # Return value is the notification_handle
             # The notification handle is an incrementing value
 
-            var = self.get_variable_by_indices(index_group, index_offset)
+            # by-name notifications are registered on the symbol handle
+            if index_group == constants.ADSIGRP_SYM_VALBYHND:
+                var = self.get_variable_by_handle(index_offset)
+            else:
+                var = self.get_variable_by_indices(index_group, index_offset)
 
             handle = var.register_notification()
 
