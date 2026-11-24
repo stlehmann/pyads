@@ -48,6 +48,9 @@ from .constants import (
 )
 from .errorcodes import ERROR_CODES
 
+# largest timeout (in ms) accepted by the native AdsSyncSetTimeoutEx (signed 32-bit)
+MAX_TIMEOUT_MS = 2**31 - 1
+
 
 NOTEFUNC: Optional[Callable] = None
 
@@ -1388,15 +1391,50 @@ def adsSyncDelDeviceNotificationReqEx(
         )
 
 
+def validate_timeout(n_ms: int) -> None:
+    """Check that a timeout fits the native ADS timeout parameter.
+
+    The native libraries take the timeout as a 32-bit integer. ctypes would
+    silently wrap out-of-range values (e.g. -1 becomes a timeout of ~49 days),
+    so they are rejected here instead.
+
+    :param int n_ms: timeout in ms
+    :raises ValueError: if the timeout is not in the range 0..2**31-1
+
+    """
+    if not 0 <= n_ms <= MAX_TIMEOUT_MS:
+        raise ValueError(
+            "timeout must be between 0 and {} ms, got {}".format(MAX_TIMEOUT_MS, n_ms)
+        )
+
+
 def adsSyncSetTimeoutEx(port: int, n_ms: int) -> None:
     """Set Timeout.
 
     :param int port: local AMS port as returned by adsPortOpenEx()
     :param int n_ms: timeout in ms
+    :raises ValueError: if the timeout is not in the range 0..2**31-1
 
     """
+    validate_timeout(n_ms)
     adsSyncSetTimeoutFct = _adsDLL.AdsSyncSetTimeoutEx
     cms = ctypes.c_long(n_ms)
     err_code = adsSyncSetTimeoutFct(port, cms)
     if err_code:
         raise ADSError(err_code)
+
+
+def adsSyncGetTimeoutEx(port: int) -> int:
+    """Get Timeout.
+
+    :param int port: local AMS port as returned by adsPortOpenEx()
+    :rtype: int
+    :return: timeout in ms
+
+    """
+    adsSyncGetTimeoutFct = _adsDLL.AdsSyncGetTimeoutEx
+    cms = ctypes.c_uint32()
+    err_code = adsSyncGetTimeoutFct(port, ctypes.byref(cms))
+    if err_code:
+        raise ADSError(err_code)
+    return cms.value

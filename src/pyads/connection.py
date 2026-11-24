@@ -76,6 +76,8 @@ from .pyads_ex import (
     adsSyncAddDeviceNotificationReqEx,
     adsSyncDelDeviceNotificationReqEx,
     adsSyncSetTimeoutEx,
+    adsSyncGetTimeoutEx,
+    validate_timeout,
     ADSError,
 )
 from .structs import (
@@ -104,6 +106,8 @@ class Connection(object):
     :ivar str ams_net_id: AMS net id of the remote device
     :ivar int ams_net_port: port of the remote device
     :ivar str ip_address: the ip address of the device
+    :ivar Optional[int] timeout: ADS timeout in ms applied on every
+        :py:meth:`open`, `None` to use the default of the ADS library (5000 ms)
 
     :note: If no IP address is given the ip address is automatically set
         to first 4 parts of the Ams net id.
@@ -112,11 +116,14 @@ class Connection(object):
 
     def __init__(
             self, ams_net_id: str = None, ams_net_port: int = None,
-            ip_address: str = None
+            ip_address: str = None, timeout: Optional[int] = None
     ) -> None:
         self._port = None  # type: Optional[int]
         self._adr = AmsAddr(ams_net_id, ams_net_port)
         self._open = False
+        if timeout is not None:
+            validate_timeout(timeout)
+        self._timeout = timeout
         if ip_address is None:
             if ams_net_id is None:
                 raise TypeError("Must provide an IP or net ID")
@@ -202,11 +209,29 @@ class Connection(object):
             try:
                 adsAddRoute(self._adr.netIdStruct(), self.ip_address)
             except ADSError:
-                adsPortCloseEx(self._port)
-                self._port = None
+                self._release_port(delete_route=False)
+                raise
+
+        if self._timeout is not None:
+            try:
+                adsSyncSetTimeoutEx(self._port, self._timeout)
+            except ADSError:
+                self._release_port(delete_route=linux)
                 raise
 
         self._open = True
+
+    def _release_port(self, delete_route: bool) -> None:
+        """Clean up after a failed :py:meth:`open`.
+
+        :param bool delete_route: also delete the route added in :py:meth:`open`
+
+        """
+        if delete_route:
+            adsDelRoute(self._adr.netIdStruct())
+        if self._port is not None:
+            adsPortCloseEx(self._port)
+            self._port = None
 
     def close(self) -> None:
         """:summary: Close the connection to the TwinCAT message router."""
@@ -899,9 +924,32 @@ class Connection(object):
         return self._open
 
     def set_timeout(self, ms: int) -> None:
-        """Set Timeout."""
+        """Set the ADS timeout of the connection.
+
+        The value is stored on the connection and re-applied on every
+        :py:meth:`open`, so it survives a close/open cycle.
+
+        :param int ms: timeout in ms
+        :raises ValueError: if the timeout is not in the range 0..2**31-1
+
+        """
+        validate_timeout(ms)
         if self._port is not None:
             adsSyncSetTimeoutEx(self._port, ms)
+        # only store the value once the ADS library has accepted it
+        self._timeout = ms
+
+    def get_timeout(self) -> Optional[int]:
+        """Return the current ADS timeout of the connection.
+
+        :rtype: Optional[int]
+        :return: timeout in ms, None if the connection is not open
+
+        """
+        if self._port is not None:
+            return adsSyncGetTimeoutEx(self._port)
+
+        return None
 
     def notification(
             self, plc_datatype: Optional[Type] = None,
