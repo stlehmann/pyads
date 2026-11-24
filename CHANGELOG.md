@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Removed
 
+- [#551](https://github.com/stlehmann/pyads/issues/551) Drop support for Python 3.9, which is end-of-life; pyads now requires Python 3.10 or later
+
 ## 3.6.0
 
 ### Added
