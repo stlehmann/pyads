@@ -495,6 +495,8 @@ class Connection(object):
                 read_length, index_group, index_offset = struct.unpack(
                     "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
+                # layout as SAdsSymbolEntry: size, dataType, flags follow
+                flags = struct.unpack("I", symbol_list_msg[ptr + 20: ptr + 24])[0]
                 name_length, type_length, comment_length = struct.unpack(
                     "HHH", symbol_list_msg[ptr + 24: ptr + 30]
                 )
@@ -511,10 +513,15 @@ class Connection(object):
                 comment = decode_ads(symbol_list_msg[comment_start_ptr:comment_end_ptr])
 
                 ptr = ptr + read_length
-                symbol = AdsSymbol(plc=self, name=name,
-                                   index_group=index_group,
-                                   index_offset=index_offset,
-                                   symbol_type=symbol_type, comment=comment)
+                symbol = AdsSymbol(
+                    plc=self,
+                    name=name,
+                    index_group=index_group,
+                    index_offset=index_offset,
+                    symbol_type=symbol_type,
+                    comment=comment,
+                    flags=flags,
+                )
                 symbols.append(symbol)
         return symbols
 

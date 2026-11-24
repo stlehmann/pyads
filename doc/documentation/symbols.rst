@@ -48,6 +48,41 @@ and `array_size` to define the size of the array.
     >>> symbol.read()
    [{"i": 1, " "s": "foo"}, {"i": 2, "s": "bar"}]
 
+Symbol flags
+^^^^^^^^^^^^
+
+The PLC's symbol table carries a flag word for every symbol (read-only, persistent,
+bit value, reference, ...). It is stored on the symbol whenever pyads gets the symbol
+info from the PLC, i.e. for symbols looked up by name and for symbols returned by
+:py:meth:`.Connection.get_all_symbols`. Both give the same values.
+
+.. code:: python
+
+   >>> symbol = plc.get_symbol('GVL.nPersistentCounter')
+   >>> symbol.is_readonly
+   False
+   >>> symbol.is_persistent
+   True
+
+The properties :py:attr:`.AdsSymbol.is_readonly`, :py:attr:`.AdsSymbol.is_persistent`,
+:py:attr:`.AdsSymbol.is_bit_value` and :py:attr:`.AdsSymbol.is_reference` cover the
+common flags. For any other bit, test the raw :py:attr:`.AdsSymbol.flags` against the
+``pyads.ADSSYMBOLFLAG_*`` constants:
+
+.. code:: python
+
+   >>> bool(symbol.flags & pyads.ADSSYMBOLFLAG_TYPEGUID)
+   True
+
+This is useful for auto-discovery, e.g. to decide whether a discovered variable should
+be presented as writable.
+
+.. note::
+    The flags are informational only: pyads does not block writes to a symbol
+    flagged read-only. If all symbol info was passed manually so that no lookup
+    took place, ``flags`` is ``None`` and all ``is_*`` properties return ``False``
+    (unless ``flags`` was passed to the constructor as well).
+
 Read and write operations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
