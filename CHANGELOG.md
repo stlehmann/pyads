@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- Fix `bytes_from_dict` (used by `write_structure_by_name` and `write_list_by_name`) sizing `STRING` values by character instead of byte count, which broke non-ASCII strings; values too long for their `STRING(n)`/`WSTRING(n)` now raise `ValueError` instead of overflowing into the next field
+- [#557](https://github.com/stlehmann/pyads/issues/557) Fix `bytes_from_dict` (used by `write_structure_by_name` and `write_list_by_name`) sizing `STRING` values by character instead of byte count, which broke non-ASCII strings; values too long for their `STRING(n)`/`WSTRING(n)` now raise `ValueError` instead of overflowing into the next field
 - [#539](https://github.com/stlehmann/pyads/pull/539) Fix `AdvancedHandler` test server: unique notification handles, survive abrupt disconnects/handler exceptions, per-item `SUMUP_WRITE` error codes
 - [#541](https://github.com/stlehmann/pyads/pull/541) Declare `meson` and `ninja` in `build-system.requires` so building from source works under PEP 517 build isolation
 - [#501](https://github.com/stlehmann/pyads/issues/501) **Breaking:** `read_list_by_name` now returns a one-element list for `ARRAY[1..1]` symbols (including negative bounds such as `ARRAY[-1..-1]`) instead of a bare scalar, matching `read_by_name`
