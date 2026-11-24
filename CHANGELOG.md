@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [#539](https://github.com/stlehmann/pyads/pull/539) Fix `AdvancedHandler` test server: unique notification handles, survive abrupt disconnects/handler exceptions, per-item `SUMUP_WRITE` error codes
 - [#541](https://github.com/stlehmann/pyads/pull/541) Declare `meson` and `ninja` in `build-system.requires` so building from source works under PEP 517 build isolation
+- [#501](https://github.com/stlehmann/pyads/issues/501) **Breaking:** `read_list_by_name` now returns a one-element list for `ARRAY[1..1]` symbols (including negative bounds such as `ARRAY[-1..-1]`) instead of a bare scalar, matching `read_by_name`
+- [#501](https://github.com/stlehmann/pyads/issues/501) `write_list_by_name` now accepts a one-element list for `ARRAY[1..1]` symbols, which previously raised `struct.error`
+
+### Deprecated
+
+- [#501](https://github.com/stlehmann/pyads/issues/501) Passing a scalar to `write_list_by_name` for an `ARRAY[1..1]` symbol emits a `DeprecationWarning`; pass a one-element list instead. Scalars will be rejected in a future release
 
 ### Removed
 
