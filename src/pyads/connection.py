@@ -1116,7 +1116,9 @@ class Connection(object):
                 return
             try:
                 contents = notification.contents
-                value = _decode_notification_data(contents, plc_type, decode_wstring=True)
+                value = _decode_notification_data(
+                    contents, plc_type, decode_wstring=True
+                )
                 if value is None and issubclass(plc_type, Array):
                     raise ValueError(
                         f"payload size {contents.cbSampleSize} does not match "

@@ -124,7 +124,9 @@ def resolve_notification_type(
         return ctype, sizeof(ctype)
 
     raise _unresolvable(
-        name, symbol_type, "structures and other complex types are not decoded automatically"
+        name,
+        symbol_type,
+        "structures and other complex types are not decoded automatically",
     )
 
 
