@@ -136,7 +136,9 @@ class Subscription:
     Returned by :meth:`pyads.Connection.subscribe` and
     :meth:`pyads.AdsSymbol.subscribe`. It stays active until
     :meth:`unsubscribe` is called or the connection is closed; dropping the
-    Python object does **not** end it. Can be used as a context manager.
+    Python object does **not** end it. It survives
+    :meth:`pyads.Connection.reconnect`, which updates its handles. Can be used
+    as a context manager.
 
     :ivar name: variable name as subscribed
     :ivar plc_datatype: PLC datatype used for decoding

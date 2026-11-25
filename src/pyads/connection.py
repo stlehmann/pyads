@@ -10,6 +10,8 @@ import logging
 import sys
 import threading
 import struct
+import weakref
+from dataclasses import dataclass
 from ctypes import (
     memmove,
     addressof,
@@ -82,6 +84,7 @@ from .pyads_ex import (
     adsSyncSetTimeoutEx,
     adsSyncGetTimeoutEx,
     validate_timeout,
+    callback_store,
     ADSError,
 )
 from .structs import (
@@ -167,6 +170,34 @@ def _decode_notification_data(
     return value
 
 
+# ADS error code of a request that got no answer in time
+_ERR_TIMEOUT = 0x745
+
+NotificationHandles = Tuple[int, Optional[int]]
+
+
+@dataclass
+class _NotificationEntry:
+    """Everything needed to subscribe a device notification again."""
+
+    data: Union[str, Tuple[int, int]]
+    attr: NotificationAttrib
+    callback: Callable
+    user_handle: Optional[int]
+    handles: NotificationHandles
+
+
+def _is_link_error(err: ADSError) -> bool:
+    """Return True if the error means the device could not be reached.
+
+    AdsLib reports a dropped TCP connection as a timeout first and as a
+    negative, non-ADS error code afterwards.
+
+    """
+    code = getattr(err, "err_code", None)
+    return code is None or code == _ERR_TIMEOUT or code < 0
+
+
 class Connection(object):
     """Class for managing the connection to an ADS device.
 
@@ -200,6 +231,15 @@ class Connection(object):
         self.ams_net_id = ams_net_id
         self.ams_net_port = ams_net_port
         self._notifications = {}  # type: Dict[int, str]
+        # Notifications added through this connection, keyed by their
+        # current handles, so they can be subscribed again by reconnect()
+        self._notification_entries: Dict[NotificationHandles, _NotificationEntry] = {}
+        # Notifications that could not be restored yet, keyed by the
+        # handles they had before the connection was lost
+        self._pending_notifications: Dict[NotificationHandles, _NotificationEntry] = {}
+        self._notification_lock = threading.RLock()
+        # AdsSymbol objects that need to learn about new notification handles
+        self._handle_listeners: "weakref.WeakSet[AdsSymbol]" = weakref.WeakSet()
         self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
         self._subscriptions: Dict[int, Subscription] = {}
         self._subscriptions_lock = threading.Lock()
@@ -296,18 +336,20 @@ class Connection(object):
         :param bool delete_route: also delete the route added in :py:meth:`open`
 
         """
-        if delete_route:
-            adsDelRoute(self._adr.netIdStruct())
         if self._port is not None:
             adsPortCloseEx(self._port)
             self._port = None
+        if delete_route:
+            adsDelRoute(self._adr.netIdStruct())
 
     def close(self) -> None:
         """:summary: Close the connection to the TwinCAT message router.
 
         Active subscriptions created with :meth:`subscribe` are removed first.
-        Notifications added with :meth:`add_device_notification` are not
-        touched.
+        Other notifications added with :meth:`add_device_notification` are not
+        deleted on the device one by one, but they end with the port and are
+        not restored by a later :py:meth:`open`. Use :py:meth:`reconnect` to
+        reopen the connection and keep all notifications.
 
         """
         if not self._open:
@@ -323,18 +365,155 @@ class Connection(object):
                     "Failed to remove subscription for %s: %s", subscription.name, err
                 )
 
+        with self._notification_lock:
+            entries = list(self._notification_entries.values())
+            self._notification_entries.clear()
+            self._pending_notifications.clear()
+            self._close_port()
+        self._forget_callbacks(entries)
+
+    def _close_port(self) -> None:
+        """Close the AMS port and, on Linux, delete the route."""
         # Close the port before deleting the route: adsPortCloseEx cleans up
         # any notifications still registered on the port, and that cleanup
         # needs the route's AmsConnection. Deleting the route first frees the
         # connection and the cleanup then segfaults (#554).
-        if self._port is not None:
-            adsPortCloseEx(self._port)
-            self._port = None
+        try:
+            if self._port is not None:
+                adsPortCloseEx(self._port)
+                self._port = None
+        finally:
+            self._open = False
+            if linux:
+                adsDelRoute(self._adr.netIdStruct())
 
-        if linux:
-            adsDelRoute(self._adr.netIdStruct())
+    def _forget_callbacks(self, entries: List[_NotificationEntry]) -> None:
+        """Drop the ctypes callbacks of notifications on a closed port."""
+        for entry in entries:
+            callback_store.pop((self._adr, entry.handles[0]), None)
 
-        self._open = False
+    def check_connection(self) -> bool:
+        """Check whether the device answers requests.
+
+        Device notifications stop silently when the network connection is
+        lost, so a long-running program should call this periodically and
+        :py:meth:`reconnect` when it returns False. A failed check takes as
+        long as the connection timeout (see :py:meth:`set_timeout`).
+
+        :rtype: bool
+        :return: True if the device answered a read state request
+
+        """
+        if not self._open:
+            return False
+        try:
+            return self.read_state() is not None
+        except ADSError:
+            return False
+
+    def reconnect(self) -> Dict[NotificationHandles, NotificationHandles]:
+        """Reopen the connection and subscribe all device notifications again.
+
+        After a network interruption the AMS port stays unusable even when
+        the device is back, so it is closed and opened again. The timeout is
+        re-applied by :py:meth:`open`.
+
+        Notifications get new handles from the device. The returned dict maps
+        the old handles to the new ones; :py:class:`.AdsSymbol` objects
+        update their handles automatically. Notifications that could not be
+        restored are kept and retried by :py:meth:`restore_notifications`.
+
+        **Usage**:
+
+            >>> while running:
+            >>>     if not plc.check_connection():
+            >>>         try:
+            >>>             new_handles = plc.reconnect()
+            >>>         except pyads.ADSError:
+            >>>             pass  # device still unreachable, try again later
+            >>>     elif plc.pending_notifications:
+            >>>         plc.restore_notifications()
+            >>>     time.sleep(5)
+
+        :rtype: Dict[Tuple[int, Optional[int]], Tuple[int, Optional[int]]]
+        :return: old notification handles mapped to the new ones
+        :raises ADSError: if the device does not answer after reopening, all
+            notifications stay pending in that case
+
+        """
+        with self._notification_lock:
+            entries = list(self._notification_entries.values())
+            for entry in entries:
+                self._pending_notifications[entry.handles] = entry
+            self._notification_entries.clear()
+            if self._open:
+                try:
+                    self._close_port()
+                except ADSError:
+                    pass  # the old port is unusable anyway
+            self._forget_callbacks(entries)
+
+            self.open()
+            # Fail fast instead of waiting for a timeout per notification
+            self.read_state()
+            return self.restore_notifications()
+
+    @property
+    def pending_notifications(self) -> List[NotificationHandles]:
+        """Return the handles of notifications that still need to be restored.
+
+        :rtype: List[Tuple[int, Optional[int]]]
+
+        """
+        with self._notification_lock:
+            return list(self._pending_notifications)
+
+    def restore_notifications(self) -> Dict[NotificationHandles, NotificationHandles]:
+        """Subscribe pending notifications again after :py:meth:`reconnect`.
+
+        Notifications that fail stay pending. Restoring stops at the first
+        error that means the device is unreachable.
+
+        :rtype: Dict[Tuple[int, Optional[int]], Tuple[int, Optional[int]]]
+        :return: old notification handles mapped to the new ones
+
+        """
+        remapped: Dict[NotificationHandles, NotificationHandles] = {}
+        with self._notification_lock:
+            if self._port is None:
+                return remapped
+            for old_handles, entry in list(self._pending_notifications.items()):
+                try:
+                    new_handles = adsSyncAddDeviceNotificationReqEx(
+                        self._port, self._adr, entry.data, entry.attr,
+                        entry.callback, entry.user_handle
+                    )
+                except ADSError as err:
+                    if _is_link_error(err):
+                        break
+                    continue
+                del self._pending_notifications[old_handles]
+                entry.handles = new_handles
+                self._notification_entries[new_handles] = entry
+                remapped[old_handles] = new_handles
+
+        if remapped:
+            self._remap_subscriptions(remapped)
+            for listener in list(self._handle_listeners):
+                listener._remap_notification_handles(remapped)
+        return remapped
+
+    def _remap_subscriptions(
+            self, remapped: Dict[NotificationHandles, NotificationHandles]
+    ) -> None:
+        """Give subscriptions the handles their notifications got on restore."""
+        with self._subscriptions_lock:
+            for old_handles, new_handles in remapped.items():
+                sub = self._subscriptions.pop(old_handles[0], None)
+                if sub is None:
+                    continue
+                sub.notification_handle, sub.user_handle = new_handles
+                self._subscriptions[new_handles[0]] = sub
 
     def get_local_address(self) -> Optional[AmsAddr]:
         """Return the local AMS-address and the port number.
@@ -985,10 +1164,14 @@ class Connection(object):
 
         """
         if self._port is not None:
-            notification_handle, user_handle = adsSyncAddDeviceNotificationReqEx(
-                self._port, self._adr, data, attr, callback, user_handle
-            )
-            return notification_handle, user_handle
+            with self._notification_lock:
+                handles = adsSyncAddDeviceNotificationReqEx(
+                    self._port, self._adr, data, attr, callback, user_handle
+                )
+                self._notification_entries[handles] = _NotificationEntry(
+                    data, attr, callback, user_handle, handles
+                )
+            return handles
 
         return None
 
@@ -1002,10 +1185,15 @@ class Connection(object):
         :param user_handle: user handle
 
         """
-        if self._port is not None:
-            adsSyncDelDeviceNotificationReqEx(
-                self._port, self._adr, notification_handle, user_handle
-            )
+        with self._notification_lock:
+            handles = (notification_handle, user_handle)
+            if self._pending_notifications.pop(handles, None) is not None:
+                return  # not subscribed on the device at the moment
+            self._notification_entries.pop(handles, None)
+            if self._port is not None:
+                adsSyncDelDeviceNotificationReqEx(
+                    self._port, self._adr, notification_handle, user_handle
+                )
 
     def subscribe(
             self,
@@ -1157,7 +1345,9 @@ class Connection(object):
         """Delete the notification behind a subscription (called by it)."""
         with self._subscriptions_lock:
             self._subscriptions.pop(cast(int, sub.notification_handle), None)
-        if self._port is not None and sub.notification_handle is not None:
+        # Also without a port: a notification still pending after a failed
+        # reconnect must be forgotten so it is not restored later
+        if sub.notification_handle is not None:
             self.del_device_notification(
                 sub.notification_handle, cast(int, sub.user_handle)
             )

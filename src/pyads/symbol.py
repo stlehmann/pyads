@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from ctypes import sizeof
 from typing import (
-    TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type, cast
+    TYPE_CHECKING, Any, Dict, Optional, List, Tuple, Callable, Union, Type, cast
 )
 
 from . import constants  # To access all constants, use package notation
@@ -291,7 +291,9 @@ class AdsSymbol:
             (self.index_group, self.index_offset), attr, callback, user_handle
         )
 
-        self._handles_list.append(handles)
+        if handles is not None:
+            self._handles_list.append(handles)
+            self._plc._handle_listeners.add(self)
 
         return handles
 
@@ -385,6 +387,16 @@ class AdsSymbol:
             cycle_time,
             max_delay,
         )
+
+    def _remap_notification_handles(
+            self, remapped: Dict[Tuple[int, Optional[int]], Tuple[int, Optional[int]]]
+    ) -> None:
+        """Replace notification handles that changed on a reconnect."""
+        self._handles_list = [remapped.get(h, h) for h in self._handles_list]
+        if self._auto_update_handle is not None:
+            self._auto_update_handle = remapped.get(
+                self._auto_update_handle, self._auto_update_handle
+            )
 
     def _value_callback(self, notification: Any, data_name: Any) -> None:
         """Internal callback used by auto-update"""

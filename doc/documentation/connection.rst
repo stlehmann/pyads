@@ -57,6 +57,45 @@ on the connection, so it survives a close/open cycle:
 the connection is not open. The timeout is a property of the ADS port, which means there
 is no value to report before :py:meth:`.Connection.open` is called.
 
+Reconnecting after a network interruption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the network connection to the device drops, requests fail with a timeout and
+device notifications stop arriving without any error. The connection does not recover
+on its own, even after the device is reachable again, so long-running programs should
+check it periodically and reconnect:
+
+.. code:: python
+
+   >>> import time
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1, timeout=1000)
+   >>> plc.open()
+   >>> while True:
+   ...     if not plc.check_connection():
+   ...         try:
+   ...             new_handles = plc.reconnect()
+   ...         except pyads.ADSError:
+   ...             pass  # device still unreachable, try again later
+   ...     elif plc.pending_notifications:
+   ...         plc.restore_notifications()
+   ...     time.sleep(5)
+
+:py:meth:`.Connection.reconnect` closes and reopens the connection and subscribes every
+device notification added through :py:meth:`.Connection.add_device_notification` again.
+The device hands out new notification handles, so ``reconnect`` returns a dict that maps
+the old handles to the new ones. Use the new handles to delete a notification later;
+:py:class:`.Subscription` and :py:class:`.AdsSymbol` objects update their handles
+automatically, so a subscription created with :py:meth:`.Connection.subscribe` keeps
+delivering values after a reconnect without any extra code.
+
+Notifications that could not be subscribed again stay pending; they are listed by
+:py:attr:`.Connection.pending_notifications` and retried by
+:py:meth:`.Connection.restore_notifications`. Each failed check takes as long as the
+connection timeout, so a short timeout makes outages noticed sooner.
+
+Note that :py:meth:`.Connection.close` removes all notifications, so a plain
+``close()``/``open()`` cycle does not restore them.
+
 Read and write by name
 ^^^^^^^^^^^^^^^^^^^^^^^
 

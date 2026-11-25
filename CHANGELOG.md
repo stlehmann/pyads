@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `Connection.subscribe()` and `AdsSymbol.subscribe()`: device notifications that resolve the PLC type and size from the symbol table and call back with a decoded `pyads.Notification(name, value, timestamp, handle)`. Supports base types, ENUMs, aliases, subranges, `STRING(n)`, `WSTRING(n)` and 1-D arrays; defaults to a 100 ms cycle time; callback errors are logged instead of reaching the ADS thread; `Connection.close()` removes active subscriptions
 - [#509](https://github.com/stlehmann/pyads/issues/509) Export the remaining `PLCTYPE_ARR_*` helpers (`BOOL`, `UINT`, `USHORT`, `UDINT`, `SINT`, `USINT`) from the top-level `pyads` namespace
+- `Connection.check_connection()` and `Connection.reconnect()` to recover from network interruptions; `reconnect()` reopens the AMS port and subscribes all device notifications again, returning the old handles mapped to the new ones; `AdsSymbol` and `Subscription` objects pick up their new handles automatically. Notifications that fail to restore are kept in `Connection.pending_notifications` and retried with `Connection.restore_notifications()`
 - [#468](https://github.com/stlehmann/pyads/issues/468) `Connection` accepts a `timeout` keyword argument which is re-applied on every `open()`, new `Connection.get_timeout()` and `pyads.get_timeout()` wrapping `AdsSyncGetTimeoutEx`; timeouts outside `0..2**31-1` ms now raise `ValueError` instead of being silently wrapped by ctypes
 
 ### Changed
