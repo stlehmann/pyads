@@ -343,6 +343,92 @@ Using the Connection class:
 **Be aware to release handles before closing the port to the PLC.**
 Leaving handles open reduces the available bandwidth in the ADS router.
 
+Call PLC methods (RPC)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Methods of function blocks can be called from Python if they are marked with
+the ``{attribute 'TcRpcEnable'}`` pragma. Address a method by its instance path
+and name separated by ``#``:
+
+.. code:: text
+
+   {attribute 'TcRpcEnable'}
+   METHOD M_Add : INT
+   VAR_INPUT
+       i1 : INT;
+       i2 : INT;
+   END_VAR
+
+.. code:: python
+
+   >>> param_def = (
+   ...     ('i1', pyads.PLCTYPE_INT, 1),
+   ...     ('i2', pyads.PLCTYPE_INT, 1),
+   ... )
+   >>> plc.invoke_rpc_method('MAIN.fbMath#M_Add', [3, 4], param_def, pyads.PLCTYPE_INT)
+   7
+
+The parameter values can be passed as a list in the order of ``param_def`` or
+as a dict keyed by parameter name. ``param_def`` uses the same structure
+definition format as ``write_structure_by_name``. ``return_type`` is either a
+``PLCTYPE`` constant or a structure definition for methods returning a struct,
+in which case a dict is returned. Leave out ``param_vals`` / ``return_type``
+for methods without parameters or return value.
+
+Parameters are sent back to back without padding, in declaration order. The
+PLC checks the sizes and raises ``ADSError`` 1797 (parameter size not correct)
+if the definitions don't match the method.
+
+If the method has ``VAR_OUTPUT`` parameters, describe them with
+``output_def``. This is required: the PLC rejects the call if the outputs are
+not read along with the return value. The call then returns a tuple of the
+return value and a dict of the outputs:
+
+.. code:: text
+
+   {attribute 'TcRpcEnable'}
+   METHOD M_Mixed : LREAL
+   VAR_INPUT
+       b : BYTE;
+       t : LREAL;
+   END_VAR
+   VAR_OUTPUT
+       n : DINT;
+   END_VAR
+
+.. code:: python
+
+   >>> plc.invoke_rpc_method(
+   ...     'MAIN.fbTest#M_Mixed',
+   ...     {'b': 3, 't': 0.5},
+   ...     (('b', pyads.PLCTYPE_BYTE, 1), ('t', pyads.PLCTYPE_LREAL, 1)),
+   ...     pyads.PLCTYPE_LREAL,
+   ...     output_def=(('n', pyads.PLCTYPE_DINT, 1),),
+   ... )
+   (3.5, {'n': 42})
+
+``VAR_IN_OUT`` parameters are transferred by value: list them in
+``param_def`` (in their place among the inputs) *and* in ``output_def`` (in
+their place among the outputs). The updated value is returned in the outputs
+dict.
+
+Strings are always transferred at their full declared size, so give the
+length of ``STRING(n)`` parameters and outputs in the definition, e.g.
+``('s', pyads.PLCTYPE_STRING, 1, 20)``. A ``pyads.PLCTYPE_STRING`` return type
+stands for the default ``STRING(80)``. For a ``STRING(n)`` return value
+together with outputs, pass a structure definition as ``return_type``, e.g.
+``(('ret', pyads.PLCTYPE_STRING, 1, 20),)``.
+
+By default a handle is acquired and released for every call. To call a
+method frequently, acquire the handle once and pass it in:
+
+.. code:: python
+
+   >>> handle = plc.get_handle('MAIN.fbMath#M_Add')
+   >>> plc.invoke_rpc_method('', [3, 4], param_def, pyads.PLCTYPE_INT, handle=handle)
+   7
+   >>> plc.release_handle(handle)
+
 Read and write by address
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 

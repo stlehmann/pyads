@@ -417,6 +417,15 @@ class AdvancedHandler(AbstractHandler):
                     var = self.get_variable_by_indices(index_group, index_offset)
                     read_data += var.value
 
+            # Read-write by handle, as used for RPC method calls: return the
+            # stored value (the method's return value), then store the written
+            # data (the method's input parameters) so tests can inspect it
+            elif index_group == constants.ADSIGRP_SYM_VALBYHND:
+                var = self.get_variable_by_handle(index_offset)
+                read_data = var.value[:read_length]
+                if write_length:
+                    var.write(write_data, request)
+
             # Else just return the value stored
             else:
 
