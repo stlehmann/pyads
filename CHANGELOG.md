@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [#509](https://github.com/stlehmann/pyads/issues/509) Export the remaining `PLCTYPE_ARR_*` helpers (`BOOL`, `UINT`, `USHORT`, `UDINT`, `SINT`, `USINT`) from the top-level `pyads` namespace
 - [#468](https://github.com/stlehmann/pyads/issues/468) `Connection` accepts a `timeout` keyword argument which is re-applied on every `open()`, new `Connection.get_timeout()` and `pyads.get_timeout()` wrapping `AdsSyncGetTimeoutEx`; timeouts outside `0..2**31-1` ms now raise `ValueError` instead of being silently wrapped by ctypes
+- Export the `ADSIGRP_*`, `ADSIOFFS_*` and `ADSSYMBOLFLAG_*` constants from the top-level `pyads` namespace (e.g. `pyads.ADSIGRP_SYM_VALBYHND`). The AMS wire-protocol constants `ADSCOMMAND_*` / `ADSSTATEFLAG_*` intentionally stay in `pyads.constants`
+- `AdsSymbol` now exposes the PLC's symbol flags as `flags` (raw flag word) plus the convenience properties `is_readonly`, `is_persistent`, `is_bit_value` and `is_reference`; populated both by `get_symbol` lookups and by `Connection.get_all_symbols`
+- Test server: `PLCVariable` accepts `flags`, and `AdvancedHandler` now answers `ADSIGRP_SYM_UPLOAD` with real symbol records (names, types, comments, flags) instead of placeholders
 
 ### Changed
 

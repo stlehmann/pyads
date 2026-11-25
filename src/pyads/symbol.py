@@ -44,6 +44,9 @@ class AdsSymbol:
         e.g. "LREAL")
     :ivar plc_type: ctypes type of variable (from constants.PLCTYPE_*)
     :ivar comment: Comment of symbol
+    :ivar flags: Raw ADS symbol flag word (bitwise OR of
+        ``pyads.ADSSYMBOLFLAG_*``) as reported by the PLC, or None if the
+        symbol was fully defined by the user and not looked up
     :ivar value: Buffered value, i.e. the most recently read or written
         value for this symbol
     """
@@ -67,6 +70,7 @@ class AdsSymbol:
             auto_update: bool = False,
             structure_def: Optional["StructureDef"] = None,
             array_size: Optional[int] = 1,
+            flags: Optional[int] = None,
     ) -> None:
         """Create AdsSymbol instance.
 
@@ -92,6 +96,8 @@ class AdsSymbol:
             the structure defined in the PLC, PLC structure must be defined with
             {attribute 'pack_mode' :=  '1'}
         :param Optional[int] array_size: size of array if reading array of structure, defaults to 1
+        :param Optional[int] flags: raw ADS symbol flags (``pyads.ADSSYMBOLFLAG_*``),
+            overwritten by the PLC's value when the symbol is looked up by name
 
         Expected input example for structure_def:
 
@@ -130,6 +136,7 @@ class AdsSymbol:
         self.index_group = index_group
         self.symbol_type = symbol_type
         self.comment = comment
+        self.flags = flags
         self._value: Any = None
 
         # structure information
@@ -176,6 +183,8 @@ class AdsSymbol:
 
         if info.comment:
             self.comment = info.comment
+
+        self.flags = info.flags
 
         # info.dataType is an integer mapping to a type in
         # constants.ads_type_to_ctype.
@@ -412,6 +421,55 @@ class AdsSymbol:
         # write value to plc if auto_update is enabled
         if self.auto_update:
             self.write(val)
+
+    def _has_flag(self, flag: int) -> bool:
+        """Return True if `flag` is set in the symbol flags."""
+        return self.flags is not None and bool(self.flags & flag)
+
+    @property
+    def is_readonly(self) -> bool:
+        """Return True if the PLC flags the symbol as read-only.
+
+        Reflects ``ADSSYMBOLFLAG_READONLY`` from the PLC symbol table. This is
+        informational only, pyads does not prevent writes to such symbols.
+        Returns False if the flags are unknown (``flags`` is None).
+
+        :rtype: bool
+        """
+        return self._has_flag(constants.ADSSYMBOLFLAG_READONLY)
+
+    @property
+    def is_persistent(self) -> bool:
+        """Return True if the symbol is declared persistent.
+
+        Reflects ``ADSSYMBOLFLAG_PERSISTENT``. Returns False if the flags are
+        unknown (``flags`` is None).
+
+        :rtype: bool
+        """
+        return self._has_flag(constants.ADSSYMBOLFLAG_PERSISTENT)
+
+    @property
+    def is_bit_value(self) -> bool:
+        """Return True if the symbol is a bit value.
+
+        Reflects ``ADSSYMBOLFLAG_BITVALUE``. Returns False if the flags are
+        unknown (``flags`` is None).
+
+        :rtype: bool
+        """
+        return self._has_flag(constants.ADSSYMBOLFLAG_BITVALUE)
+
+    @property
+    def is_reference(self) -> bool:
+        """Return True if the symbol is a ``REFERENCE TO`` another variable.
+
+        Reflects ``ADSSYMBOLFLAG_REFERENCETO``. Returns False if the flags are
+        unknown (``flags`` is None).
+
+        :rtype: bool
+        """
+        return self._has_flag(constants.ADSSYMBOLFLAG_REFERENCETO)
 
     @property
     def is_structure(self) -> bool:

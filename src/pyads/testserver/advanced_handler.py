@@ -38,6 +38,7 @@ class PLCVariable:
         symbol_type: str,
         index_group: Optional[int] = None,
         index_offset: Optional[int] = None,
+        flags: int = 0,
     ) -> None:
         """
         Handle and indices are set by default (to random but safe values)
@@ -48,6 +49,8 @@ class PLCVariable:
         :param str symbol_type: PLC-style name of type
         :param Optional[int] index_group: set index_group manually
         :param Optional[int] index_offset: set index_offset manually
+        :param int flags: symbol flags (bitwise OR of
+            constants.ADSSYMBOLFLAG_*), defaults to 0
         """
         self.name = name.strip("\x00")
 
@@ -61,6 +64,7 @@ class PLCVariable:
 
         self.ads_type = ads_type
         self.symbol_type = symbol_type
+        self.flags = flags
 
         self.handle = PLCVariable.handle_count
         PLCVariable.handle_count += 1
@@ -113,7 +117,7 @@ class PLCVariable:
                 self.index_offset,
                 self.size,
                 self.ads_type,
-                0,  # Flags
+                self.flags,
                 len(name_bytes),
                 len(symbol_type_bytes),
                 len(comment_bytes),
@@ -269,14 +273,15 @@ class AdvancedHandler(AbstractHandler):
 
             elif index_group == constants.ADSIGRP_SYM_UPLOADINFO2:
                 symbol_count = len(self._data)
-                response_length = 120 * symbol_count
+                response_length = sum(
+                    len(var.get_packed_info()) for var in self._data.values()
+                )
                 response_value = struct.pack("II", symbol_count, response_length)
 
             elif index_group == constants.ADSIGRP_SYM_UPLOAD:
-                response_value = b""
-                for (group, offset) in self._data.keys():
-                    response_value += struct.pack("III", 120, group, offset)
-                    response_value += b"\x00" * 108
+                response_value = b"".join(
+                    var.get_packed_info() for var in self._data.values()
+                )
 
             else:
                 # Create response of repeated 0x0F with a null

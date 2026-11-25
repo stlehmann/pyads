@@ -92,6 +92,87 @@ class AdsSymbolTestCase(unittest.TestCase):
         self.assertAdsRequestsCount(1)  # Only a single READWRITE must have
         # been made
 
+    def _add_flagged_variables(self):
+        """Add a read-only, a persistent and a combined-flags variable."""
+        self.handler.add_variable(PLCVariable(
+            "GVL.bReadOnly", 1, ads_type=constants.ADST_BIT, symbol_type="BOOL",
+            flags=constants.ADSSYMBOLFLAG_READONLY,
+        ))
+        self.handler.add_variable(PLCVariable(
+            "GVL.nPersistent", 7, ads_type=constants.ADST_INT32, symbol_type="DINT",
+            flags=constants.ADSSYMBOLFLAG_PERSISTENT,
+        ))
+        self.handler.add_variable(PLCVariable(
+            "GVL.refBit", 0, ads_type=constants.ADST_BIT, symbol_type="BOOL",
+            flags=(constants.ADSSYMBOLFLAG_BITVALUE
+                   | constants.ADSSYMBOLFLAG_REFERENCETO
+                   | constants.ADSSYMBOLFLAG_TYPEGUID),
+        ))
+
+    def test_flags_by_name(self):
+        """Test symbol flags are taken from the PLC on lookup"""
+        self._add_flagged_variables()
+        with self.plc:
+            plain = self.plc.get_symbol(self.test_var.name)
+            readonly = self.plc.get_symbol("GVL.bReadOnly")
+            persistent = self.plc.get_symbol("GVL.nPersistent")
+            ref_bit = self.plc.get_symbol("GVL.refBit")
+
+        self.assertEqual(0, plain.flags)
+        self.assertFalse(plain.is_readonly)
+        self.assertFalse(plain.is_persistent)
+        self.assertFalse(plain.is_bit_value)
+        self.assertFalse(plain.is_reference)
+
+        self.assertEqual(pyads.ADSSYMBOLFLAG_READONLY, readonly.flags)
+        self.assertTrue(readonly.is_readonly)
+        self.assertFalse(readonly.is_persistent)
+
+        self.assertEqual(pyads.ADSSYMBOLFLAG_PERSISTENT, persistent.flags)
+        self.assertTrue(persistent.is_persistent)
+        self.assertFalse(persistent.is_readonly)
+
+        self.assertFalse(ref_bit.is_readonly)
+        self.assertTrue(ref_bit.is_bit_value)
+        self.assertTrue(ref_bit.is_reference)
+        # bits without a property are still available from the raw flags
+        self.assertTrue(ref_bit.flags & pyads.ADSSYMBOLFLAG_TYPEGUID)
+
+    def test_flags_manual(self):
+        """Test symbol flags for fully user-defined symbols"""
+        symbol = AdsSymbol(self.plc, name="Manual", index_group=1, index_offset=2,
+                           symbol_type="BOOL")
+        self.assertIsNone(symbol.flags)
+        self.assertFalse(symbol.is_readonly)
+        self.assertFalse(symbol.is_persistent)
+
+        symbol = AdsSymbol(self.plc, name="Manual", index_group=1, index_offset=2,
+                           symbol_type="BOOL", flags=constants.ADSSYMBOLFLAG_READONLY)
+        self.assertTrue(symbol.is_readonly)
+        self.assertAdsRequestsCount(0)
+
+    def test_flags_get_all_symbols(self):
+        """Test get_all_symbols yields the same flags as get_symbol"""
+        self._add_flagged_variables()
+        with self.plc:
+            all_symbols = {s.name: s for s in self.plc.get_all_symbols()}
+            self.assertEqual(
+                {self.test_var.name, "GVL.bReadOnly", "GVL.nPersistent", "GVL.refBit"},
+                set(all_symbols),
+            )
+            for name, discovered in all_symbols.items():
+                looked_up = self.plc.get_symbol(name)
+                self.assertEqual(looked_up.flags, discovered.flags, name)
+                self.assertEqual(looked_up.is_readonly, discovered.is_readonly, name)
+                self.assertEqual(looked_up.is_persistent, discovered.is_persistent, name)
+                self.assertEqual(looked_up.index_group, discovered.index_group, name)
+                self.assertEqual(looked_up.index_offset, discovered.index_offset, name)
+                self.assertEqual(looked_up.symbol_type, discovered.symbol_type, name)
+
+        self.assertTrue(all_symbols["GVL.bReadOnly"].is_readonly)
+        self.assertTrue(all_symbols["GVL.nPersistent"].is_persistent)
+        self.assertTrue(all_symbols["GVL.refBit"].is_reference)
+
     def test_init_by_name_array(self):
         """Test symbol creation when it's an array"""
 
