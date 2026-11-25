@@ -5,6 +5,7 @@ import struct
 import time
 import unittest
 from datetime import timezone
+from unittest import mock
 
 import pyads
 from pyads import constants
@@ -88,6 +89,9 @@ class ResolverTestCase(unittest.TestCase):
 
     def test_alias_to_array_size_mismatch(self):
         self.assertUnresolvable("T_Arr", constants.ADST_INT16, 20)
+
+    def test_array_size_mismatch(self):
+        self.assertUnresolvable("ARRAY [0..2] OF INT", constants.ADST_INT16, 8)
 
     def test_array_of_strings(self):
         self.assertUnresolvable("ARRAY [0..11] OF STRING(80)", constants.ADST_STRING, 972)
@@ -293,6 +297,79 @@ class SubscribeTestCase(_ServerTestCase):
             self.plc.write_by_name("GVL.counter", 5, pyads.PLCTYPE_INT)
         self.assertEqual([n.value for n in self.received], [5])
 
+    def test_explicit_type_with_attr_uses_attr_length(self):
+        self.add_var("GVL.counter", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        with self.plc:
+            sub = self.plc.subscribe(
+                "GVL.counter", self.received.append,
+                plc_datatype=pyads.PLCTYPE_INT, attr=pyads.NotificationAttrib(2),
+            )
+        self.assertEqual(sub.size, 2)
+
+    def test_explicit_string_type_asks_plc_for_size(self):
+        self.add_var("GVL.text", bytes(11), constants.ADST_STRING, "STRING(10)")
+        with self.plc:
+            sub = self.plc.subscribe(
+                "GVL.text", self.received.append, plc_datatype=pyads.PLCTYPE_STRING
+            )
+            self.plc.write_by_name("GVL.text", "abc", pyads.PLCTYPE_STRING)
+        self.assertEqual(sub.size, 11)
+        self.assertEqual([n.value for n in self.received], ["abc"])
+
+    def test_array_payload_size_mismatch_is_reported(self):
+        # the PLC sends 2 bytes, but 3 INTs (6 bytes) are expected
+        self.add_var("GVL.counter", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        with self.plc:
+            with self.assertLogs("pyads", level="ERROR") as logs:
+                self.plc.subscribe(
+                    "GVL.counter", self.received.append,
+                    plc_datatype=pyads.PLCTYPE_INT * 3,
+                )
+                self.plc.write_by_name("GVL.counter", 1, pyads.PLCTYPE_INT)
+        self.assertEqual(self.received, [])
+        self.assertIn("does not match", "\n".join(logs.output))
+
+    def test_notification_in_flight_after_deactivation_is_dropped(self):
+        self.add_var("GVL.counter", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        with self.plc:
+            sub = self.plc.subscribe("GVL.counter", self.received.append)
+            # simulate a notification arriving while unsubscribe() runs
+            sub._active = False
+            self.plc.write_by_name("GVL.counter", 9, pyads.PLCTYPE_INT)
+            self.plc._remove_subscription(sub)
+        self.assertEqual(self.received, [])
+
+    def test_failed_registration_leaves_no_subscription(self):
+        self.add_var("GVL.counter", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        with self.plc:
+            with mock.patch.object(
+                self.plc, "add_device_notification", side_effect=pyads.ADSError(1808)
+            ):
+                with self.assertRaises(pyads.ADSError):
+                    self.plc.subscribe("GVL.counter", self.received.append)
+            self.assertEqual(self.plc._subscriptions, {})
+
+    def test_registration_on_concurrently_closed_connection(self):
+        self.add_var("GVL.counter", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        with self.plc:
+            with mock.patch.object(
+                self.plc, "add_device_notification", return_value=None
+            ):
+                with self.assertRaises(ValueError):
+                    self.plc.subscribe("GVL.counter", self.received.append)
+            self.assertEqual(self.plc._subscriptions, {})
+
+    def test_repr(self):
+        self.add_var("GVL.counter", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        with self.plc:
+            sub = self.plc.subscribe("GVL.counter", self.received.append)
+            self.assertEqual(
+                repr(sub),
+                f"<Subscription 'GVL.counter' handle={sub.notification_handle} active>",
+            )
+            sub.unsubscribe()
+            self.assertTrue(repr(sub).endswith("inactive>"))
+
 
 
 class CloseTestCase(_ServerTestCase):
@@ -315,6 +392,27 @@ class CloseTestCase(_ServerTestCase):
         self.assertEqual(
             self.command_ids().count(constants.ADSCOMMAND_DELDEVICENOTE), 2
         )
+
+    def test_close_logs_failed_unsubscribe_and_continues(self):
+        self.add_var("GVL.a", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        self.add_var("GVL.b", struct.pack("<h", 0), constants.ADST_INT16, "INT")
+        self.plc.open()
+        sub_a = self.plc.subscribe("GVL.a", self.received.append)
+        sub_b = self.plc.subscribe("GVL.b", self.received.append)
+        real_unsubscribe = pyads.Subscription.unsubscribe
+
+        def unsubscribe_then_fail(sub):
+            # really remove the notification: closing the port with a live
+            # one crashes AdsLib
+            real_unsubscribe(sub)
+            if sub is sub_a:
+                raise pyads.ADSError(1808)
+
+        with mock.patch.object(pyads.Subscription, "unsubscribe", unsubscribe_then_fail):
+            with self.assertLogs("pyads", level="WARNING") as logs:
+                self.plc.close()
+        self.assertIn("GVL.a", "\n".join(logs.output))
+        self.assertFalse(sub_b.active)  # the failure did not stop the loop
 
     def test_with_block_exit_removes_subscriptions(self):
         self.add_var("GVL.a", struct.pack("<h", 0), constants.ADST_INT16, "INT")

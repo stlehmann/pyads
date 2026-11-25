@@ -616,6 +616,45 @@ class AdsSymbolTestCase(unittest.TestCase):
             symbol.write(1.5)
         self.assertEqual([n.value for n in received], [1.5])
 
+    def test_subscribe_with_explicit_type(self):
+        """plc_datatype= overrides the symbol's own type."""
+        received = []
+        with self.plc:
+            symbol = self.plc.get_symbol(self.test_var.name)
+            sub = symbol.subscribe(received.append, plc_datatype=pyads.PLCTYPE_LREAL)
+            symbol.write(2.5)
+        self.assertIs(sub.plc_datatype, pyads.PLCTYPE_LREAL)
+        self.assertEqual([n.value for n in received], [2.5])
+
+    def test_subscribe_hand_built_symbol_looks_up_unknown_type(self):
+        """A type string pyads cannot map is resolved via the symbol info."""
+        var = PLCVariable(
+            "GVL.mode", struct.pack("<h", 0), constants.ADST_INT16, symbol_type="E_Mode"
+        )
+        self.handler.add_variable(var)
+        received = []
+        with self.plc:
+            symbol = AdsSymbol(
+                self.plc, name="GVL.mode",
+                index_group=var.index_group, index_offset=var.index_offset,
+                symbol_type="E_Mode",
+            )
+            sub = symbol.subscribe(received.append)
+            self.plc.write_by_name("GVL.mode", 2, pyads.PLCTYPE_INT)
+        self.assertIs(sub.plc_datatype, pyads.PLCTYPE_INT)
+        self.assertEqual([n.value for n in received], [2])
+
+    def test_subscribe_unnamed_symbol_of_unknown_type_raises(self):
+        """Without a name there is nothing to look the type up by."""
+        with self.plc:
+            symbol = AdsSymbol(
+                self.plc, index_group=self.test_var.index_group,
+                index_offset=self.test_var.index_offset, symbol_type="E_Mode",
+            )
+            with self.assertRaises(TypeError) as ctx:
+                symbol.subscribe(lambda note: None)
+        self.assertIn(f"{self.test_var.index_group:#x}", str(ctx.exception))
+
     def test_subscribe_survives_symbol_gc(self):
         """Dropping the symbol does not end its subscription."""
         import gc
