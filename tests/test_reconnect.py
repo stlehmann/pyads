@@ -55,7 +55,11 @@ class ReconnectTestCase(unittest.TestCase):
         # connection, otherwise a late accept() outlives stop()
         self.assertTrue(self.plc.check_connection())
         self.server.stop()
-        time.sleep(0.2)
+        # How fast AdsLib notices the closed socket depends on the machine,
+        # so poll with a deadline rather than sleeping a fixed time
+        deadline = time.monotonic() + 5.0
+        while self.plc.check_connection() and time.monotonic() < deadline:
+            time.sleep(0.05)
         self.assertFalse(self.plc.check_connection())
 
     def _restart_server(self) -> None:
