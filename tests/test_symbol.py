@@ -563,6 +563,123 @@ class AdsSymbolTestCase(unittest.TestCase):
 
         self.assertEqual(args[3], new_val)  # Verify new value
 
+    def _command_ids(self):
+        return [
+            struct.unpack("<H", r.ams_header.command_id)[0]
+            for r in self.test_server.request_history
+        ]
+
+    def test_subscribe_from_get_all_symbols_needs_no_lookup(self):
+        """Symbols from get_all_symbols() carry type info for subscribe()."""
+        self.handler.add_variable(PLCVariable(
+            "GVL.mode", struct.pack("<h", 0), constants.ADST_INT16, symbol_type="E_Mode"
+        ))
+        received = []
+        with self.plc:
+            (symbol,) = [s for s in self.plc.get_all_symbols() if s.name == "GVL.mode"]
+            self.test_server.request_history = []
+            sub = symbol.subscribe(received.append)
+            # only ADD_DEVICE_NOTIFICATION - no symbol-info READWRITE
+            self.assertEqual(self._command_ids(), [constants.ADSCOMMAND_ADDDEVICENOTE])
+            self.plc.write_by_name("GVL.mode", 4, pyads.PLCTYPE_INT)
+            sub.unsubscribe()
+        self.assertEqual([n.value for n in received], [4])
+        self.assertEqual(received[0].name, "GVL.mode")
+
+    def test_subscribe_from_get_symbol(self):
+        """Symbols looked up by name keep dataType/size for subscribe()."""
+        self.handler.add_variable(PLCVariable(
+            "GVL.text", bytes(11), constants.ADST_STRING, symbol_type="STRING(10)"
+        ))
+        received = []
+        with self.plc:
+            symbol = self.plc.get_symbol("GVL.text")
+            sub = symbol.subscribe(received.append)
+            self.plc.write_by_name("GVL.text", "hi", pyads.PLCTYPE_STRING)
+        self.assertFalse(sub.active)  # torn down by close()
+        self.assertEqual(sub.size, 11)
+        self.assertEqual([n.value for n in received], ["hi"])
+
+    def test_subscribe_hand_built_symbol(self):
+        """A fully specified scalar symbol subscribes without any lookup."""
+        received = []
+        with self.plc:
+            symbol = AdsSymbol(
+                self.plc, name=self.test_var.name,
+                index_group=self.test_var.index_group,
+                index_offset=self.test_var.index_offset,
+                symbol_type=pyads.PLCTYPE_LREAL,
+            )
+            self.test_server.request_history = []
+            symbol.subscribe(received.append)
+            self.assertEqual(self._command_ids(), [constants.ADSCOMMAND_ADDDEVICENOTE])
+            symbol.write(1.5)
+        self.assertEqual([n.value for n in received], [1.5])
+
+    def test_subscribe_with_explicit_type(self):
+        """plc_datatype= overrides the symbol's own type."""
+        received = []
+        with self.plc:
+            symbol = self.plc.get_symbol(self.test_var.name)
+            sub = symbol.subscribe(received.append, plc_datatype=pyads.PLCTYPE_LREAL)
+            symbol.write(2.5)
+        self.assertIs(sub.plc_datatype, pyads.PLCTYPE_LREAL)
+        self.assertEqual([n.value for n in received], [2.5])
+
+    def test_subscribe_hand_built_symbol_looks_up_unknown_type(self):
+        """A type string pyads cannot map is resolved via the symbol info."""
+        var = PLCVariable(
+            "GVL.mode", struct.pack("<h", 0), constants.ADST_INT16, symbol_type="E_Mode"
+        )
+        self.handler.add_variable(var)
+        received = []
+        with self.plc:
+            symbol = AdsSymbol(
+                self.plc, name="GVL.mode",
+                index_group=var.index_group, index_offset=var.index_offset,
+                symbol_type="E_Mode",
+            )
+            sub = symbol.subscribe(received.append)
+            self.plc.write_by_name("GVL.mode", 2, pyads.PLCTYPE_INT)
+        self.assertIs(sub.plc_datatype, pyads.PLCTYPE_INT)
+        self.assertEqual([n.value for n in received], [2])
+
+    def test_subscribe_unnamed_symbol_of_unknown_type_raises(self):
+        """Without a name there is nothing to look the type up by."""
+        with self.plc:
+            symbol = AdsSymbol(
+                self.plc, index_group=self.test_var.index_group,
+                index_offset=self.test_var.index_offset, symbol_type="E_Mode",
+            )
+            with self.assertRaises(TypeError) as ctx:
+                symbol.subscribe(lambda note: None)
+        self.assertIn(f"{self.test_var.index_group:#x}", str(ctx.exception))
+
+    def test_subscribe_survives_symbol_gc(self):
+        """Dropping the symbol does not end its subscription."""
+        import gc
+        received = []
+        with self.plc:
+            symbol = self.plc.get_symbol(self.test_var.name)
+            sub = symbol.subscribe(received.append)
+            symbol.clear_device_notifications()
+            del symbol
+            gc.collect()
+            self.assertTrue(sub.active)
+            self.plc.write_by_name(self.test_var.name, 2.5, pyads.PLCTYPE_LREAL)
+        self.assertEqual([n.value for n in received], [2.5])
+
+    def test_subscribe_structure_def_needs_explicit_type(self):
+        """structure_def symbols cannot be decoded automatically."""
+        structure_def = (("a", pyads.PLCTYPE_INT, 1), ("b", pyads.PLCTYPE_INT, 1))
+        self.handler.add_variable(PLCVariable(
+            "GVL.st", bytes(4), constants.ADST_BIGTYPE, symbol_type="ST_Ab"
+        ))
+        with self.plc:
+            symbol = self.plc.get_symbol("GVL.st", structure_def=structure_def)
+            with self.assertRaises(TypeError):
+                symbol.subscribe(lambda _: None)
+
     def test_auto_update(self):
         """Test auto-update feature"""
         self.plc.open()

@@ -13,13 +13,22 @@ from __future__ import annotations
 
 import re
 from ctypes import sizeof
-from typing import TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type
+from typing import (
+    TYPE_CHECKING, Any, Optional, List, Tuple, Callable, Union, Type, cast
+)
 
 from . import constants  # To access all constants, use package notation
 from .constants import PLCDataType
 from .pyads_ex import adsGetSymbolInfo, ADSError
 from .structs import NotificationAttrib
 from .utils import regex_array
+from .subscription import (
+    DEFAULT_CYCLE_TIME_MS,
+    DEFAULT_MAX_DELAY_MS,
+    Notification,
+    Subscription,
+    resolve_notification_type,
+)
 
 # ads.Connection relies on structs.AdsSymbol (but in type hints only), so use
 # this 'if' to only include it when type hinting (False during execution)
@@ -114,6 +123,9 @@ class AdsSymbol:
         self._handles_list: List[Tuple[int, int]] = []  # Notification handles
         self._auto_update_handle: Optional[Tuple[int, int]] = None
         self._acquired_handle: bool = False  # True when get_handle() was called internally and must be released
+        # ADS base type and size from the symbol entry, when known (used by subscribe())
+        self._ads_data_type: Optional[int] = None
+        self._ads_size: Optional[int] = None
 
         # Check if the required info is present:
         missing_info = index_group is None or index_offset is None or symbol_type is None
@@ -180,9 +192,11 @@ class AdsSymbol:
         # info.dataType is an integer mapping to a type in
         # constants.ads_type_to_ctype.
         # However, this type ignores whether the variable is really an array!
-        # So are not going to be using this and instead rely on the textual
-        # type
+        # So reads/writes rely on the textual type instead. subscribe() uses
+        # dataType and size together with the textual type.
         self.symbol_type = info.symbol_type  # Save the type as string
+        self._ads_data_type = info.dataType
+        self._ads_size = info.size
 
     def _check_for_open_connection(self) -> None:
         """Assert the current object is ready to read from/write to.
@@ -296,6 +310,81 @@ class AdsSymbol:
         if handles in self._handles_list:
             self._plc.del_device_notification(*handles)
             self._handles_list.remove(handles)
+
+    def subscribe(
+            self,
+            callback: Callable[[Notification], None],
+            *,
+            plc_datatype: Optional[Type] = None,
+            attr: Optional[NotificationAttrib] = None,
+            cycle_time: float = DEFAULT_CYCLE_TIME_MS,
+            max_delay: float = DEFAULT_MAX_DELAY_MS,
+    ) -> Subscription:
+        """Subscribe to this symbol and receive decoded values.
+
+        Same as :meth:`pyads.Connection.subscribe`, but uses the type
+        information this symbol already carries: symbols from
+        :meth:`pyads.Connection.get_all_symbols` or
+        :meth:`pyads.Connection.get_symbol` need no extra ADS request.
+
+        The subscription is independent of this object's lifetime: it is not
+        removed by :meth:`clear_device_notifications` or when the symbol is
+        garbage collected, only by :meth:`pyads.Subscription.unsubscribe` or
+        :meth:`pyads.Connection.close`.
+
+        :param callback: called with a :class:`pyads.Notification` per change
+        :param plc_datatype: override the resolved PLC datatype, e.g. a
+            ``ctypes.Structure`` subclass
+        :param attr: notification attributes; if given, used as-is
+        :type attr: Optional[pyads.NotificationAttrib]
+        :param float cycle_time: how often (ms) the PLC checks for a change
+        :param float max_delay: maximum delay (ms) before a change is sent
+        :raises ValueError: if the connection is not open
+        :raises TypeError: if the type cannot be determined automatically
+        :return: the active subscription
+        :rtype: pyads.Subscription
+
+        """
+        self._plc._check_open_for_subscribe()
+        name = cast(str, self.name) if self.name is not None else (
+            f"{self.index_group:#x}:{self.index_offset:#x}"
+        )
+
+        if plc_datatype is not None:
+            plc_type = plc_datatype
+            size = self._plc._explicit_notification_size(name, plc_datatype, attr)
+        elif self.is_structure:
+            raise TypeError(
+                f"Cannot determine the type of {name!r}: structures defined by "
+                "structure_def are not decoded automatically; pass a "
+                "ctypes.Structure subclass as plc_datatype="
+            )
+        elif self._ads_data_type is not None and isinstance(self.symbol_type, str):
+            plc_type, size = resolve_notification_type(
+                name, self.symbol_type, self._ads_data_type, self._ads_size
+            )
+        elif self.plc_type is not None and self.plc_type in constants.DATATYPE_MAP:
+            plc_type, size = self.plc_type, sizeof(self.plc_type)
+        elif self.name is not None:
+            info = self._plc._get_cached_symbol_info(self.name)
+            plc_type, size = resolve_notification_type(
+                name, info.symbol_type, info.dataType, info.size
+            )
+        else:
+            raise TypeError(
+                f"Cannot determine the type of {name!r}; pass plc_datatype= explicitly"
+            )
+
+        return self._plc._subscribe(
+            name,
+            (cast(int, self.index_group), cast(int, self.index_offset)),
+            callback,
+            plc_type,
+            size,
+            attr,
+            cycle_time,
+            max_delay,
+        )
 
     def _value_callback(self, notification: Any, data_name: Any) -> None:
         """Internal callback used by auto-update"""
