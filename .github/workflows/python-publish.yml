@@ -49,8 +49,6 @@ jobs:
           # We only compile `adslib`, with no link to Python at all, so we only need to pick a single Python version
           # We will fairly the different OS flavours
           CIBW_BUILD: "cp314-*"
-          # Skip the versions that give errors during building:
-          CIBW_SKIP: "*-musllinux_*"
           # Full matrix: https://cibuildwheel.pypa.io/en/stable/options/#build-skip
 
       - uses: actions/upload-artifact@v4
@@ -85,6 +83,29 @@ jobs:
           python -m pip install pyads --no-index --find-links ./dist
           python -c "import pyads; pyads.Connection(ams_net_id='127.0.0.1.1.1', ams_net_port=851)"
 
+  test_wheels_musllinux:
+    name: Test musllinux distributions
+    needs: build_wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: dist
+
+      # The runner itself is glibc-based, so install and import the musllinux wheel
+      # inside an Alpine container. JavaScript actions don't run in Alpine
+      # containers on every architecture, hence `docker run` instead of `container:`.
+      - run: |
+          docker run --rm -v "$PWD/dist:/dist:ro" python:3.13-alpine sh -c '
+            python -m pip install --root-user-action=ignore /dist/*-musllinux_*.whl &&
+            python -c "import pyads; pyads.Connection(ams_net_id=\"127.0.0.1.1.1\", ams_net_port=851)"
+          '
+
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
@@ -103,7 +124,7 @@ jobs:
 
   upload_all:
       name: Upload to PyPi
-      needs: [build_wheels, build_sdist, test_wheels, test_editable]
+      needs: [build_wheels, build_sdist, test_wheels, test_wheels_musllinux, test_editable]
       if: github.event_name == 'release'
       environment: pypi
       permissions:

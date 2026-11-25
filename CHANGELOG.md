@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [#509](https://github.com/stlehmann/pyads/issues/509) Export the remaining `PLCTYPE_ARR_*` helpers (`BOOL`, `UINT`, `USHORT`, `UDINT`, `SINT`, `USINT`) from the top-level `pyads` namespace
 - [#468](https://github.com/stlehmann/pyads/issues/468) `Connection` accepts a `timeout` keyword argument which is re-applied on every `open()`, new `Connection.get_timeout()` and `pyads.get_timeout()` wrapping `AdsSyncGetTimeoutEx`; timeouts outside `0..2**31-1` ms now raise `ValueError` instead of being silently wrapped by ctypes
+- [#549](https://github.com/stlehmann/pyads/pull/549) musllinux (Alpine) wheels for x86_64, aarch64 and riscv64 are now built and published via CI
 
 ### Changed
 
@@ -17,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [#541](https://github.com/stlehmann/pyads/pull/541) Declare `meson` and `ninja` in `build-system.requires` so building from source works under PEP 517 build isolation
 - [#501](https://github.com/stlehmann/pyads/issues/501) **Breaking:** `read_list_by_name` now returns a one-element list for `ARRAY[1..1]` symbols (including negative bounds such as `ARRAY[-1..-1]`) instead of a bare scalar, matching `read_by_name`
 - [#501](https://github.com/stlehmann/pyads/issues/501) `write_list_by_name` now accepts a one-element list for `ARRAY[1..1]` symbols, which previously raised `struct.error`
+- [#549](https://github.com/stlehmann/pyads/pull/549) The cibuildwheel `before-all` steps that installed meson/ninja with `pip`/`yum` were dropped, since the build environment now provides them
 
 ### Deprecated
 
