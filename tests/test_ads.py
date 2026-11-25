@@ -12,6 +12,7 @@ from pyads import constants
 from pyads.utils import platform_is_linux, get_array_length
 from collections import OrderedDict
 from ctypes import sizeof
+import struct
 import unittest
 
 
@@ -120,6 +121,18 @@ class AdsTest(unittest.TestCase):
 
         if port_was_open:
             pyads.open_port()
+
+    def test_get_local_address_without_port(self):
+        # type: () -> None
+        """Test get_local_address returns None when no port is open."""
+        # other tests share the module-level port, restore its state afterwards
+        port_was_open = pyads.ads.port is not None
+        pyads.close_port()
+        try:
+            self.assertIsNone(pyads.get_local_address())
+        finally:
+            if port_was_open:
+                pyads.open_port()
 
     def test_set_timeout_out_of_range(self):
         # type: () -> None
@@ -822,6 +835,46 @@ class AdsTest(unittest.TestCase):
         # test for incorrect dict
         with self.assertRaises(KeyError):
             pyads.bytes_from_dict(OrderedDict(), structure_def)
+
+    def test_bytes_from_dict_string_length(self) -> None:
+        """STRING/WSTRING are padded by encoded byte length and checked to fit."""
+        string_def = (("s", pyads.PLCTYPE_STRING, 1, 5), ("i", pyads.PLCTYPE_INT, 1))
+        wstring_def = (("s", pyads.PLCTYPE_WSTRING, 1, 3), ("i", pyads.PLCTYPE_INT, 1))
+        array_def = (("s", pyads.PLCTYPE_STRING, 2, 3), ("i", pyads.PLCTYPE_INT, 1))
+
+        # non-ASCII characters take more than one byte in UTF-8
+        self.assertEqual(
+            pyads.bytes_from_dict({"s": "äö", "i": 7}, string_def),
+            list("äö".encode("utf-8") + b"\x00\x00" + struct.pack("<h", 7)),
+        )
+        # full length still leaves the null terminator
+        self.assertEqual(
+            pyads.bytes_from_dict({"s": "abcde", "i": 7}, string_def),
+            list(b"abcde\x00" + struct.pack("<h", 7)),
+        )
+        self.assertEqual(
+            pyads.bytes_from_dict({"s": ["äb", "c"], "i": 7}, array_def),
+            list("äb".encode() + b"\x00" + b"c\x00\x00\x00" + struct.pack("<h", 7)),
+        )
+        self.assertEqual(
+            pyads.bytes_from_dict({"s": "abc", "i": 7}, wstring_def),
+            list("abc".encode("utf-16-le") + b"\x00\x00" + struct.pack("<h", 7)),
+        )
+
+        # values that don't fit raise instead of shifting the next field
+        for value in ["abcdef", "ääö"]:
+            with self.assertRaises(ValueError):
+                pyads.bytes_from_dict({"s": value, "i": 7}, string_def)
+        with self.assertRaises(ValueError):
+            pyads.bytes_from_dict({"s": ["ab", "abcd"], "i": 7}, array_def)
+        with self.assertRaises(ValueError):
+            pyads.bytes_from_dict({"s": "abcd", "i": 7}, wstring_def)
+
+        # the byte count always matches the structure size
+        self.assertEqual(
+            len(pyads.bytes_from_dict({"s": "äö", "i": 7}, string_def)),
+            pyads.size_of_structure(string_def),
+        )
 
                 # tests for known values
         substructure_def = (

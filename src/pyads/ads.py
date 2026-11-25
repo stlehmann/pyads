@@ -382,6 +382,34 @@ def dict_from_bytes(
         return values_list[0]
 
 
+def _encode_plc_string(value: str, str_len: int, wide: bool = False) -> List[int]:
+    """Encode a string to the fixed-size byte layout of a PLC STRING/WSTRING.
+
+    :param str value: string to encode
+    :param int str_len: declared length n of the STRING(n)/WSTRING(n)
+    :param bool wide: encode as WSTRING (UTF-16-LE, 2 bytes a character) if
+        True, else as STRING (UTF-8)
+    :raises ValueError: if the encoded value does not fit into the string
+        while leaving room for the null terminator
+    :return: str_len + 1 characters worth of bytes, null-padded
+    :rtype: List[int]
+    """
+    char_size = 2 if wide else 1
+    encoded = value.encode("utf-16-le" if wide else "utf-8")
+    capacity = str_len * char_size
+    if len(encoded) > capacity:
+        raise ValueError(
+            "String {!r} is {} bytes long when encoded, but the PLC {} only "
+            "holds {} bytes".format(
+                value,
+                len(encoded),
+                "WSTRING({})".format(str_len) if wide else "STRING({})".format(str_len),
+                capacity,
+            )
+        )
+    return list(encoded) + [0] * (capacity + char_size - len(encoded))
+
+
 def bytes_from_dict(
     values: Union[Dict[str, Any], List[Dict[str, Any]]],
     structure_def: StructureDef,
@@ -427,28 +455,14 @@ def bytes_from_dict(
 
             var = cur_dict[var]
             for i in range(0, size):
-                if plc_datatype == PLCTYPE_STRING:
+                if plc_datatype in (PLCTYPE_STRING, PLCTYPE_WSTRING):
                     if str_len is None:
                         str_len = PLC_DEFAULT_STRING_SIZE
-                    if size > 1:
-                        byte_list += list(var[i].encode("utf-8"))
-                        remaining_bytes = str_len + 1 - len(var[i])  # 1 byte a character plus null-terminator
-                    else:
-                        byte_list += list(var.encode("utf-8"))
-                        remaining_bytes = str_len + 1 - len(var)  # 1 byte a character plus null-terminator
-                    byte_list.extend(remaining_bytes * [0])
-                elif plc_datatype == PLCTYPE_WSTRING:
-                    if str_len is None:
-                        str_len = PLC_DEFAULT_STRING_SIZE
-                    if size > 1:
-                        encoded = list(var[i].encode("utf-16-le"))
-                        byte_list += encoded
-                        remaining_bytes = 2 * (str_len + 1) - len(encoded)  # 2 bytes a character plus null-terminator
-                    else:
-                        encoded = list(var.encode("utf-16-le"))
-                        byte_list += encoded
-                        remaining_bytes = 2 * (str_len + 1) - len(encoded)  # 2 bytes a character plus null-terminator
-                    byte_list.extend(remaining_bytes * [0])
+                    byte_list += _encode_plc_string(
+                        var[i] if size > 1 else var,
+                        str_len,
+                        wide=plc_datatype == PLCTYPE_WSTRING,
+                    )
                 elif type(plc_datatype) is tuple:
                     bytecount = bytes_from_dict(
                         values=var[i], structure_def=plc_datatype
