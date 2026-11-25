@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [#541](https://github.com/stlehmann/pyads/pull/541) Declare `meson` and `ninja` in `build-system.requires` so building from source works under PEP 517 build isolation
 - [#501](https://github.com/stlehmann/pyads/issues/501) **Breaking:** `read_list_by_name` now returns a one-element list for `ARRAY[1..1]` symbols (including negative bounds such as `ARRAY[-1..-1]`) instead of a bare scalar, matching `read_by_name`
 - [#501](https://github.com/stlehmann/pyads/issues/501) `write_list_by_name` now accepts a one-element list for `ARRAY[1..1]` symbols, which previously raised `struct.error`
+- [#554](https://github.com/stlehmann/pyads/issues/554) Fix segfault in `Connection.close()` on Linux/macOS when a device notification is still registered, by closing the port before deleting the route
 
 ### Deprecated
 
