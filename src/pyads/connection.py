@@ -6,8 +6,12 @@
 
 """
 from __future__ import annotations
+import logging
 import sys
+import threading
 import struct
+import weakref
+from dataclasses import dataclass
 from ctypes import (
     memmove,
     addressof,
@@ -43,6 +47,7 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
+    PLCTYPE_WSTRING,
     PLC_DEFAULT_STRING_SIZE,
     DATATYPE_MAP,
     ADSIGRP_SUMUP_READ,
@@ -51,6 +56,7 @@ from .constants import (
     ads_type_to_ctype,
     PLCSimpleDataType,
     PLCDataType,
+    ADSTRANS_SERVERONCHA,
 )
 from .filetimes import filetime_to_dt
 from .pyads_ex import (
@@ -78,6 +84,7 @@ from .pyads_ex import (
     adsSyncSetTimeoutEx,
     adsSyncGetTimeoutEx,
     validate_timeout,
+    callback_store,
     ADSError,
 )
 from .structs import (
@@ -97,7 +104,98 @@ from .ads import (
     size_of_structure,
 )
 from .symbol import AdsSymbol
-from .utils import decode_ads
+from .subscription import (
+    DEFAULT_CYCLE_TIME_MS,
+    DEFAULT_MAX_DELAY_MS,
+    Notification,
+    Subscription,
+    resolve_notification_type,
+)
+from .utils import decode_ads, find_wstring_null_terminator
+
+logger = logging.getLogger(__name__)
+
+
+def _decode_notification_data(
+        contents: SAdsNotificationHeader,
+        plc_datatype: Optional[Type],
+        decode_wstring: bool = False,
+) -> Any:
+    """Decode the payload of a notification header into a Python value.
+
+    Shared by :meth:`Connection.parse_notification` and the
+    :meth:`Connection.subscribe` dispatcher so there is a single decoder.
+
+    :param contents: the dereferenced notification header
+    :param plc_datatype: PLC datatype of the payload, or None for raw bytes
+    :param decode_wstring: decode ``PLCTYPE_WSTRING`` as UTF-16-LE ``str``.
+        Off by default so :meth:`Connection.parse_notification` keeps
+        returning a ``bytearray`` for WSTRING (unchanged behaviour).
+    :return: the decoded value
+
+    """
+    data_size = contents.cbSampleSize
+    # Get dynamically sized data array
+    data = (c_ubyte * data_size).from_address(
+        addressof(contents) + SAdsNotificationHeader.data.offset
+    )
+    value: Any
+    if plc_datatype == PLCTYPE_STRING:
+        # read only until null-termination character
+        value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
+
+    elif decode_wstring and plc_datatype == PLCTYPE_WSTRING:
+        raw = bytearray(data)
+        null_idx = find_wstring_null_terminator(raw)
+        value = raw[: len(raw) if null_idx is None else null_idx].decode("utf-16-le")
+
+    elif plc_datatype is not None and issubclass(plc_datatype, Structure):
+        value = plc_datatype()
+        fit_size = min(data_size, sizeof(value))
+        memmove(addressof(value), addressof(data), fit_size)
+
+    elif plc_datatype is not None and issubclass(plc_datatype, Array):
+        if data_size == sizeof(plc_datatype):
+            value = list(plc_datatype.from_buffer_copy(bytes(data)))
+        else:
+            # invalid size
+            value = None
+
+    elif plc_datatype not in DATATYPE_MAP:
+        value = bytearray(data)
+
+    else:
+        value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+
+    return value
+
+
+# ADS error code of a request that got no answer in time
+_ERR_TIMEOUT = 0x745
+
+NotificationHandles = Tuple[int, Optional[int]]
+
+
+@dataclass
+class _NotificationEntry:
+    """Everything needed to subscribe a device notification again."""
+
+    data: Union[str, Tuple[int, int]]
+    attr: NotificationAttrib
+    callback: Callable
+    user_handle: Optional[int]
+    handles: NotificationHandles
+
+
+def _is_link_error(err: ADSError) -> bool:
+    """Return True if the error means the device could not be reached.
+
+    AdsLib reports a dropped TCP connection as a timeout first and as a
+    negative, non-ADS error code afterwards.
+
+    """
+    code = getattr(err, "err_code", None)
+    return code is None or code == _ERR_TIMEOUT or code < 0
 
 
 class Connection(object):
@@ -133,7 +231,18 @@ class Connection(object):
         self.ams_net_id = ams_net_id
         self.ams_net_port = ams_net_port
         self._notifications = {}  # type: Dict[int, str]
+        # Notifications added through this connection, keyed by their
+        # current handles, so they can be subscribed again by reconnect()
+        self._notification_entries: Dict[NotificationHandles, _NotificationEntry] = {}
+        # Notifications that could not be restored yet, keyed by the
+        # handles they had before the connection was lost
+        self._pending_notifications: Dict[NotificationHandles, _NotificationEntry] = {}
+        self._notification_lock = threading.RLock()
+        # AdsSymbol objects that need to learn about new notification handles
+        self._handle_listeners: "weakref.WeakSet[AdsSymbol]" = weakref.WeakSet()
         self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
+        self._subscriptions: Dict[int, Subscription] = {}
+        self._subscriptions_lock = threading.Lock()
 
     @property
     def ams_netid(self) -> str:
@@ -227,25 +336,184 @@ class Connection(object):
         :param bool delete_route: also delete the route added in :py:meth:`open`
 
         """
-        if delete_route:
-            adsDelRoute(self._adr.netIdStruct())
         if self._port is not None:
             adsPortCloseEx(self._port)
             self._port = None
+        if delete_route:
+            adsDelRoute(self._adr.netIdStruct())
 
     def close(self) -> None:
-        """:summary: Close the connection to the TwinCAT message router."""
+        """:summary: Close the connection to the TwinCAT message router.
+
+        Active subscriptions created with :meth:`subscribe` are removed first.
+        Other notifications added with :meth:`add_device_notification` are not
+        deleted on the device one by one, but they end with the port and are
+        not restored by a later :py:meth:`open`. Use :py:meth:`reconnect` to
+        reopen the connection and keep all notifications.
+
+        """
         if not self._open:
             return
 
-        if linux:
-            adsDelRoute(self._adr.netIdStruct())
+        with self._subscriptions_lock:
+            subscriptions = list(self._subscriptions.values())
+        for subscription in subscriptions:
+            try:
+                subscription.unsubscribe()
+            except ADSError as err:
+                logger.warning(
+                    "Failed to remove subscription for %s: %s", subscription.name, err
+                )
 
-        if self._port is not None:
-            adsPortCloseEx(self._port)
-            self._port = None
+        with self._notification_lock:
+            entries = list(self._notification_entries.values())
+            self._notification_entries.clear()
+            self._pending_notifications.clear()
+            self._close_port()
+        self._forget_callbacks(entries)
 
-        self._open = False
+    def _close_port(self) -> None:
+        """Close the AMS port and, on Linux, delete the route."""
+        # Close the port before deleting the route: adsPortCloseEx cleans up
+        # any notifications still registered on the port, and that cleanup
+        # needs the route's AmsConnection. Deleting the route first frees the
+        # connection and the cleanup then segfaults (#554).
+        try:
+            if self._port is not None:
+                adsPortCloseEx(self._port)
+                self._port = None
+        finally:
+            self._open = False
+            if linux:
+                adsDelRoute(self._adr.netIdStruct())
+
+    def _forget_callbacks(self, entries: List[_NotificationEntry]) -> None:
+        """Drop the ctypes callbacks of notifications on a closed port."""
+        for entry in entries:
+            callback_store.pop((self._adr, entry.handles[0]), None)
+
+    def check_connection(self) -> bool:
+        """Check whether the device answers requests.
+
+        Device notifications stop silently when the network connection is
+        lost, so a long-running program should call this periodically and
+        :py:meth:`reconnect` when it returns False. A failed check takes as
+        long as the connection timeout (see :py:meth:`set_timeout`).
+
+        :rtype: bool
+        :return: True if the device answered a read state request
+
+        """
+        if not self._open:
+            return False
+        try:
+            return self.read_state() is not None
+        except ADSError:
+            return False
+
+    def reconnect(self) -> Dict[NotificationHandles, NotificationHandles]:
+        """Reopen the connection and subscribe all device notifications again.
+
+        After a network interruption the AMS port stays unusable even when
+        the device is back, so it is closed and opened again. The timeout is
+        re-applied by :py:meth:`open`.
+
+        Notifications get new handles from the device. The returned dict maps
+        the old handles to the new ones; :py:class:`.AdsSymbol` objects
+        update their handles automatically. Notifications that could not be
+        restored are kept and retried by :py:meth:`restore_notifications`.
+
+        **Usage**:
+
+            >>> while running:
+            >>>     if not plc.check_connection():
+            >>>         try:
+            >>>             new_handles = plc.reconnect()
+            >>>         except pyads.ADSError:
+            >>>             pass  # device still unreachable, try again later
+            >>>     elif plc.pending_notifications:
+            >>>         plc.restore_notifications()
+            >>>     time.sleep(5)
+
+        :rtype: Dict[Tuple[int, Optional[int]], Tuple[int, Optional[int]]]
+        :return: old notification handles mapped to the new ones
+        :raises ADSError: if the device does not answer after reopening, all
+            notifications stay pending in that case
+
+        """
+        with self._notification_lock:
+            entries = list(self._notification_entries.values())
+            for entry in entries:
+                self._pending_notifications[entry.handles] = entry
+            self._notification_entries.clear()
+            if self._open:
+                try:
+                    self._close_port()
+                except ADSError:
+                    pass  # the old port is unusable anyway
+            self._forget_callbacks(entries)
+
+            self.open()
+            # Fail fast instead of waiting for a timeout per notification
+            self.read_state()
+            return self.restore_notifications()
+
+    @property
+    def pending_notifications(self) -> List[NotificationHandles]:
+        """Return the handles of notifications that still need to be restored.
+
+        :rtype: List[Tuple[int, Optional[int]]]
+
+        """
+        with self._notification_lock:
+            return list(self._pending_notifications)
+
+    def restore_notifications(self) -> Dict[NotificationHandles, NotificationHandles]:
+        """Subscribe pending notifications again after :py:meth:`reconnect`.
+
+        Notifications that fail stay pending. Restoring stops at the first
+        error that means the device is unreachable.
+
+        :rtype: Dict[Tuple[int, Optional[int]], Tuple[int, Optional[int]]]
+        :return: old notification handles mapped to the new ones
+
+        """
+        remapped: Dict[NotificationHandles, NotificationHandles] = {}
+        with self._notification_lock:
+            if self._port is None:
+                return remapped
+            for old_handles, entry in list(self._pending_notifications.items()):
+                try:
+                    new_handles = adsSyncAddDeviceNotificationReqEx(
+                        self._port, self._adr, entry.data, entry.attr,
+                        entry.callback, entry.user_handle
+                    )
+                except ADSError as err:
+                    if _is_link_error(err):
+                        break
+                    continue
+                del self._pending_notifications[old_handles]
+                entry.handles = new_handles
+                self._notification_entries[new_handles] = entry
+                remapped[old_handles] = new_handles
+
+        if remapped:
+            self._remap_subscriptions(remapped)
+            for listener in list(self._handle_listeners):
+                listener._remap_notification_handles(remapped)
+        return remapped
+
+    def _remap_subscriptions(
+            self, remapped: Dict[NotificationHandles, NotificationHandles]
+    ) -> None:
+        """Give subscriptions the handles their notifications got on restore."""
+        with self._subscriptions_lock:
+            for old_handles, new_handles in remapped.items():
+                sub = self._subscriptions.pop(old_handles[0], None)
+                if sub is None:
+                    continue
+                sub.notification_handle, sub.user_handle = new_handles
+                self._subscriptions[new_handles[0]] = sub
 
     def get_local_address(self) -> Optional[AmsAddr]:
         """Return the local AMS-address and the port number.
@@ -492,6 +760,7 @@ class Connection(object):
             ptr = 0
 
             for idx in range(sym_count):
+                ptr_entry = ptr
                 read_length, index_group, index_offset = struct.unpack(
                     "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
@@ -515,6 +784,9 @@ class Connection(object):
                                    index_group=index_group,
                                    index_offset=index_offset,
                                    symbol_type=symbol_type, comment=comment)
+                symbol._ads_size, symbol._ads_data_type = struct.unpack(
+                    "II", symbol_list_msg[ptr_entry + 12: ptr_entry + 20]
+                )
                 symbols.append(symbol)
         return symbols
 
@@ -892,10 +1164,14 @@ class Connection(object):
 
         """
         if self._port is not None:
-            notification_handle, user_handle = adsSyncAddDeviceNotificationReqEx(
-                self._port, self._adr, data, attr, callback, user_handle
-            )
-            return notification_handle, user_handle
+            with self._notification_lock:
+                handles = adsSyncAddDeviceNotificationReqEx(
+                    self._port, self._adr, data, attr, callback, user_handle
+                )
+                self._notification_entries[handles] = _NotificationEntry(
+                    data, attr, callback, user_handle, handles
+                )
+            return handles
 
         return None
 
@@ -909,9 +1185,171 @@ class Connection(object):
         :param user_handle: user handle
 
         """
-        if self._port is not None:
-            adsSyncDelDeviceNotificationReqEx(
-                self._port, self._adr, notification_handle, user_handle
+        with self._notification_lock:
+            handles = (notification_handle, user_handle)
+            if self._pending_notifications.pop(handles, None) is not None:
+                return  # not subscribed on the device at the moment
+            self._notification_entries.pop(handles, None)
+            if self._port is not None:
+                adsSyncDelDeviceNotificationReqEx(
+                    self._port, self._adr, notification_handle, user_handle
+                )
+
+    def subscribe(
+            self,
+            name: str,
+            callback: Callable[[Notification], None],
+            *,
+            plc_datatype: Optional[Type] = None,
+            attr: Optional[NotificationAttrib] = None,
+            cycle_time: float = DEFAULT_CYCLE_TIME_MS,
+            max_delay: float = DEFAULT_MAX_DELAY_MS,
+    ) -> Subscription:
+        """Subscribe to a PLC variable and receive decoded values.
+
+        The PLC type and notification length are determined from the symbol
+        table, so in the common case only the name is needed. Base types,
+        ENUMs, aliases, subranges, ``STRING(n)``, ``WSTRING(n)`` and
+        one-dimensional arrays of base types resolve automatically. For
+        anything else (e.g. structures) pass ``plc_datatype``; otherwise a
+        ``TypeError`` is raised and nothing is registered.
+
+        The callback receives a single :class:`pyads.Notification`. It runs on
+        the ADS notification thread: keep it short and hand work off to your
+        own thread or event loop. Exceptions raised in the callback are logged
+        to the ``pyads`` logger and never propagate into the ADS library.
+
+        :param str name: PLC variable name, e.g. ``"GVL.counter"``
+        :param callback: called with a :class:`pyads.Notification` per change
+        :param plc_datatype: override the resolved PLC datatype, e.g. a
+            ``ctypes.Structure`` subclass
+        :param attr: notification attributes; if given, used as-is and
+            ``cycle_time``/``max_delay`` are ignored
+        :type attr: Optional[pyads.NotificationAttrib]
+        :param float cycle_time: how often (ms) the PLC checks for a change.
+            Defaults to 100 ms, i.e. at most 10 updates/s; a PLC pulse shorter
+            than this can be missed
+        :param float max_delay: maximum delay (ms) before a change is sent
+        :raises ValueError: if the connection is not open
+        :raises TypeError: if the type cannot be determined automatically
+        :return: the active subscription
+        :rtype: pyads.Subscription
+
+        **Usage**:
+
+            >>> import pyads
+            >>>
+            >>> def on_change(notification: pyads.Notification) -> None:
+            >>>     print(notification.name, notification.value)
+            >>>
+            >>> with pyads.Connection("127.0.0.1.1.1", pyads.PORT_TC3PLC1) as plc:
+            >>>     sub = plc.subscribe("GVL.counter", on_change)
+            >>>     ...
+            >>>     sub.unsubscribe()
+
+        """
+        self._check_open_for_subscribe()
+        if plc_datatype is not None:
+            plc_type = plc_datatype
+            size = self._explicit_notification_size(name, plc_datatype, attr)
+        else:
+            info = self._get_cached_symbol_info(name)
+            plc_type, size = resolve_notification_type(
+                name, info.symbol_type, info.dataType, info.size
+            )
+        return self._subscribe(
+            name, name, callback, plc_type, size, attr, cycle_time, max_delay
+        )
+
+    def _check_open_for_subscribe(self) -> None:
+        if not self._open or self._port is None:
+            raise ValueError("Cannot subscribe with missing or closed Connection")
+
+    def _get_cached_symbol_info(self, name: str) -> SAdsSymbolEntry:
+        info = self._symbol_info_cache.get(name)
+        if info is None:
+            info = adsGetSymbolInfo(self._port, self._adr, name)
+            self._symbol_info_cache[name] = info
+        return info
+
+    def _explicit_notification_size(
+            self, name: str, plc_datatype: Type, attr: Optional[NotificationAttrib]
+    ) -> int:
+        if attr is not None:
+            return attr.length
+        if plc_datatype in (PLCTYPE_STRING, PLCTYPE_WSTRING):
+            # sizeof() is meaningless for the string types, ask the PLC
+            return self._get_cached_symbol_info(name).size
+        return sizeof(plc_datatype)
+
+    def _subscribe(
+            self,
+            name: str,
+            address: Union[str, Tuple[int, int]],
+            callback: Callable[[Notification], None],
+            plc_type: Type,
+            size: int,
+            attr: Optional[NotificationAttrib],
+            cycle_time: float,
+            max_delay: float,
+    ) -> Subscription:
+        """Register a decoded notification (shared by Connection and AdsSymbol)."""
+        if attr is None:
+            attr = NotificationAttrib(
+                size, ADSTRANS_SERVERONCHA, max_delay=max_delay, cycle_time=cycle_time
+            )
+
+        # Create the subscription before registering: a real PLC sends the
+        # current value right away, possibly before registration returns.
+        sub = Subscription(self, name, plc_type, size)
+
+        def dispatch(notification: Any, _data: Any) -> None:
+            if not sub.active:
+                return
+            try:
+                contents = notification.contents
+                value = _decode_notification_data(
+                    contents, plc_type, decode_wstring=True
+                )
+                if value is None and issubclass(plc_type, Array):
+                    raise ValueError(
+                        f"payload size {contents.cbSampleSize} does not match "
+                        f"{sizeof(plc_type)} bytes"
+                    )
+                callback(
+                    Notification(
+                        name,
+                        value,
+                        filetime_to_dt(contents.nTimeStamp),
+                        contents.hNotification,
+                    )
+                )
+            except Exception:
+                sub._report_error()
+
+        try:
+            handles = self.add_device_notification(address, attr, dispatch)
+        except BaseException:
+            sub._active = False
+            raise
+        if handles is None:  # connection closed concurrently
+            sub._active = False
+            raise ValueError("Cannot subscribe with missing or closed Connection")
+
+        sub.notification_handle, sub.user_handle = handles
+        with self._subscriptions_lock:
+            self._subscriptions[sub.notification_handle] = sub
+        return sub
+
+    def _remove_subscription(self, sub: Subscription) -> None:
+        """Delete the notification behind a subscription (called by it)."""
+        with self._subscriptions_lock:
+            self._subscriptions.pop(cast(int, sub.notification_handle), None)
+        # Also without a port: a notification still pending after a failed
+        # reconnect must be forgotten so it is not restored later
+        if sub.notification_handle is not None:
+            self.del_device_notification(
+                sub.notification_handle, cast(int, sub.user_handle)
             )
 
     @property
@@ -1065,33 +1503,7 @@ class Connection(object):
                         >>>     plc.del_device_notification(handles)
                         """
         contents = notification.contents
-        data_size = contents.cbSampleSize
-        # Get dynamically sized data array
-        data = (c_ubyte * data_size).from_address(
-            addressof(contents) + SAdsNotificationHeader.data.offset
-        )
-        value: Any
-        if plc_datatype == PLCTYPE_STRING:
-            # read only until null-termination character
-            value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
-
-        elif plc_datatype is not None and issubclass(plc_datatype, Structure):
-            value = plc_datatype()
-            fit_size = min(data_size, sizeof(value))
-            memmove(addressof(value), addressof(data), fit_size)
-
-        elif plc_datatype is not None and issubclass(plc_datatype, Array):
-            if data_size == sizeof(plc_datatype):
-                value = list(plc_datatype.from_buffer_copy(bytes(data)))
-            else:
-                # invalid size
-                value = None
-
-        elif plc_datatype not in DATATYPE_MAP:
-            value = bytearray(data)
-
-        else:
-            value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+        value = _decode_notification_data(contents, plc_datatype)
 
         if timestamp_as_filetime:
             timestamp = contents.nTimeStamp

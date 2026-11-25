@@ -269,14 +269,16 @@ class AdvancedHandler(AbstractHandler):
 
             elif index_group == constants.ADSIGRP_SYM_UPLOADINFO2:
                 symbol_count = len(self._data)
-                response_length = 120 * symbol_count
+                response_length = sum(
+                    len(var.get_packed_info()) for var in self._data.values()
+                )
                 response_value = struct.pack("II", symbol_count, response_length)
 
             elif index_group == constants.ADSIGRP_SYM_UPLOAD:
-                response_value = b""
-                for (group, offset) in self._data.keys():
-                    response_value += struct.pack("III", 120, group, offset)
-                    response_value += b"\x00" * 108
+                # Real symbol entries (name, type, size, ADS type, comment)
+                response_value = b"".join(
+                    var.get_packed_info() for var in self._data.values()
+                )
 
             else:
                 # Create response of repeated 0x0F with a null
@@ -465,7 +467,11 @@ class AdvancedHandler(AbstractHandler):
             # Return value is the notification_handle
             # The notification handle is an incrementing value
 
-            var = self.get_variable_by_indices(index_group, index_offset)
+            # by-name notifications are registered on the symbol handle
+            if index_group == constants.ADSIGRP_SYM_VALBYHND:
+                var = self.get_variable_by_handle(index_offset)
+            else:
+                var = self.get_variable_by_indices(index_group, index_offset)
 
             handle = var.register_notification()
 

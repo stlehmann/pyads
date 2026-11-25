@@ -971,6 +971,21 @@ class AdsConnectionClassTestCase(unittest.TestCase):
         notification = create_notification_struct(data)
         callback(pointer(notification), "")
 
+    def test_parse_notification_wstring_returns_bytearray(self):
+        # type: () -> None
+        """parse_notification keeps returning raw bytes for WSTRING.
+
+        Only ``Connection.subscribe`` opts in to WSTRING decoding; the existing
+        notification API must not change behaviour.
+        """
+        payload = "Grüße".encode("utf-16-le") + b"\x00\x00"
+        notification = create_notification_struct(payload)
+        _, _, value = self.plc.parse_notification(
+            pointer(notification), constants.PLCTYPE_WSTRING
+        )
+        self.assertIsInstance(value, bytearray)
+        self.assertEqual(value, bytearray(payload))
+
     def test_multiple_connect(self):
         """
         Using context manager multiple times after each other for
@@ -1975,3 +1990,63 @@ class AdsApiTestCaseAdvanced(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+_CLOSE_WITH_NOTIFICATION_SCRIPT = """
+import time
+import pyads
+from pyads.testserver import AdsTestServer
+
+server = AdsTestServer(logging=False)
+server.start()
+time.sleep(0.5)
+try:
+    plc = pyads.Connection({net_id!r}, {port!r}, {ip!r})
+    plc.open()
+    plc.add_device_notification({target}, pyads.NotificationAttrib(4),
+                                lambda n, d: None)
+    plc.close()
+    assert not plc.is_open
+finally:
+    server.stop()
+"""
+
+
+class CloseWithActiveNotificationTestCase(unittest.TestCase):
+    """Regression tests for #554.
+
+    Closing a connection with a still-registered notification used to
+    segfault inside adsPortCloseEx on Linux/macOS. The scenario runs in a
+    subprocess so a crash fails the test instead of killing the test run.
+    """
+
+    def _run_close(self, target):
+        # type: (str) -> None
+        import subprocess
+        import sys
+
+        script = _CLOSE_WITH_NOTIFICATION_SCRIPT.format(
+            net_id=TEST_SERVER_AMS_NET_ID,
+            port=TEST_SERVER_AMS_PORT,
+            ip=TEST_SERVER_IP_ADDRESS,
+            target=target,
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            "close() with an active notification failed:\n" + result.stderr,
+        )
+
+    def test_close_with_notification_by_name(self):
+        # type: () -> None
+        self._run_close('"GVL.x"')
+
+    def test_close_with_notification_by_index(self):
+        # type: () -> None
+        self._run_close("(0x4020, 0)")

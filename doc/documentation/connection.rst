@@ -57,6 +57,45 @@ on the connection, so it survives a close/open cycle:
 the connection is not open. The timeout is a property of the ADS port, which means there
 is no value to report before :py:meth:`.Connection.open` is called.
 
+Reconnecting after a network interruption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the network connection to the device drops, requests fail with a timeout and
+device notifications stop arriving without any error. The connection does not recover
+on its own, even after the device is reachable again, so long-running programs should
+check it periodically and reconnect:
+
+.. code:: python
+
+   >>> import time
+   >>> plc = pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1, timeout=1000)
+   >>> plc.open()
+   >>> while True:
+   ...     if not plc.check_connection():
+   ...         try:
+   ...             new_handles = plc.reconnect()
+   ...         except pyads.ADSError:
+   ...             pass  # device still unreachable, try again later
+   ...     elif plc.pending_notifications:
+   ...         plc.restore_notifications()
+   ...     time.sleep(5)
+
+:py:meth:`.Connection.reconnect` closes and reopens the connection and subscribes every
+device notification added through :py:meth:`.Connection.add_device_notification` again.
+The device hands out new notification handles, so ``reconnect`` returns a dict that maps
+the old handles to the new ones. Use the new handles to delete a notification later;
+:py:class:`.Subscription` and :py:class:`.AdsSymbol` objects update their handles
+automatically, so a subscription created with :py:meth:`.Connection.subscribe` keeps
+delivering values after a reconnect without any extra code.
+
+Notifications that could not be subscribed again stay pending; they are listed by
+:py:attr:`.Connection.pending_notifications` and retried by
+:py:meth:`.Connection.restore_notifications`. Each failed check takes as long as the
+connection timeout, so a short timeout makes outages noticed sooner.
+
+Note that :py:meth:`.Connection.close` removes all notifications, so a plain
+``close()``/``open()`` cycle does not restore them.
+
 Read and write by name
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -509,3 +548,104 @@ supported. Find an example below:
    >>> @plc.notification(TowerEvent)
    >>> def callback(handle, name, timestamp, value):
    >>>     print(f'Received new event notification for {name}.Message = {value.Message}')
+
+Subscribing to variables
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+:py:meth:`.Connection.subscribe` is the simplest way to get notified about
+changes. pyads looks up the variable in the PLC's symbol table, works out its
+type and size, and calls your callback with an already decoded value wrapped
+in a :py:class:`pyads.Notification`. There is no type or ``NotificationAttrib``
+to supply.
+
+.. code:: python
+
+   >>> import pyads
+   >>>
+   >>> def on_change(notification: pyads.Notification) -> None:
+   ...     print(notification.name, notification.value, notification.timestamp)
+   >>>
+   >>> with pyads.Connection('127.0.0.1.1.1', pyads.PORT_TC3PLC1) as plc:
+   ...     sub = plc.subscribe('GVL.counter', on_change)
+   ...     ...  # notifications arrive while the connection is open
+   ...     sub.unsubscribe()
+
+   GVL.counter 42 2026-11-24 11:03:12.512000+00:00
+
+:py:class:`pyads.Notification` has four fields: ``name``, ``value``,
+``timestamp`` (the PLC's timestamp as a timezone-aware UTC ``datetime``) and
+``handle`` (the ADS notification handle).
+
+**Discovered symbols.** Symbols returned by :py:meth:`.Connection.get_all_symbols`
+already carry their type information, so subscribing to them needs no further
+ADS request:
+
+.. code:: python
+
+   >>> for symbol in plc.get_all_symbols():
+   ...     if symbol.name.startswith('GVL.'):
+   ...         symbol.subscribe(on_change)
+
+**What is decoded automatically.**
+
+.. list-table::
+   :header-rows: 1
+
+   * - PLC type
+     - Python value
+   * - ``BOOL``, integers, ``REAL``, ``LREAL``
+     - ``bool`` / ``int`` / ``float``
+   * - ENUMs, aliases, subranges (``INT (1..9)``)
+     - value of the underlying base type
+   * - ``TIME``, ``TIME_OF_DAY``, ``DATE``, ``DT``
+     - ``int`` (raw PLC value)
+   * - ``STRING(n)`` and string aliases
+     - ``str``
+   * - ``WSTRING(n)``
+     - ``str``
+   * - 1-D ``ARRAY`` of a base type
+     - ``list``
+
+Anything else - structures, function blocks, multi-dimensional or nested
+arrays, arrays of strings - raises ``TypeError`` at ``subscribe()`` time and
+nothing is registered. Pass the type yourself in that case, e.g. a
+``ctypes.Structure`` subclass:
+
+.. code:: python
+
+   >>> class Point(ctypes.Structure):
+   ...     _pack_ = 1
+   ...     _fields_ = [('x', ctypes.c_int16), ('y', ctypes.c_int16)]
+   >>>
+   >>> plc.subscribe('GVL.point', on_change, plc_datatype=Point)
+
+**Update rate.** By default the PLC checks a subscribed variable for changes
+every 100 ms, so you get at most 10 updates per second per variable, even if
+the value changes faster. A PLC pulse that is shorter than that interval can
+be missed entirely. To catch short pulses, lower ``cycle_time`` (in ms) or
+latch the signal in the PLC program:
+
+.. code:: python
+
+   >>> plc.subscribe('GVL.button_pulse', on_change, cycle_time=10)
+
+Pass ``attr=pyads.NotificationAttrib(...)`` for full control over the
+notification settings; it is then used as-is.
+
+**Threading.** The callback runs on the ADS notification thread. Keep it
+short and hand the work off to your own thread or event loop. Exceptions
+raised in the callback are logged to the ``pyads`` logger and do not stop
+further notifications. With ``asyncio``:
+
+.. code:: python
+
+   >>> loop = asyncio.get_running_loop()
+   >>>
+   >>> def on_change(notification):
+   ...     loop.call_soon_threadsafe(queue.put_nowait, notification)
+
+**Lifetime.** A subscription stays active until you call
+:py:meth:`.Subscription.unsubscribe` (calling it twice is harmless), leave its
+``with`` block, or close the connection - :py:meth:`.Connection.close` removes
+all subscriptions. Dropping the :py:class:`.Subscription` object does *not*
+end it.
