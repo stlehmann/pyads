@@ -6,7 +6,9 @@
 
 """
 from __future__ import annotations
+import logging
 import sys
+import threading
 import struct
 from ctypes import (
     memmove,
@@ -43,6 +45,7 @@ from .constants import (
     PLCTYPE_UINT,
     PLCTYPE_USINT,
     PLCTYPE_WORD,
+    PLCTYPE_WSTRING,
     PLC_DEFAULT_STRING_SIZE,
     DATATYPE_MAP,
     ADSIGRP_SUMUP_READ,
@@ -51,6 +54,7 @@ from .constants import (
     ads_type_to_ctype,
     PLCSimpleDataType,
     PLCDataType,
+    ADSTRANS_SERVERONCHA,
 )
 from .filetimes import filetime_to_dt
 from .pyads_ex import (
@@ -97,7 +101,70 @@ from .ads import (
     size_of_structure,
 )
 from .symbol import AdsSymbol
-from .utils import decode_ads
+from .subscription import (
+    DEFAULT_CYCLE_TIME_MS,
+    DEFAULT_MAX_DELAY_MS,
+    Notification,
+    Subscription,
+    resolve_notification_type,
+)
+from .utils import decode_ads, find_wstring_null_terminator
+
+logger = logging.getLogger(__name__)
+
+
+def _decode_notification_data(
+        contents: SAdsNotificationHeader,
+        plc_datatype: Optional[Type],
+        decode_wstring: bool = False,
+) -> Any:
+    """Decode the payload of a notification header into a Python value.
+
+    Shared by :meth:`Connection.parse_notification` and the
+    :meth:`Connection.subscribe` dispatcher so there is a single decoder.
+
+    :param contents: the dereferenced notification header
+    :param plc_datatype: PLC datatype of the payload, or None for raw bytes
+    :param decode_wstring: decode ``PLCTYPE_WSTRING`` as UTF-16-LE ``str``.
+        Off by default so :meth:`Connection.parse_notification` keeps
+        returning a ``bytearray`` for WSTRING (unchanged behaviour).
+    :return: the decoded value
+
+    """
+    data_size = contents.cbSampleSize
+    # Get dynamically sized data array
+    data = (c_ubyte * data_size).from_address(
+        addressof(contents) + SAdsNotificationHeader.data.offset
+    )
+    value: Any
+    if plc_datatype == PLCTYPE_STRING:
+        # read only until null-termination character
+        value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
+
+    elif decode_wstring and plc_datatype == PLCTYPE_WSTRING:
+        raw = bytearray(data)
+        null_idx = find_wstring_null_terminator(raw)
+        value = raw[: len(raw) if null_idx is None else null_idx].decode("utf-16-le")
+
+    elif plc_datatype is not None and issubclass(plc_datatype, Structure):
+        value = plc_datatype()
+        fit_size = min(data_size, sizeof(value))
+        memmove(addressof(value), addressof(data), fit_size)
+
+    elif plc_datatype is not None and issubclass(plc_datatype, Array):
+        if data_size == sizeof(plc_datatype):
+            value = list(plc_datatype.from_buffer_copy(bytes(data)))
+        else:
+            # invalid size
+            value = None
+
+    elif plc_datatype not in DATATYPE_MAP:
+        value = bytearray(data)
+
+    else:
+        value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+
+    return value
 
 
 class Connection(object):
@@ -134,6 +201,8 @@ class Connection(object):
         self.ams_net_port = ams_net_port
         self._notifications = {}  # type: Dict[int, str]
         self._symbol_info_cache: Dict[str, SAdsSymbolEntry] = {}
+        self._subscriptions: Dict[int, Subscription] = {}
+        self._subscriptions_lock = threading.Lock()
 
     @property
     def ams_netid(self) -> str:
@@ -234,9 +303,25 @@ class Connection(object):
             self._port = None
 
     def close(self) -> None:
-        """:summary: Close the connection to the TwinCAT message router."""
+        """:summary: Close the connection to the TwinCAT message router.
+
+        Active subscriptions created with :meth:`subscribe` are removed first.
+        Notifications added with :meth:`add_device_notification` are not
+        touched.
+
+        """
         if not self._open:
             return
+
+        with self._subscriptions_lock:
+            subscriptions = list(self._subscriptions.values())
+        for subscription in subscriptions:
+            try:
+                subscription.unsubscribe()
+            except ADSError as err:
+                logger.warning(
+                    "Failed to remove subscription for %s: %s", subscription.name, err
+                )
 
         # Close the port before deleting the route: adsPortCloseEx cleans up
         # any notifications still registered on the port, and that cleanup
@@ -496,6 +581,7 @@ class Connection(object):
             ptr = 0
 
             for idx in range(sym_count):
+                ptr_entry = ptr
                 read_length, index_group, index_offset = struct.unpack(
                     "III", symbol_list_msg[ptr + 0: ptr + 12]
                 )
@@ -519,6 +605,9 @@ class Connection(object):
                                    index_group=index_group,
                                    index_offset=index_offset,
                                    symbol_type=symbol_type, comment=comment)
+                symbol._ads_size, symbol._ads_data_type = struct.unpack(
+                    "II", symbol_list_msg[ptr_entry + 12: ptr_entry + 20]
+                )
                 symbols.append(symbol)
         return symbols
 
@@ -918,6 +1007,161 @@ class Connection(object):
                 self._port, self._adr, notification_handle, user_handle
             )
 
+    def subscribe(
+            self,
+            name: str,
+            callback: Callable[[Notification], None],
+            *,
+            plc_datatype: Optional[Type] = None,
+            attr: Optional[NotificationAttrib] = None,
+            cycle_time: float = DEFAULT_CYCLE_TIME_MS,
+            max_delay: float = DEFAULT_MAX_DELAY_MS,
+    ) -> Subscription:
+        """Subscribe to a PLC variable and receive decoded values.
+
+        The PLC type and notification length are determined from the symbol
+        table, so in the common case only the name is needed. Base types,
+        ENUMs, aliases, subranges, ``STRING(n)``, ``WSTRING(n)`` and
+        one-dimensional arrays of base types resolve automatically. For
+        anything else (e.g. structures) pass ``plc_datatype``; otherwise a
+        ``TypeError`` is raised and nothing is registered.
+
+        The callback receives a single :class:`pyads.Notification`. It runs on
+        the ADS notification thread: keep it short and hand work off to your
+        own thread or event loop. Exceptions raised in the callback are logged
+        to the ``pyads`` logger and never propagate into the ADS library.
+
+        :param str name: PLC variable name, e.g. ``"GVL.counter"``
+        :param callback: called with a :class:`pyads.Notification` per change
+        :param plc_datatype: override the resolved PLC datatype, e.g. a
+            ``ctypes.Structure`` subclass
+        :param attr: notification attributes; if given, used as-is and
+            ``cycle_time``/``max_delay`` are ignored
+        :type attr: Optional[pyads.NotificationAttrib]
+        :param float cycle_time: how often (ms) the PLC checks for a change.
+            Defaults to 100 ms, i.e. at most 10 updates/s; a PLC pulse shorter
+            than this can be missed
+        :param float max_delay: maximum delay (ms) before a change is sent
+        :raises ValueError: if the connection is not open
+        :raises TypeError: if the type cannot be determined automatically
+        :return: the active subscription
+        :rtype: pyads.Subscription
+
+        **Usage**:
+
+            >>> import pyads
+            >>>
+            >>> def on_change(notification: pyads.Notification) -> None:
+            >>>     print(notification.name, notification.value)
+            >>>
+            >>> with pyads.Connection("127.0.0.1.1.1", pyads.PORT_TC3PLC1) as plc:
+            >>>     sub = plc.subscribe("GVL.counter", on_change)
+            >>>     ...
+            >>>     sub.unsubscribe()
+
+        """
+        self._check_open_for_subscribe()
+        if plc_datatype is not None:
+            plc_type = plc_datatype
+            size = self._explicit_notification_size(name, plc_datatype, attr)
+        else:
+            info = self._get_cached_symbol_info(name)
+            plc_type, size = resolve_notification_type(
+                name, info.symbol_type, info.dataType, info.size
+            )
+        return self._subscribe(
+            name, name, callback, plc_type, size, attr, cycle_time, max_delay
+        )
+
+    def _check_open_for_subscribe(self) -> None:
+        if not self._open or self._port is None:
+            raise ValueError("Cannot subscribe with missing or closed Connection")
+
+    def _get_cached_symbol_info(self, name: str) -> SAdsSymbolEntry:
+        info = self._symbol_info_cache.get(name)
+        if info is None:
+            info = adsGetSymbolInfo(self._port, self._adr, name)
+            self._symbol_info_cache[name] = info
+        return info
+
+    def _explicit_notification_size(
+            self, name: str, plc_datatype: Type, attr: Optional[NotificationAttrib]
+    ) -> int:
+        if attr is not None:
+            return attr.length
+        if plc_datatype in (PLCTYPE_STRING, PLCTYPE_WSTRING):
+            # sizeof() is meaningless for the string types, ask the PLC
+            return self._get_cached_symbol_info(name).size
+        return sizeof(plc_datatype)
+
+    def _subscribe(
+            self,
+            name: str,
+            address: Union[str, Tuple[int, int]],
+            callback: Callable[[Notification], None],
+            plc_type: Type,
+            size: int,
+            attr: Optional[NotificationAttrib],
+            cycle_time: float,
+            max_delay: float,
+    ) -> Subscription:
+        """Register a decoded notification (shared by Connection and AdsSymbol)."""
+        if attr is None:
+            attr = NotificationAttrib(
+                size, ADSTRANS_SERVERONCHA, max_delay=max_delay, cycle_time=cycle_time
+            )
+
+        # Create the subscription before registering: a real PLC sends the
+        # current value right away, possibly before registration returns.
+        sub = Subscription(self, name, plc_type, size)
+
+        def dispatch(notification: Any, _data: Any) -> None:
+            if not sub.active:
+                return
+            try:
+                contents = notification.contents
+                value = _decode_notification_data(
+                    contents, plc_type, decode_wstring=True
+                )
+                if value is None and issubclass(plc_type, Array):
+                    raise ValueError(
+                        f"payload size {contents.cbSampleSize} does not match "
+                        f"{sizeof(plc_type)} bytes"
+                    )
+                callback(
+                    Notification(
+                        name,
+                        value,
+                        filetime_to_dt(contents.nTimeStamp),
+                        contents.hNotification,
+                    )
+                )
+            except Exception:
+                sub._report_error()
+
+        try:
+            handles = self.add_device_notification(address, attr, dispatch)
+        except BaseException:
+            sub._active = False
+            raise
+        if handles is None:  # connection closed concurrently
+            sub._active = False
+            raise ValueError("Cannot subscribe with missing or closed Connection")
+
+        sub.notification_handle, sub.user_handle = handles
+        with self._subscriptions_lock:
+            self._subscriptions[sub.notification_handle] = sub
+        return sub
+
+    def _remove_subscription(self, sub: Subscription) -> None:
+        """Delete the notification behind a subscription (called by it)."""
+        with self._subscriptions_lock:
+            self._subscriptions.pop(cast(int, sub.notification_handle), None)
+        if self._port is not None and sub.notification_handle is not None:
+            self.del_device_notification(
+                sub.notification_handle, cast(int, sub.user_handle)
+            )
+
     @property
     def is_open(self) -> bool:
         """Show the current connection state.
@@ -1069,33 +1313,7 @@ class Connection(object):
                         >>>     plc.del_device_notification(handles)
                         """
         contents = notification.contents
-        data_size = contents.cbSampleSize
-        # Get dynamically sized data array
-        data = (c_ubyte * data_size).from_address(
-            addressof(contents) + SAdsNotificationHeader.data.offset
-        )
-        value: Any
-        if plc_datatype == PLCTYPE_STRING:
-            # read only until null-termination character
-            value = bytearray(data).split(b"\0", 1)[0].decode("utf-8")
-
-        elif plc_datatype is not None and issubclass(plc_datatype, Structure):
-            value = plc_datatype()
-            fit_size = min(data_size, sizeof(value))
-            memmove(addressof(value), addressof(data), fit_size)
-
-        elif plc_datatype is not None and issubclass(plc_datatype, Array):
-            if data_size == sizeof(plc_datatype):
-                value = list(plc_datatype.from_buffer_copy(bytes(data)))
-            else:
-                # invalid size
-                value = None
-
-        elif plc_datatype not in DATATYPE_MAP:
-            value = bytearray(data)
-
-        else:
-            value = struct.unpack(DATATYPE_MAP[plc_datatype], bytearray(data))[0]
+        value = _decode_notification_data(contents, plc_datatype)
 
         if timestamp_as_filetime:
             timestamp = contents.nTimeStamp

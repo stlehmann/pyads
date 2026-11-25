@@ -8,12 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `Connection.subscribe()` and `AdsSymbol.subscribe()`: device notifications that resolve the PLC type and size from the symbol table and call back with a decoded `pyads.Notification(name, value, timestamp, handle)`. Supports base types, ENUMs, aliases, subranges, `STRING(n)`, `WSTRING(n)` and 1-D arrays; defaults to a 100 ms cycle time; callback errors are logged instead of reaching the ADS thread; `Connection.close()` removes active subscriptions
 - [#509](https://github.com/stlehmann/pyads/issues/509) Export the remaining `PLCTYPE_ARR_*` helpers (`BOOL`, `UINT`, `USHORT`, `UDINT`, `SINT`, `USINT`) from the top-level `pyads` namespace
 - [#468](https://github.com/stlehmann/pyads/issues/468) `Connection` accepts a `timeout` keyword argument which is re-applied on every `open()`, new `Connection.get_timeout()` and `pyads.get_timeout()` wrapping `AdsSyncGetTimeoutEx`; timeouts outside `0..2**31-1` ms now raise `ValueError` instead of being silently wrapped by ctypes
 
 ### Changed
 
 - [#539](https://github.com/stlehmann/pyads/pull/539) Fix `AdvancedHandler` test server: unique notification handles, survive abrupt disconnects/handler exceptions, per-item `SUMUP_WRITE` error codes
+- `AdvancedHandler` test server: symbol upload returns real symbol entries, and device notifications can be registered on a symbol handle (`ADSIGRP_SYM_VALBYHND`)
 - [#541](https://github.com/stlehmann/pyads/pull/541) Declare `meson` and `ninja` in `build-system.requires` so building from source works under PEP 517 build isolation
 - [#501](https://github.com/stlehmann/pyads/issues/501) **Breaking:** `read_list_by_name` now returns a one-element list for `ARRAY[1..1]` symbols (including negative bounds such as `ARRAY[-1..-1]`) instead of a bare scalar, matching `read_by_name`
 - [#501](https://github.com/stlehmann/pyads/issues/501) `write_list_by_name` now accepts a one-element list for `ARRAY[1..1]` symbols, which previously raised `struct.error`
