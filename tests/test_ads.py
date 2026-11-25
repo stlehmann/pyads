@@ -122,6 +122,18 @@ class AdsTest(unittest.TestCase):
         if port_was_open:
             pyads.open_port()
 
+    def test_get_local_address_without_port(self):
+        # type: () -> None
+        """Test get_local_address returns None when no port is open."""
+        # other tests share the module-level port, restore its state afterwards
+        port_was_open = pyads.ads.port is not None
+        pyads.close_port()
+        try:
+            self.assertIsNone(pyads.get_local_address())
+        finally:
+            if port_was_open:
+                pyads.open_port()
+
     def test_set_timeout_out_of_range(self):
         # type: () -> None
         """Test that set_timeout rejects values the native library would wrap."""
